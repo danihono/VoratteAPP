@@ -5,6 +5,12 @@
   },
   "hosting": {
     "public": ".",
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/Voratte DISC Platform.html"
+      }
+    ],
     "ignore": [
       "firebase.json",
       ".firebaserc",

@@ -224,8 +224,10 @@ function App() {
             <span className="sub">{meta.sub}</span>
           </div>
           <div className="topbar-right">
-            {/* Role switcher */}
-            <RoleSwitcher current={role} onChange={switchRole} />
+            {/* Role switcher — apenas para administradores (ferramenta de demo) */}
+            {currentUser && currentUser.role === 'admin' && (
+              <RoleSwitcher current={role} onChange={switchRole} />
+            )}
             <button className="icon-btn"><Ic.Bell s={18}/><span className="dot"/></button>
             <div className="top-user">
               <div className="avatar">{profile.initials}</div>

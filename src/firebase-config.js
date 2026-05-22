@@ -122,10 +122,18 @@ window.fbSaveDiscResult = async function(uid, result) {
     s:           result.s,
     c:           result.c,
     main:        result.main,
+    code:        result.code || result.main,
+    // Os 3 gráficos do DISC (Máscara / Pressão / Real)
+    mostGraph:   result.mostGraph   || null,
+    leastGraph:  result.leastGraph  || null,
+    changeGraph: result.changeGraph || null,
     answers:     result.answers || [],
     completedAt: firebase.firestore.FieldValue.serverTimestamp(),
   });
-  await window.db.collection('users').doc(uid).update({ discCompleted: true });
+  await window.db.collection('users').doc(uid).update({
+    discCompleted: true,
+    discMain:      result.main,
+  });
 };
 
 // Cria usuário no Firebase Auth SEM fazer logout do admin atual (REST API)

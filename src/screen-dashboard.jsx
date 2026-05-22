@@ -1,12 +1,36 @@
 // Dashboard — main landing after login
-const DISC_DATA = [
-  { key: 'D', label: 'Dominância', value: 68, color: 'var(--disc-d)' },
-  { key: 'I', label: 'Influência', value: 18, color: 'var(--disc-i)' },
-  { key: 'S', label: 'Estabilidade', value: 8, color: 'var(--disc-s)' },
-  { key: 'C', label: 'Conformidade', value: 6, color: 'var(--disc-c)' },
-];
 
-function DashboardScreen({ go }) {
+const DISC_LABELS = { D: 'Dominante', I: 'Influente', S: 'Estável', C: 'Conforme' };
+const DISC_FULL   = { D: 'Dominância', I: 'Influência', S: 'Estabilidade', C: 'Conformidade' };
+
+function toDiscData(raw) {
+  if (!raw) return null;
+  return [
+    { key: 'D', label: DISC_FULL.D, value: raw.d || 0, color: 'var(--disc-d)' },
+    { key: 'I', label: DISC_FULL.I, value: raw.i || 0, color: 'var(--disc-i)' },
+    { key: 'S', label: DISC_FULL.S, value: raw.s || 0, color: 'var(--disc-s)' },
+    { key: 'C', label: DISC_FULL.C, value: raw.c || 0, color: 'var(--disc-c)' },
+  ];
+}
+
+function DashboardScreen({ go, user }) {
+  const [discData, setDiscData] = React.useState(null);
+  const [discLoading, setDiscLoading] = React.useState(true);
+
+  React.useEffect(function() {
+    if (!user) { setDiscLoading(false); return; }
+    window.fbGetDiscResult(user.id).then(function(raw) {
+      const data = toDiscData(raw);
+      setDiscData(data);
+      // mantém window.DISC_DATA atualizado para outros scripts que possam consumi-lo
+      if (data) window.DISC_DATA = data;
+      setDiscLoading(false);
+    }).catch(function() { setDiscLoading(false); });
+  }, [user && user.id]);
+
+  const dominant = discData ? discData.reduce(function(a, b) { return a.value > b.value ? a : b; }) : null;
+  const firstName = user ? user.name.split(' ')[0] : 'você';
+
   return (
     <div className="page-enter" style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
 
@@ -19,14 +43,16 @@ function DashboardScreen({ go }) {
             <div className="badge badge-brown"><Ic.Sparkle s={12}/> Análise atualizada · há 2 dias</div>
           </div>
           <h2 className="serif" style={{ fontSize: 30, fontWeight: 500, letterSpacing: '-0.02em', marginTop: 14, lineHeight: 1.15, maxWidth: 460 }}>
-            Olá, Rafael. <span style={{ color: 'var(--muted)' }}>Aqui está seu panorama estratégico de hoje.</span>
+            Olá, {firstName}. <span style={{ color: 'var(--muted)' }}>Aqui está seu panorama estratégico de hoje.</span>
           </h2>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginTop: 26 }}>
             <div className="stat">
               <div className="stat-label">Perfil predominante</div>
-              <div className="stat-value">D · 68%</div>
-              <div className="stat-delta">+4 pts vs. avaliação anterior</div>
+              <div className="stat-value">
+                {discLoading ? '…' : dominant ? dominant.key + ' · ' + dominant.value + '%' : '—'}
+              </div>
+              <div className="stat-delta">{dominant ? DISC_LABELS[dominant.key] : 'Aguardando avaliação'}</div>
             </div>
             <div className="stat">
               <div className="stat-label">Compatibilidade equipe</div>
@@ -60,28 +86,37 @@ function DashboardScreen({ go }) {
             <button className="icon-btn"><Ic.More s={16}/></button>
           </div>
 
-          <div style={{ display: 'flex', gap: 20, alignItems: 'center', marginTop: 6 }}>
-            <Donut
-              size={170} stroke={22} data={DISC_DATA}
-              center={<><div className="letter">D</div><div className="label">Dominante</div></>}
-            />
-            <div className="legend" style={{ flex: 1 }}>
-              {DISC_DATA.map(d => (
-                <div className="legend-row" key={d.key}>
-                  <div className="sw" style={{ background: d.color }} />
-                  <span>{d.key} · {d.label}</span>
-                  <span className="pct">{d.value}%</span>
+          {discLoading ? (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 170, color: 'var(--muted)', fontSize: 13 }}>Carregando perfil…</div>
+          ) : discData ? (
+            <React.Fragment>
+              <div style={{ display: 'flex', gap: 20, alignItems: 'center', marginTop: 6 }}>
+                <Donut
+                  size={170} stroke={22} data={discData}
+                  center={<><div className="letter">{dominant.key}</div><div className="label">{DISC_LABELS[dominant.key]}</div></>}
+                />
+                <div className="legend" style={{ flex: 1 }}>
+                  {discData.map(d => (
+                    <div className="legend-row" key={d.key}>
+                      <div className="sw" style={{ background: d.color }} />
+                      <span>{d.key} · {d.label}</span>
+                      <span className="pct">{d.value}%</span>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              </div>
+              <div className="divider" />
+              <p style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.6 }}>
+                Você possui um perfil <strong style={{ color: 'var(--ink)' }}>{DISC_LABELS[dominant.key]}</strong>,
+                com {dominant.value}% de predominância no seu resultado DISC.
+              </p>
+            </React.Fragment>
+          ) : (
+            <div style={{ padding: '24px 0', textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>
+              Seu perfil DISC ainda não foi avaliado.{' '}
+              <button className="btn btn-ghost" style={{ fontSize: 13, padding: '4px 8px', display: 'inline-flex' }} onClick={() => go('teste')}>Iniciar agora</button>
             </div>
-          </div>
-
-          <div className="divider" />
-          <p style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.6 }}>
-            Você possui um perfil <strong style={{ color: 'var(--ink)' }}>Dominante</strong>,
-            com forte foco em resultados, tomada de decisão rápida e liderança natural em
-            ambientes desafiadores.
-          </p>
+          )}
         </div>
       </div>
 
@@ -182,4 +217,4 @@ function QuickCard({ icon, title, sub, onClick }) {
 }
 
 window.DashboardScreen = DashboardScreen;
-window.DISC_DATA = DISC_DATA;
+window.DISC_DATA = window.DISC_DATA || [];

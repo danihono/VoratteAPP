@@ -180,20 +180,57 @@ function GrowthChart() {
   );
 }
 
+// helpers de transformação Firestore → shape de exibição
+function userToRow(doc) {
+  var levelMap = { aluno: 'Aluno', gestor: 'Gestor', admin: 'Admin' };
+  var status = doc.discCompleted ? 'Ativo' : (doc.invited ? 'Convidado' : 'Pendente');
+  return {
+    name:    doc.name    || '—',
+    email:   doc.email   || '—',
+    company: doc.companyName || doc.companyId || '—',
+    role:    doc.jobTitle || '—',
+    level:   levelMap[doc.role] || doc.role || '—',
+    disc:    doc.discMain || '—',
+    active:  doc.lastSeen ? '—' : '—',   // timestamp formatado: melhoria futura
+    status:  status,
+  };
+}
+
+function companyToRow(doc) {
+  return {
+    name:      doc.name      || '—',
+    sector:    doc.sector    || '—',
+    users:     doc.userCount    || 0,
+    managers:  doc.managerCount || 0,
+    completed: doc.completedPct || 0,
+    plan:      doc.plan || 'Starter',
+    since:     doc.since || '—',
+  };
+}
+
+function gestorToRow(doc) {
+  var [done, total] = [doc.teamCompletedCount || 0, doc.teamSize || 0];
+  return {
+    name:      doc.name        || '—',
+    email:     doc.email       || '—',
+    company:   doc.companyName || doc.companyId || '—',
+    team:      total,
+    completed: total ? done + '/' + total : '—',
+  };
+}
+
 // ============ ADMIN — USUÁRIOS (visão geral) ============
 function AdminUsuarios({ go }) {
-  const users = [
-    { name: 'Rafael Mendes',     email: 'rafael@abcind.com',     company: 'ABC Indústria',    role: 'Comprador Sênior',  level: 'Aluno',  disc: 'D', active: 'há 2h',   status: 'Ativo' },
-    { name: 'Beatriz Almeida',   email: 'beatriz@abcind.com',    company: 'ABC Indústria',    role: 'Diretora Compras',  level: 'Gestor', disc: 'D', active: 'há 4h',   status: 'Ativo' },
-    { name: 'Carlos Souza',      email: 'csouza@norvel.com.br',  company: 'Norvel Logística', role: 'Gerente Compras',   level: 'Gestor', disc: 'I', active: 'há 1d',   status: 'Ativo' },
-    { name: 'Marina Tellez',     email: 'm.tellez@petromine.io', company: 'Petromine',        role: 'Diretora Suprimentos', level: 'Gestor', disc: 'C', active: 'há 1d',   status: 'Ativo' },
-    { name: 'Júlia Cordeiro',    email: 'j.cordeiro@abcind.com', company: 'ABC Indústria',    role: 'Comprador Pleno',   level: 'Aluno',  disc: 'I', active: 'há 2d',   status: 'Ativo' },
-    { name: 'Helena Antunes',    email: 'h.antunes@abcind.com',  company: 'ABC Indústria',    role: 'Especialista',      level: 'Aluno',  disc: 'C', active: 'há 3d',   status: 'Ativo' },
-    { name: 'Roberto Tang',      email: 'rtang@casalume.com',    company: 'Casa Lume',        role: 'Gerente Compras',   level: 'Gestor', disc: 'D', active: 'há 5d',   status: 'Ativo' },
-    { name: 'Diego Salgado',     email: 'd.salgado@abcind.com',  company: 'ABC Indústria',    role: 'Comprador Júnior',  level: 'Aluno',  disc: '—', active: 'há 9d',   status: 'Pendente' },
-    { name: 'Patricia Nunes',    email: 'patricia@olivar.br',    company: 'Olivar Alimentos', role: 'Gerente Compras',   level: 'Gestor', disc: 'S', active: 'há 12d',  status: 'Ativo' },
-    { name: 'Luana Brizolla',    email: 'luana@abcind.com',      company: 'ABC Indústria',    role: 'Assistente',        level: 'Aluno',  disc: '—', active: '—',       status: 'Convidado' },
-  ];
+  var [users, setUsers]       = React.useState([]);
+  var [loading, setLoading]   = React.useState(true);
+  var [showModal, setShowModal] = React.useState(false);
+
+  React.useEffect(function() {
+    window.fbGetAllUsers(100).then(function(docs) {
+      setUsers(docs.map(userToRow));
+      setLoading(false);
+    }).catch(function() { setLoading(false); });
+  }, []);
 
   return (
     <div className="page-enter" style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
@@ -209,8 +246,9 @@ function AdminUsuarios({ go }) {
           <button className="btn btn-secondary"><Ic.Settings s={14}/> Filtros</button>
           <button className="btn btn-ghost"><Ic.Download s={14}/> Exportar CSV</button>
         </div>
-        <button className="btn btn-primary"><Ic.Plus s={14}/> Convidar usuário</button>
+        <button className="btn btn-primary" onClick={function(){ setShowModal(true); }}><Ic.Plus s={14}/> Convidar usuário</button>
       </div>
+      {showModal && <CriarUsuarioModal onClose={function(){ setShowModal(false); }} />}
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
         <Mini2 label="Total" value="2 814" sub="todos os perfis" />
@@ -220,7 +258,13 @@ function AdminUsuarios({ go }) {
       </div>
 
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-        <table className="tbl">
+        {loading && (
+          <div style={{ padding: 32, textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>Carregando usuários…</div>
+        )}
+        {!loading && users.length === 0 && (
+          <div style={{ padding: 32, textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>Nenhum usuário encontrado no Firestore.</div>
+        )}
+        {!loading && users.length > 0 && <table className="tbl">
           <thead><tr>
             <th style={{ paddingLeft: 24 }}>Usuário</th>
             <th>Empresa</th>
@@ -276,11 +320,11 @@ function AdminUsuarios({ go }) {
               </tr>
             ))}
           </tbody>
-        </table>
+        </table>}
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12.5, color: 'var(--muted)' }}>
-        <span>Mostrando 10 de 2 814 usuários</span>
+        <span>Mostrando {users.length} usuários</span>
         <div style={{ display: 'flex', gap: 6 }}>
           <button className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: 12 }}><Ic.ArrowL s={12}/></button>
           <button className="btn btn-primary" style={{ padding: '6px 12px', fontSize: 12 }}>1</button>
@@ -307,16 +351,15 @@ function Mini2({ label, value, sub }) {
 
 // ============ ADMIN — EMPRESAS ============
 function AdminEmpresas({ go }) {
-  const cos = [
-    { name: 'ABC Indústria S.A.',    sector: 'Manufatura',    users: 184, managers: 8, completed: 92, plan: 'Enterprise', since: '2023' },
-    { name: 'Norvel Logística',      sector: 'Logística',     users: 142, managers: 6, completed: 88, plan: 'Enterprise', since: '2024' },
-    { name: 'Petromine Energias',    sector: 'Energia',       users: 128, managers: 5, completed: 94, plan: 'Enterprise', since: '2023' },
-    { name: 'Casa Lume Varejo',      sector: 'Varejo',        users: 98,  managers: 4, completed: 81, plan: 'Business',   since: '2024' },
-    { name: 'Olivar Alimentos',      sector: 'Alimentos',     users: 76,  managers: 3, completed: 76, plan: 'Business',   since: '2025' },
-    { name: 'Vortex Tech',           sector: 'Tecnologia',    users: 54,  managers: 3, completed: 71, plan: 'Business',   since: '2025' },
-    { name: 'Saudera Farma',         sector: 'Farmacêutico',  users: 48,  managers: 2, completed: 88, plan: 'Business',   since: '2025' },
-    { name: 'Cordia Construções',    sector: 'Construção',    users: 36,  managers: 2, completed: 64, plan: 'Starter',    since: '2026' },
-  ];
+  var [cos, setCos] = React.useState([]);
+  var [loading, setLoading] = React.useState(true);
+
+  React.useEffect(function() {
+    window.fbGetAllCompanies().then(function(docs) {
+      setCos(docs.map(companyToRow));
+      setLoading(false);
+    }).catch(function() { setLoading(false); });
+  }, []);
   return (
     <div className="page-enter" style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -331,6 +374,8 @@ function AdminEmpresas({ go }) {
         <button className="btn btn-primary"><Ic.Plus s={14}/> Cadastrar empresa</button>
       </div>
 
+      {loading && <div style={{ padding: 32, textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>Carregando empresas…</div>}
+      {!loading && cos.length === 0 && <div style={{ padding: 32, textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>Nenhuma empresa encontrada no Firestore.</div>}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14 }}>
         {cos.map((c, i) => (
           <div key={i} className="card" style={{ padding: 22 }}>
@@ -383,15 +428,16 @@ function AdminEmpresas({ go }) {
 
 // ============ ADMIN — GESTORES ============
 function AdminGestores({ go }) {
-  const ms = [
-    { name: 'Beatriz Almeida',  email: 'beatriz@abcind.com',    company: 'ABC Indústria',    team: 8,  completed: '6/8' },
-    { name: 'Carlos Souza',     email: 'csouza@norvel.com.br',  company: 'Norvel Logística', team: 12, completed: '11/12' },
-    { name: 'Marina Tellez',    email: 'm.tellez@petromine.io', company: 'Petromine',        team: 9,  completed: '9/9' },
-    { name: 'Roberto Tang',     email: 'rtang@casalume.com',    company: 'Casa Lume',        team: 7,  completed: '5/7' },
-    { name: 'Patricia Nunes',   email: 'patricia@olivar.br',    company: 'Olivar Alimentos', team: 6,  completed: '4/6' },
-    { name: 'Antonio Karp',     email: 'a.karp@vortex.io',      company: 'Vortex Tech',      team: 5,  completed: '4/5' },
-    { name: 'Camila Vega',      email: 'cvega@saudera.com',     company: 'Saudera Farma',    team: 4,  completed: '4/4' },
-  ];
+  var [ms, setMs]             = React.useState([]);
+  var [loading, setLoading]   = React.useState(true);
+  var [showModal, setShowModal] = React.useState(false);
+
+  React.useEffect(function() {
+    window.fbGetAllGestores().then(function(docs) {
+      setMs(docs.map(gestorToRow));
+      setLoading(false);
+    }).catch(function() { setLoading(false); });
+  }, []);
   return (
     <div className="page-enter" style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -399,18 +445,22 @@ function AdminGestores({ go }) {
           <input className="input" placeholder="Buscar gestor..." style={{ paddingLeft: 38 }} />
           <div style={{ position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)' }}><Ic.Search s={16}/></div>
         </div>
-        <button className="btn btn-primary"><Ic.Plus s={14}/> Promover usuário a gestor</button>
+        <button className="btn btn-primary" onClick={function(){ setShowModal(true); }}><Ic.Plus s={14}/> Promover usuário a gestor</button>
       </div>
+      {showModal && <CriarUsuarioModal defaultRole="gestor" onClose={function(){ setShowModal(false); }} />}
 
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-        <table className="tbl">
+        {loading && <div style={{ padding: 32, textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>Carregando gestores…</div>}
+        {!loading && ms.length === 0 && <div style={{ padding: 32, textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>Nenhum gestor encontrado no Firestore.</div>}
+        {!loading && ms.length > 0 && <table className="tbl">
           <thead><tr>
             <th style={{ paddingLeft: 24 }}>Gestor</th><th>Empresa</th><th>Equipe</th><th>Cobertura DISC</th><th>Permissões</th><th style={{ paddingRight: 24, textAlign: 'right' }}>Ações</th>
           </tr></thead>
           <tbody>
             {ms.map((m, i) => {
-              const [done, total] = m.completed.split('/').map(Number);
-              const pct = (done/total) * 100;
+              var parts = typeof m.completed === 'string' ? m.completed.split('/').map(Number) : [0, 0];
+              var done = parts[0] || 0, total = parts[1] || m.team || 0;
+              var pct = total ? (done/total) * 100 : 0;
               return (
                 <tr key={i}>
                   <td style={{ paddingLeft: 24 }}>
@@ -448,7 +498,7 @@ function AdminGestores({ go }) {
               );
             })}
           </tbody>
-        </table>
+        </table>}
       </div>
     </div>
   );
@@ -595,6 +645,150 @@ function AdminPermissoes({ go }) {
             </React.Fragment>
           ))}
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ============ MODAL — CRIAR USUÁRIO (somente admin) ============
+function CriarUsuarioModal({ onClose, defaultRole }) {
+  var [form, setForm] = React.useState({
+    name: '', email: '', password: '', jobTitle: '', companyName: '',
+    role: defaultRole || 'aluno',
+  });
+  var [loading, setLoading] = React.useState(false);
+  var [error, setError]     = React.useState('');
+  var [success, setSuccess] = React.useState(false);
+
+  function setField(k, v) { setForm(function(f) { return Object.assign({}, f, { [k]: v }); }); }
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    if (!form.name || !form.email || !form.password) {
+      setError('Nome, e-mail e senha são obrigatórios.');
+      return;
+    }
+    setError(''); setLoading(true);
+    try {
+      var uid = await window.fbCreateUser(form.email, form.password);
+      await window.fbCreateUserDoc(uid, {
+        name: form.name, email: form.email,
+        jobTitle: form.jobTitle, companyName: form.companyName, role: form.role,
+      });
+      setSuccess(true);
+    } catch(err) {
+      var msg = err.message || 'Erro ao criar usuário.';
+      if (msg === 'EMAIL_EXISTS') msg = 'Este e-mail já está cadastrado.';
+      if (msg.indexOf('WEAK_PASSWORD') !== -1) msg = 'A senha deve ter pelo menos 6 caracteres.';
+      setError(msg);
+    } finally { setLoading(false); }
+  }
+
+  var roleLabels = { aluno: 'Aluno', gestor: 'Gestor', admin: 'Admin' };
+
+  return (
+    <div
+      style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(0,0,0,0.45)',
+               display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
+      onClick={onClose}
+    >
+      <div className="card" style={{ width: '100%', maxWidth: 480, padding: 32 }}
+           onClick={function(e) { e.stopPropagation(); }}>
+
+        {success ? (
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'var(--brown-50)',
+                          color: 'var(--brown-700)', display: 'inline-flex',
+                          alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+              <Ic.Check s={24}/>
+            </div>
+            <div className="serif" style={{ fontSize: 22, marginBottom: 8 }}>Usuário criado!</div>
+            <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 24, lineHeight: 1.5 }}>
+              <strong>{form.name}</strong> foi cadastrado como <strong>{roleLabels[form.role]}</strong> e já pode fazer login.
+            </p>
+            <button className="btn btn-primary" style={{ width: '100%' }} onClick={onClose}>Fechar</button>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit}>
+            <div className="serif" style={{ fontSize: 22, marginBottom: 4 }}>Criar usuário</div>
+            <div style={{ fontSize: 12.5, color: 'var(--muted)', marginBottom: 20 }}>
+              Preencha os dados para criar uma nova conta na plataforma.
+            </div>
+
+            {error && (
+              <div style={{ fontSize: 12.5, color: '#b91c1c', marginBottom: 14,
+                            padding: '10px 14px', background: '#fef2f2',
+                            border: '1px solid #fecaca', borderRadius: 8 }}>
+                {error}
+              </div>
+            )}
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div className="field">
+                <label>Nome completo *</label>
+                <input className="input" type="text" value={form.name}
+                  onChange={function(e) { setField('name', e.target.value); }}
+                  placeholder="Ex: Ana Paula Souza" />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div className="field">
+                  <label>E-mail *</label>
+                  <input className="input" type="email" value={form.email}
+                    onChange={function(e) { setField('email', e.target.value); }}
+                    placeholder="email@empresa.com" />
+                </div>
+                <div className="field">
+                  <label>Senha *</label>
+                  <input className="input" type="password" value={form.password}
+                    onChange={function(e) { setField('password', e.target.value); }}
+                    placeholder="Mínimo 6 caracteres" />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div className="field">
+                  <label>Cargo profissional</label>
+                  <input className="input" type="text" value={form.jobTitle}
+                    onChange={function(e) { setField('jobTitle', e.target.value); }}
+                    placeholder="Ex: Comprador Sênior" />
+                </div>
+                <div className="field">
+                  <label>Empresa</label>
+                  <input className="input" type="text" value={form.companyName}
+                    onChange={function(e) { setField('companyName', e.target.value); }}
+                    placeholder="Nome da empresa" />
+                </div>
+              </div>
+
+              <div className="field">
+                <label>Papel na plataforma</label>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  {['aluno', 'gestor', 'admin'].map(function(r) {
+                    return (
+                      <button key={r} type="button"
+                        onClick={function() { setField('role', r); }}
+                        className={'btn ' + (form.role === r ? 'btn-primary' : 'btn-secondary')}
+                        style={{ flex: 1, padding: '8px 12px', fontSize: 12 }}
+                      >
+                        {roleLabels[r]}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: 10, marginTop: 22 }}>
+              <button type="button" className="btn btn-ghost" style={{ flex: 1 }} onClick={onClose}>
+                Cancelar
+              </button>
+              <button type="submit" className="btn btn-primary" style={{ flex: 1 }} disabled={loading}>
+                {loading ? 'Criando…' : 'Criar usuário'}
+              </button>
+            </div>
+          </form>
+        )}
       </div>
     </div>
   );

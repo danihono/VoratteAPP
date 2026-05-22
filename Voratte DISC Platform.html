@@ -14,6 +14,13 @@
   <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
   <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
 
+  <!-- Firebase Compat SDK — deve ser carregado ANTES dos scripts Babel -->
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <!-- Inicialização e helpers — preencha firebase-config.js com seu firebaseConfig -->
+  <script src="src/firebase-config.js"></script>
+
   <script type="text/babel" src="src/icons.jsx"></script>
   <script type="text/babel" src="src/donut.jsx"></script>
   <script type="text/babel" src="src/screen-login.jsx"></script>

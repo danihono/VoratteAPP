@@ -1,0 +1,84 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ─── helpers ────────────────────────────────────────────────────────────
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function myUid() {
+      return request.auth.uid;
+    }
+
+    function myProfile() {
+      return get(/databases/$(database)/documents/users/$(myUid())).data;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && myProfile().role == 'admin';
+    }
+
+    function isGestor() {
+      return isSignedIn() && myProfile().role == 'gestor';
+    }
+
+    // Verifica se o aluno (userId) pertence ao time do gestor autenticado
+    function isMyTeamMember(userId) {
+      return isGestor() &&
+        get(/databases/$(database)/documents/users/$(userId)).data.gestorId == myUid();
+    }
+
+    // ─── /users/{uid} ───────────────────────────────────────────────────────
+    match /users/{uid} {
+      // Leitura: próprio doc, gestor do time, ou admin
+      allow read: if isSignedIn() && (
+        myUid() == uid ||
+        isMyTeamMember(uid) ||
+        isAdmin()
+      );
+
+      // Escrita: próprio perfil (dados básicos) ou admin
+      allow update: if isSignedIn() && (myUid() == uid || isAdmin());
+      allow create: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ─── /companies/{companyId} ─────────────────────────────────────────────
+    match /companies/{companyId} {
+      // Qualquer usuário autenticado da empresa pode ler
+      allow read: if isSignedIn() && (
+        myProfile().companyId == companyId ||
+        isAdmin()
+      );
+      allow write: if isAdmin();
+    }
+
+    // ─── /disc_results/{uid} ────────────────────────────────────────────────
+    match /disc_results/{uid} {
+      // Leitura: próprio resultado, gestor do aluno, ou admin
+      allow read: if isSignedIn() && (
+        myUid() == uid ||
+        isMyTeamMember(uid) ||
+        isAdmin()
+      );
+
+      // Escrita: apenas o próprio aluno salva seu resultado (via fbSaveDiscResult)
+      allow write: if isSignedIn() && myUid() == uid;
+    }
+
+    // ─── /reports/{reportId} ────────────────────────────────────────────────
+    match /reports/{reportId} {
+      // Leitura: dono do relatório, gestor do dono, ou admin
+      allow read: if isSignedIn() && (
+        resource.data.userId == myUid() ||
+        isMyTeamMember(resource.data.userId) ||
+        isAdmin()
+      );
+
+      // Criação: próprio usuário (userId deve ser o seu uid)
+      allow create: if isSignedIn() && request.resource.data.userId == myUid();
+      allow update, delete: if isAdmin();
+    }
+  }
+}

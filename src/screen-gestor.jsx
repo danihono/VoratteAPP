@@ -1,20 +1,39 @@
 // ====================== GESTOR ======================
 // O gestor vê APENAS os colaboradores do seu time.
 
-const GESTOR_TEAM = [
-  { id: 1, name: 'Rafael Mendes',   role: 'Comprador Sênior',     d: 68, i: 18, s: 8,  c: 6,  main: 'D', status: 'done', last: '25/05/2026', reports: 4 },
-  { id: 2, name: 'Júlia Cordeiro',  role: 'Comprador Pleno',      d: 22, i: 54, s: 16, c: 8,  main: 'I', status: 'done', last: '18/05/2026', reports: 3 },
-  { id: 3, name: 'Bruno Tavares',   role: 'Coordenador',          d: 12, i: 14, s: 58, c: 16, main: 'S', status: 'done', last: '12/05/2026', reports: 5 },
-  { id: 4, name: 'Helena Antunes',  role: 'Especialista',         d: 8,  i: 12, s: 18, c: 62, main: 'C', status: 'done', last: '08/05/2026', reports: 2 },
-  { id: 5, name: 'Marcos Vianna',   role: 'Comprador Júnior',     d: 34, i: 28, s: 22, c: 16, main: 'D', status: 'done', last: '02/05/2026', reports: 1 },
-  { id: 6, name: 'Carolina Reis',   role: 'Comprador Pleno',      d: 28, i: 38, s: 24, c: 10, main: 'I', status: 'done', last: '28/04/2026', reports: 3 },
-  { id: 7, name: 'Diego Salgado',   role: 'Comprador Júnior',     d: 0,  i: 0,  s: 0,  c: 0,  main: '—', status: 'pending', last: '—',         reports: 0 },
-  { id: 8, name: 'Luana Brizolla',  role: 'Assistente de Compras',d: 0,  i: 0,  s: 0,  c: 0,  main: '—', status: 'invited', last: '—',         reports: 0 },
-];
+// Cache de sessão: evita múltiplos fetches enquanto o gestor navega entre telas
+var _gestorTeamCache = null;
+var _gestorTeamFetch = null;
 
-function GestorDashboard({ go }) {
-  const done = GESTOR_TEAM.filter(p => p.status === 'done').length;
-  const pending = GESTOR_TEAM.length - done;
+function useGestorTeam(gestorId) {
+  var [team, setTeam] = React.useState(_gestorTeamCache || []);
+  var [loading, setLoading] = React.useState(!_gestorTeamCache);
+
+  React.useEffect(function() {
+    if (_gestorTeamCache) { setTeam(_gestorTeamCache); setLoading(false); return; }
+    if (!gestorId) { setLoading(false); return; }
+    if (!_gestorTeamFetch) {
+      _gestorTeamFetch = window.fbGetTeamMembers(gestorId);
+    }
+    _gestorTeamFetch.then(function(data) {
+      _gestorTeamCache = data;
+      setTeam(data);
+      setLoading(false);
+    }).catch(function(err) {
+      console.error('Erro ao carregar time:', err);
+      setLoading(false);
+    });
+  }, [gestorId]);
+
+  return [team, loading];
+}
+
+function GestorDashboard({ go, user }) {
+  var [team, teamLoading] = useGestorTeam(user && user.id);
+  var GESTOR_TEAM = team;
+  var done = GESTOR_TEAM.filter(function(p) { return p.status === 'done'; }).length;
+  var pending = GESTOR_TEAM.length - done;
+  var firstName = user ? user.name.split(' ')[0] : 'Gestor';
 
   return (
     <div className="page-enter" style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
@@ -24,7 +43,9 @@ function GestorDashboard({ go }) {
           <div style={{ position: 'absolute', right: -60, top: -60, width: 240, height: 240, background: 'radial-gradient(circle, var(--brown-50), transparent 70%)' }} />
           <div className="badge badge-brown" style={{ position: 'relative' }}><Ic.Shield s={12}/> Visão de Gestor · Time Compras ABC</div>
           <h2 className="serif" style={{ fontSize: 30, fontWeight: 500, letterSpacing: '-0.02em', marginTop: 14, lineHeight: 1.15, maxWidth: 460 }}>
-            Olá, Beatriz. <span style={{ color: 'var(--muted)' }}>Seu time tem 84% de cobertura comportamental.</span>
+            Olá, {firstName}. <span style={{ color: 'var(--muted)' }}>
+              {teamLoading ? 'Carregando dados do time…' : GESTOR_TEAM.length + ' colaboradores · ' + done + ' avaliados.'}
+            </span>
           </h2>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginTop: 26 }}>
@@ -154,9 +175,19 @@ function GestorDashboard({ go }) {
   );
 }
 
-function GestorEquipe({ go }) {
-  const [sel, setSel] = React.useState(GESTOR_TEAM[0].id);
-  const p = GESTOR_TEAM.find(x => x.id === sel);
+function GestorEquipe({ go, user }) {
+  var [team, teamLoading] = useGestorTeam(user && user.id);
+  var GESTOR_TEAM = team;
+  var [sel, setSel] = React.useState(null);
+  var selId = sel || (GESTOR_TEAM.length ? GESTOR_TEAM[0].id : null);
+  var p = GESTOR_TEAM.find(function(x) { return x.id === selId; }) || null;
+
+  if (teamLoading) {
+    return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 300, color: 'var(--muted)', fontSize: 13 }}>Carregando equipe…</div>;
+  }
+  if (!GESTOR_TEAM.length) {
+    return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 300, color: 'var(--muted)', fontSize: 13 }}>Nenhum colaborador encontrado neste time.</div>;
+  }
 
   return (
     <div className="page-enter" style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: 16, height: '100%' }}>
@@ -168,7 +199,7 @@ function GestorEquipe({ go }) {
           <div className="card-sub" style={{ marginBottom: 0 }}>{GESTOR_TEAM.length} colaboradores</div>
         </div>
         <div style={{ flex: 1, overflowY: 'auto' }}>
-          {GESTOR_TEAM.map(person => (
+          {GESTOR_TEAM.map(function(person) { return (
             <button
               key={person.id}
               onClick={() => setSel(person.id)}
@@ -176,8 +207,8 @@ function GestorEquipe({ go }) {
                 display: 'flex', alignItems: 'center', gap: 12,
                 width: '100%', textAlign: 'left',
                 padding: '14px 18px',
-                background: sel === person.id ? 'var(--brown-50)' : 'transparent',
-                borderLeft: '3px solid ' + (sel === person.id ? 'var(--brown-700)' : 'transparent'),
+                background: selId === person.id ? 'var(--brown-50)' : 'transparent',
+                borderLeft: '3px solid ' + (selId === person.id ? 'var(--brown-700)' : 'transparent'),
                 borderBottom: '1px solid var(--line-soft)',
                 cursor: 'pointer',
               }}
@@ -195,7 +226,7 @@ function GestorEquipe({ go }) {
                 <div style={{ width: 26, height: 26, borderRadius: 6, background: 'var(--brown-50)', border: '1px dashed var(--brown-300)', color: 'var(--brown-400)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>?</div>
               )}
             </button>
-          ))}
+          ); })}
         </div>
       </div>
 
@@ -329,7 +360,7 @@ function GestorEquipe({ go }) {
   );
 }
 
-function GestorMapa({ go }) {
+function GestorMapa({ go, user }) {
   // Behavioural heatmap by role
   const matrix = [
     { role: 'Diretor de Compras',     D: 2, I: 1, S: 0, C: 1 },
@@ -405,7 +436,7 @@ function GestorMapa({ go }) {
   );
 }
 
-function GestorRelatorios({ go }) {
+function GestorRelatorios({ go, user }) {
   const rows = [
     { name: 'Consolidado Time Compras · maio/26', date: '25/05/2026', type: 'Consolidado', author: 'Sistema · IA Voratte' },
     { name: 'Relatório DISC · Rafael Mendes',     date: '25/05/2026', type: 'Individual',  author: 'Rafael Mendes' },

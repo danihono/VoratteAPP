@@ -91,18 +91,76 @@ const ROLE_LABELS = {
 
 function App() {
   const [loggedIn, setLoggedIn] = React.useState(false);
+  const [authLoading, setAuthLoading] = React.useState(true);
+  const [currentUser, setCurrentUser] = React.useState(null);
+  const [authError, setAuthError] = React.useState('');
   const [role, setRole] = React.useState('aluno'); // 'aluno' | 'alunoNew' | 'gestor' | 'admin'
   const [route, setRoute] = React.useState('dashboard');
 
+  // Escuta mudanças de autenticação Firebase e carrega perfil do Firestore
+  React.useEffect(() => {
+    return window.auth.onAuthStateChanged(async function(firebaseUser) {
+      if (firebaseUser) {
+        try {
+          const profile = await window.fbGetUserProfile(firebaseUser.uid);
+          if (profile) {
+            setCurrentUser(profile);
+            setAuthError('');
+            const effectiveRole = profile.role === 'aluno' && !profile.discCompleted
+              ? 'alunoNew'
+              : (profile.role || 'aluno');
+            setRole(effectiveRole);
+            setLoggedIn(true);
+          } else {
+            await window.fbLogout();
+            setAuthError('Conta não configurada. Fale com o administrador.');
+          }
+        } catch (err) {
+          console.error('Erro ao carregar perfil:', err);
+          setLoggedIn(false);
+        }
+      } else {
+        setCurrentUser(null);
+        setLoggedIn(false);
+      }
+      setAuthLoading(false);
+    });
+  }, []);
+
   const switchRole = (r) => { setRole(r); setRoute('dashboard'); };
 
+  // Tela de splash enquanto Firebase verifica sessão
+  if (authLoading) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: 'var(--paper)', flexDirection: 'column', gap: 20 }}>
+        <img src="assets/voratte-logo.webp" alt="Voratte" style={{ width: 64, opacity: 0.7 }} />
+        <div style={{ fontSize: 13, color: 'var(--muted)', letterSpacing: '0.06em' }}>Carregando…</div>
+      </div>
+    );
+  }
+
   if (!loggedIn) {
-    return <LoginScreen onLogin={() => setLoggedIn(true)} />;
+    return <LoginScreen authError={authError} />;
   }
 
   const nav = role === 'gestor' ? NAV_GESTOR : role === 'admin' ? NAV_ADMIN : NAV_ALUNO;
-  const meta = (PAGE_META[role] && PAGE_META[role][route]) || PAGE_META[route] || { title: 'Voratte', sub: '' };
-  const profile = ROLE_PROFILES[role];
+
+  // Sobrescreve título do dashboard com o nome real do usuário
+  const firstName = currentUser ? currentUser.name.split(' ')[0] : null;
+  const baseMeta = (PAGE_META[role] && PAGE_META[role][route]) || PAGE_META[route] || { title: 'Voratte', sub: '' };
+  const meta = (route === 'dashboard' && firstName)
+    ? { ...baseMeta, title: 'Olá, ' + firstName }
+    : baseMeta;
+
+  // Perfil exibido na sidebar: usa dados reais quando disponível, fallback para ROLE_PROFILES
+  const roleProfile = ROLE_PROFILES[role];
+  const profile = currentUser ? {
+    name:     currentUser.name || roleProfile.name,
+    role:     currentUser.jobTitle || roleProfile.role,
+    initials: currentUser.name
+      ? currentUser.name.split(' ').map(function(n) { return n[0]; }).join('').slice(0,2).toUpperCase()
+      : roleProfile.initials,
+  } : roleProfile;
 
   return (
     <div className="app-shell">
@@ -148,7 +206,7 @@ function App() {
               <div className="user-role">{profile.role}</div>
             </div>
             <button
-              onClick={() => setLoggedIn(false)}
+              onClick={() => window.fbLogout()}
               style={{ color: 'var(--brown-400)', display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, borderRadius: 6 }}
               title="Sair"
             >
@@ -180,67 +238,67 @@ function App() {
         </header>
 
         <div className="page" key={role + '-' + route}>
-          {renderScreen(role, route, setRoute)}
+          {renderScreen(role, route, setRoute, currentUser)}
         </div>
       </main>
     </div>
   );
 }
 
-function renderScreen(role, route, go) {
+function renderScreen(role, route, go, user) {
   if (role === 'aluno') {
     return ({
-      dashboard:   <DashboardScreen   go={go} />,
-      teste:       <DiscTestScreen    go={go} />,
-      analise:     <AnaliseScreen     go={go} />,
-      cruzamento:  <CruzamentoScreen  go={go} />,
+      dashboard:   <DashboardScreen   go={go} user={user} />,
+      teste:       <DiscTestScreen    go={go} user={user} />,
+      analise:     <AnaliseScreen     go={go} user={user} />,
+      cruzamento:  <CruzamentoScreen  go={go} user={user} />,
       kraljic:     <KraljicScreen     go={go} />,
       objecoes:    <ObjecoesScreen    go={go} />,
-      plano:       <PlanoScreen       go={go} />,
-      relatorios:  <RelatoriosScreen  go={go} />,
-      relatorio:   <RelatorioScreen   go={go} />,
-      perfil:      <PerfilScreen      go={go} />,
-    }[route] || <DashboardScreen go={go} />);
+      plano:       <PlanoScreen       go={go} user={user} />,
+      relatorios:  <RelatoriosScreen  go={go} user={user} />,
+      relatorio:   <RelatorioScreen   go={go} user={user} />,
+      perfil:      <PerfilScreen      go={go} user={user} />,
+    }[route] || <DashboardScreen go={go} user={user} />);
   }
   if (role === 'alunoNew') {
     return ({
-      dashboard:   <AlunoOnboarding   go={go} />,
-      teste:       <DiscTestScreen    go={go} />,
+      dashboard:   <AlunoOnboarding   go={go} user={user} />,
+      teste:       <DiscTestScreen    go={go} user={user} />,
       analise:     <AlunoNewLocked    go={go} title="Análise indisponível" body="Responda o DISC primeiro para acessar sua análise comportamental."/>,
       cruzamento:  <AlunoNewLocked    go={go} title="Cruzamento indisponível" body="Disponível após sua primeira avaliação DISC."/>,
       kraljic:     <KraljicScreen     go={go} />,
       objecoes:    <ObjecoesScreen    go={go} />,
       plano:       <AlunoNewLocked    go={go} title="Plano de desenvolvimento" body="Vamos construir seu plano após o resultado do DISC."/>,
       relatorios:  <AlunoNewLocked    go={go} title="Você ainda não tem relatórios" body="Seus relatórios aparecerão aqui após completar o DISC."/>,
-      perfil:      <PerfilScreen      go={go} />,
-    }[route] || <AlunoOnboarding go={go} />);
+      perfil:      <PerfilScreen      go={go} user={user} />,
+    }[route] || <AlunoOnboarding go={go} user={user} />);
   }
   if (role === 'gestor') {
     return ({
-      dashboard:   <GestorDashboard    go={go} />,
-      equipe:      <GestorEquipe       go={go} />,
-      comparacoes: <ComparacoesScreen  go={go} />,
-      mapa:        <GestorMapa         go={go} />,
+      dashboard:   <GestorDashboard    go={go} user={user} />,
+      equipe:      <GestorEquipe       go={go} user={user} />,
+      comparacoes: <ComparacoesScreen  go={go} user={user} />,
+      mapa:        <GestorMapa         go={go} user={user} />,
       kraljic:     <KraljicScreen      go={go} />,
       objecoes:    <ObjecoesScreen     go={go} />,
-      relatorios:  <GestorRelatorios   go={go} />,
-      relatorio:   <RelatorioScreen    go={go} />,
-      analise:     <AnaliseScreen      go={go} />,
-      perfil:      <PerfilScreen       go={go} />,
-    }[route] || <GestorDashboard go={go} />);
+      relatorios:  <GestorRelatorios   go={go} user={user} />,
+      relatorio:   <RelatorioScreen    go={go} user={user} />,
+      analise:     <AnaliseScreen      go={go} user={user} />,
+      perfil:      <PerfilScreen       go={go} user={user} />,
+    }[route] || <GestorDashboard go={go} user={user} />);
   }
   if (role === 'admin') {
     return ({
-      dashboard:    <AdminDashboard      go={go} />,
+      dashboard:    <AdminDashboard      go={go} user={user} />,
       usuarios:     <AdminUsuarios       go={go} />,
       empresas:     <AdminEmpresas       go={go} />,
       gestores:     <AdminGestores       go={go} />,
       estatisticas: <AdminEstatisticas   go={go} />,
-      relatorios:   <RelatoriosScreen    go={go} />,
-      relatorio:    <RelatorioScreen     go={go} />,
+      relatorios:   <RelatoriosScreen    go={go} user={user} />,
+      relatorio:    <RelatorioScreen     go={go} user={user} />,
       permissoes:   <AdminPermissoes     go={go} />,
-      perfil:       <PerfilScreen        go={go} />,
-    }[route] || <AdminDashboard go={go} />);
+      perfil:       <PerfilScreen        go={go} user={user} />,
+    }[route] || <AdminDashboard go={go} user={user} />);
   }
 }
 

@@ -463,8 +463,21 @@ a { color: inherit; text-decoration: none; }
   border-left: 1px solid rgba(201, 161, 122, 0.3);
   line-height: 1.4;
 }
+.login-logo-stage {
+  flex: 1;
+  min-height: 240px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+.login-logo-large {
+  width: min(100%, 520px);
+  height: auto;
+  display: block;
+  filter: drop-shadow(0 16px 36px rgba(0,0,0,0.28));
+}
 .login-headline {
-  margin-top: auto;
+  margin-top: 0;
   margin-bottom: 16px;
 }
 .login-headline h2 {

@@ -1,5 +1,62 @@
 // Vorätte DISC Platform — main app shell with role switching + routing
 
+// ===== Theme (light/dark) — applied to <html> via data-theme; persisted in localStorage =====
+(function bootTheme() {
+  try {
+    var saved = localStorage.getItem('voratte-theme');
+    var theme = saved === 'dark' ? 'dark' : 'light'; // default = claro
+    document.documentElement.setAttribute('data-theme', theme);
+  } catch (e) {
+    document.documentElement.setAttribute('data-theme', 'light');
+  }
+})();
+window.setTheme = function (theme) {
+  var t = theme === 'dark' ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', t);
+  try { localStorage.setItem('voratte-theme', t); } catch (e) {}
+  window.dispatchEvent(new CustomEvent('voratte-theme', { detail: t }));
+};
+window.getTheme = function () {
+  return document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+};
+
+// React hook que mantém o tema atual sincronizado entre componentes
+function useTheme() {
+  const [theme, setThemeState] = React.useState(window.getTheme());
+  React.useEffect(function () {
+    function onChange(e) { setThemeState(e.detail); }
+    window.addEventListener('voratte-theme', onChange);
+    return function () { window.removeEventListener('voratte-theme', onChange); };
+  }, []);
+  return [theme, function (t) { window.setTheme(t); }];
+}
+window.useTheme = useTheme;
+
+// Pill toggle reutilizável (Sol / Lua) — usado na topbar
+function ThemeTogglePill() {
+  const [theme, setTheme] = useTheme();
+  return (
+    <div className="theme-pill" data-mode={theme} title={theme === 'dark' ? 'Modo escuro ativo' : 'Modo claro ativo'}>
+      <span className="thumb" />
+      <button
+        className={theme === 'light' ? 'active' : ''}
+        onClick={() => setTheme('light')}
+        aria-label="Modo claro"
+      >
+        <Ic.Sun s={15} />
+      </button>
+      <button
+        className={theme === 'dark' ? 'active' : ''}
+        onClick={() => setTheme('dark')}
+        aria-label="Modo escuro"
+      >
+        <Ic.Moon s={15} />
+      </button>
+    </div>
+  );
+}
+window.ThemeTogglePill = ThemeTogglePill;
+
 // Different sidebar navs per role
 const NAV_ALUNO = [
   { key: 'dashboard',  label: 'Início',                    icon: <Ic.Dashboard/>, group: 'Minha jornada' },
@@ -257,6 +314,7 @@ function App() {
             {currentUser && currentUser.role === 'admin' && (
               <RoleSwitcher current={effectiveRole} onChange={switchRole} />
             )}
+            <ThemeTogglePill />
             <button className="icon-btn"><Ic.Bell s={18}/><span className="dot"/></button>
             <div className="top-user">
               <div className="avatar">{profile.initials}</div>

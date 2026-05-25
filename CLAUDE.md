@@ -2,6 +2,25 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## ⚠️ NUNCA editar arquivos UTF-8 via PowerShell
+
+**Todos os `src/*.jsx` deste projeto estão em UTF-8 sem BOM e contêm caracteres acentuados em português** (`ä`, `ç`, `é`, `ã`, `ê`, `í`, `ó`, `ú`, `·`, `—`, `…`).
+
+**REGRA ABSOLUTA:** Para editar qualquer arquivo do projeto, use SEMPRE as ferramentas `Edit`, `Write` ou `NotebookEdit`. **NUNCA** use PowerShell (`Get-Content` / `Set-Content` / `-replace`) para modificar conteúdo de arquivos — o Windows PowerShell 5.1 lê o arquivo na codepage do console (cp850/cp1252) e re-escreve como UTF-8, corrompendo todos os caracteres não-ASCII (`é` → `Ã©`, `ã` → `Ã£`, `ç` → `Ã§`, etc — mojibake).
+
+Comandos **proibidos**:
+
+```powershell
+# ❌ NUNCA
+(Get-Content 'src/file.jsx' -Raw) -replace 'foo','bar' | Set-Content 'src/file.jsx' -Encoding utf8
+[IO.File]::WriteAllText('src/file.jsx', $text)   # também usa default encoding
+Out-File / > / Add-Content sobre arquivos do projeto
+```
+
+Se precisar fazer substituição em massa, use a ferramenta `Edit` com `replace_all: true`, ou um script Python (`open(path, 'r', encoding='utf-8')` / `open(path, 'w', encoding='utf-8')`) chamado via Bash. Bash é seguro porque preserva os bytes; PowerShell não é.
+
+Se algum arquivo já estiver com mojibake (`Ã©`, `Â·`, `â€”`, BOM `ï»¿` no início), reverter com `git checkout <arquivo>` antes de re-aplicar as mudanças via Edit.
+
 ## Brand name
 
 The official brand spelling is **Vorätte** (with umlaut on the `a`). Always use `Vorätte` in any user-visible text, comments, alt attributes, PDF/report content, and documentation.

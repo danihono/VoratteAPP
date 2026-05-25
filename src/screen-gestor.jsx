@@ -5,31 +5,73 @@
 var _gestorTeamCache = null;
 var _gestorTeamFetch = null;
 
-function useGestorTeam(gestorId) {
+// Quando admin está em "Visão: Gestor" sem equipe vinculada, injeta o próprio admin
+// (com o DISC que ele tiver feito como aluno demo) na lista — só para visualização.
+async function _buildDemoSelfMember(currentUser) {
+  if (!currentUser || !currentUser.id) return null;
+  try {
+    var disc = await window.fbGetDiscResult(currentUser.id);
+    if (!disc) return null;
+    return {
+      id:        currentUser.id,
+      name:      (currentUser.name || 'Você') + ' (demo)',
+      role:      currentUser.jobTitle || 'Aluno demo',
+      d:         disc.d || 0,
+      i:         disc.i || 0,
+      s:         disc.s || 0,
+      c:         disc.c || 0,
+      main:      disc.main || '—',
+      last:      '—',
+      reports:   0,
+      status:    'done',
+      _demoSelf: true,
+    };
+  } catch (e) {
+    return null;
+  }
+}
+
+function useGestorTeam(gestorId, currentUser) {
   var [team, setTeam] = React.useState(_gestorTeamCache || []);
   var [loading, setLoading] = React.useState(!_gestorTeamCache);
 
   React.useEffect(function() {
-    if (_gestorTeamCache) { setTeam(_gestorTeamCache); setLoading(false); return; }
+    var cancelled = false;
+    function applyDemoFallback(data) {
+      // Só injeta o demo-self quando o usuário logado é admin (sinaliza modo demo)
+      // e a equipe real veio vazia.
+      if (data.length > 0 || !currentUser || currentUser.role !== 'admin') {
+        if (!cancelled) { setTeam(data); setLoading(false); }
+        return;
+      }
+      _buildDemoSelfMember(currentUser).then(function (self) {
+        if (cancelled) return;
+        setTeam(self ? [self] : []);
+        setLoading(false);
+      });
+    }
+
+    if (_gestorTeamCache) { applyDemoFallback(_gestorTeamCache); return; }
     if (!gestorId) { setLoading(false); return; }
     if (!_gestorTeamFetch) {
       _gestorTeamFetch = window.fbGetTeamMembers(gestorId);
     }
     _gestorTeamFetch.then(function(data) {
       _gestorTeamCache = data;
-      setTeam(data);
-      setLoading(false);
+      applyDemoFallback(data);
     }).catch(function(err) {
       console.error('Erro ao carregar time:', err);
-      setLoading(false);
+      if (!cancelled) setLoading(false);
     });
-  }, [gestorId]);
+
+    return function () { cancelled = true; };
+  }, [gestorId, currentUser && currentUser.id, currentUser && currentUser.role]);
 
   return [team, loading];
 }
 
 function GestorDashboard({ go, user }) {
-  var [team, teamLoading] = useGestorTeam(user && user.id);
+  var [team, teamLoading] = useGestorTeam(user && user.id, user);
   var GESTOR_TEAM = team;
   var done = GESTOR_TEAM.filter(function(p) { return p.status === 'done'; }).length;
   var pending = GESTOR_TEAM.length - done;
@@ -159,7 +201,7 @@ function GestorDashboard({ go, user }) {
 }
 
 function GestorEquipe({ go, user }) {
-  var [team, teamLoading] = useGestorTeam(user && user.id);
+  var [team, teamLoading] = useGestorTeam(user && user.id, user);
   var GESTOR_TEAM = team;
   var [sel, setSel] = React.useState(null);
   var selId = sel || (GESTOR_TEAM.length ? GESTOR_TEAM[0].id : null);
@@ -324,7 +366,7 @@ function GestorEquipe({ go, user }) {
 }
 
 function GestorMapa({ go, user }) {
-  var [team, teamLoading] = useGestorTeam(user && user.id);
+  var [team, teamLoading] = useGestorTeam(user && user.id, user);
 
   // Agrega a equipe por cargo (jobTitle), contando o perfil principal (DISC main) de cada membro.
   const matrix = React.useMemo(() => {

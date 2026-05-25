@@ -1,0 +1,206 @@
+[debug] [2026-05-25T14:37:13.167Z] ----------------------------------------------------------------------
+[debug] [2026-05-25T14:37:13.184Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\follo\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js deploy
+[debug] [2026-05-25T14:37:13.184Z] CLI Version:   15.17.0
+[debug] [2026-05-25T14:37:13.185Z] Platform:      win32
+[debug] [2026-05-25T14:37:13.185Z] Node Version:  v24.11.1
+[debug] [2026-05-25T14:37:13.185Z] Time:          Mon May 25 2026 11:37:13 GMT-0300 (Horário Padrão de Brasília)
+[debug] [2026-05-25T14:37:13.186Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-05-25T14:37:18.145Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-05-25T14:37:18.145Z] > authorizing via signed-in user (danielboy200627@gmail.com)
+[debug] [2026-05-25T14:37:18.145Z] [iam] checking project voratte-3fc9f for permissions ["datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get","firebasehosting.sites.update"]
+[debug] [2026-05-25T14:37:18.147Z] Checked if tokens are valid: false, expires at: 1779717714444
+[debug] [2026-05-25T14:37:18.147Z] Checked if tokens are valid: false, expires at: 1779717714444
+[debug] [2026-05-25T14:37:18.147Z] > refreshing access token with scopes: []
+[debug] [2026-05-25T14:37:18.179Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-05-25T14:37:18.179Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-05-25T14:37:18.521Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2026-05-25T14:37:18.522Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-05-25T14:37:18.542Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/voratte-3fc9f:testIamPermissions [none]
+[debug] [2026-05-25T14:37:18.542Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/voratte-3fc9f:testIamPermissions  x-goog-user-project=voratte-3fc9f
+[debug] [2026-05-25T14:37:18.542Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/voratte-3fc9f:testIamPermissions {"permissions":["datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get","firebasehosting.sites.update"]}
+[debug] [2026-05-25T14:37:19.642Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/voratte-3fc9f:testIamPermissions 200
+[debug] [2026-05-25T14:37:19.642Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/voratte-3fc9f:testIamPermissions {"permissions":["datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get","firebasehosting.sites.update"]}
+[debug] [2026-05-25T14:37:19.644Z] Checked if tokens are valid: true, expires at: 1779723437522
+[debug] [2026-05-25T14:37:19.644Z] Checked if tokens are valid: true, expires at: 1779723437522
+[debug] [2026-05-25T14:37:19.645Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/voratte-3fc9f [none]
+[debug] [2026-05-25T14:37:20.136Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/voratte-3fc9f 200
+[debug] [2026-05-25T14:37:20.136Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/voratte-3fc9f {"projectId":"voratte-3fc9f","projectNumber":"809155242230","displayName":"Voratte","name":"projects/voratte-3fc9f","resources":{"hostingSite":"voratte-3fc9f"},"state":"ACTIVE","etag":"1_93082d61-15f2-48c4-88f9-47050841c62b"}
+[info] 
+[info] === Deploying to 'voratte-3fc9f'...
+[info] 
+[info] i  deploying firestore, hosting 
+[info] i  firestore: ensuring required API firestore.googleapis.com is enabled... 
+[info] i  firestore: ensuring required API firestore.googleapis.com is enabled... 
+[debug] [2026-05-25T14:37:20.157Z] Checked if tokens are valid: true, expires at: 1779723437522
+[debug] [2026-05-25T14:37:20.158Z] Checked if tokens are valid: true, expires at: 1779723437522
+[debug] [2026-05-25T14:37:20.158Z] >>> [apiv2][query] GET https://firestore.googleapis.com/v1/projects/voratte-3fc9f/databases/(default) [none]
+[debug] [2026-05-25T14:37:20.424Z] <<< [apiv2][status] GET https://firestore.googleapis.com/v1/projects/voratte-3fc9f/databases/(default) 200
+[debug] [2026-05-25T14:37:20.425Z] <<< [apiv2][body] GET https://firestore.googleapis.com/v1/projects/voratte-3fc9f/databases/(default) {"name":"projects/voratte-3fc9f/databases/(default)","uid":"e47cf402-ae6b-4c3b-b32b-3f5c27bbb8f9","createTime":"2026-05-21T23:31:06.599694Z","updateTime":"2026-05-21T23:31:06.599694Z","locationId":"southamerica-east1","type":"FIRESTORE_NATIVE","concurrencyMode":"PESSIMISTIC","versionRetentionPeriod":"3600s","earliestVersionTime":"2026-05-25T13:37:22.505676Z","appEngineIntegrationMode":"DISABLED","keyPrefix":"i","pointInTimeRecoveryEnablement":"POINT_IN_TIME_RECOVERY_DISABLED","deleteProtectionState":"DELETE_PROTECTION_DISABLED","databaseEdition":"STANDARD","freeTier":true,"realtimeUpdatesMode":"REALTIME_UPDATES_MODE_ENABLED","etag":"IKXCjIjV1JQDMOfgxLjPy5QD"}
+[info] i  firestore: reading indexes from firestore.indexes.json... 
+[info] i  cloud.firestore: checking firestore.rules for compilation errors... 
+[debug] [2026-05-25T14:37:20.449Z] Checked if tokens are valid: true, expires at: 1779723437522
+[debug] [2026-05-25T14:37:20.449Z] Checked if tokens are valid: true, expires at: 1779723437522
+[debug] [2026-05-25T14:37:20.449Z] >>> [apiv2][query] POST https://firebaserules.googleapis.com/v1/projects/voratte-3fc9f:test [none]
+[debug] [2026-05-25T14:37:20.449Z] >>> [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/voratte-3fc9f:test [omitted]
+[debug] [2026-05-25T14:37:21.804Z] <<< [apiv2][status] POST https://firebaserules.googleapis.com/v1/projects/voratte-3fc9f:test 200
+[debug] [2026-05-25T14:37:21.804Z] <<< [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/voratte-3fc9f:test {}
+[info] +  cloud.firestore: rules file firestore.rules compiled successfully 
+[debug] [2026-05-25T14:37:21.807Z] Checked if tokens are valid: true, expires at: 1779723437522
+[debug] [2026-05-25T14:37:21.807Z] Checked if tokens are valid: true, expires at: 1779723437522
+[debug] [2026-05-25T14:37:21.807Z] >>> [apiv2][query] GET https://firebasehosting.googleapis.com/v1beta1/projects/voratte-3fc9f/sites/voratte-3fc9f [none]
+[debug] [2026-05-25T14:37:23.223Z] <<< [apiv2][status] GET https://firebasehosting.googleapis.com/v1beta1/projects/voratte-3fc9f/sites/voratte-3fc9f 200
+[debug] [2026-05-25T14:37:23.224Z] <<< [apiv2][body] GET https://firebasehosting.googleapis.com/v1beta1/projects/voratte-3fc9f/sites/voratte-3fc9f {"name":"projects/voratte-3fc9f/sites/voratte-3fc9f","defaultUrl":"https://voratte-3fc9f.web.app","appId":"1:809155242230:web:9c7ba8f38a3e500ddb24d7","type":"DEFAULT_SITE"}
+[debug] [2026-05-25T14:37:23.229Z] Checked if tokens are valid: true, expires at: 1779723437522
+[debug] [2026-05-25T14:37:23.229Z] Checked if tokens are valid: true, expires at: 1779723437522
+[debug] [2026-05-25T14:37:23.229Z] >>> [apiv2][query] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/voratte-3fc9f/versions [none]
+[debug] [2026-05-25T14:37:23.229Z] >>> [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/voratte-3fc9f/versions {"status":"CREATED","labels":{"deployment-tool":"cli-firebase"}}
+[debug] [2026-05-25T14:37:24.150Z] <<< [apiv2][status] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/voratte-3fc9f/versions 200
+[debug] [2026-05-25T14:37:24.150Z] <<< [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/-/sites/voratte-3fc9f/versions {"name":"projects/809155242230/sites/voratte-3fc9f/versions/f2a4e6ccae1ff7e1","status":"CREATED","config":{},"labels":{"deployment-tool":"cli-firebase"}}
+[debug] [2026-05-25T14:37:24.151Z] Checked if tokens are valid: true, expires at: 1779723437522
+[debug] [2026-05-25T14:37:24.151Z] Checked if tokens are valid: true, expires at: 1779723437522
+[debug] [2026-05-25T14:37:24.151Z] >>> [apiv2][query] GET https://firebaserules.googleapis.com/v1/projects/voratte-3fc9f/releases pageSize=10&pageToken=
+[debug] [2026-05-25T14:37:24.651Z] <<< [apiv2][status] GET https://firebaserules.googleapis.com/v1/projects/voratte-3fc9f/releases 200
+[debug] [2026-05-25T14:37:24.651Z] <<< [apiv2][body] GET https://firebaserules.googleapis.com/v1/projects/voratte-3fc9f/releases {"releases":[{"name":"projects/voratte-3fc9f/releases/cloud.firestore","rulesetName":"projects/voratte-3fc9f/rulesets/3568bccb-3bab-4423-825b-54a9638eeaa0","createTime":"2026-05-21T23:31:10.906233Z","updateTime":"2026-05-22T13:50:07.292484Z"}]}
+[debug] [2026-05-25T14:37:24.652Z] Checked if tokens are valid: true, expires at: 1779723437522
+[debug] [2026-05-25T14:37:24.652Z] Checked if tokens are valid: true, expires at: 1779723437522
+[debug] [2026-05-25T14:37:24.652Z] >>> [apiv2][query] GET https://firebaserules.googleapis.com/v1/projects/voratte-3fc9f/rulesets/3568bccb-3bab-4423-825b-54a9638eeaa0 [none]
+[debug] [2026-05-25T14:37:25.782Z] <<< [apiv2][status] GET https://firebaserules.googleapis.com/v1/projects/voratte-3fc9f/rulesets/3568bccb-3bab-4423-825b-54a9638eeaa0 200
+[debug] [2026-05-25T14:37:25.783Z] <<< [apiv2][body] GET https://firebaserules.googleapis.com/v1/projects/voratte-3fc9f/rulesets/3568bccb-3bab-4423-825b-54a9638eeaa0 [omitted]
+[info] i  firestore: latest version of firestore.rules already up to date, skipping upload... 
+[info] i  firestore: deploying indexes... 
+[debug] [2026-05-25T14:37:25.785Z] Checked if tokens are valid: true, expires at: 1779723437522
+[debug] [2026-05-25T14:37:25.786Z] Checked if tokens are valid: true, expires at: 1779723437522
+[debug] [2026-05-25T14:37:25.786Z] >>> [apiv2][query] GET https://firestore.googleapis.com/v1/projects/voratte-3fc9f/databases/(default)/collectionGroups/-/indexes [none]
+[debug] [2026-05-25T14:37:25.991Z] <<< [apiv2][status] GET https://firestore.googleapis.com/v1/projects/voratte-3fc9f/databases/(default)/collectionGroups/-/indexes 200
+[debug] [2026-05-25T14:37:25.992Z] <<< [apiv2][body] GET https://firestore.googleapis.com/v1/projects/voratte-3fc9f/databases/(default)/collectionGroups/-/indexes {"indexes":[{"name":"projects/voratte-3fc9f/databases/(default)/collectionGroups/users/indexes/CICAgOjXh4EK","queryScope":"COLLECTION","fields":[{"fieldPath":"gestorId","order":"ASCENDING"},{"fieldPath":"role","order":"ASCENDING"},{"fieldPath":"__name__","order":"ASCENDING"}],"state":"READY","density":"SPARSE_ALL"},{"name":"projects/voratte-3fc9f/databases/(default)/collectionGroups/reports/indexes/CICAgJiUpoMK","queryScope":"COLLECTION","fields":[{"fieldPath":"userId","order":"ASCENDING"},{"fieldPath":"createdAt","order":"DESCENDING"},{"fieldPath":"__name__","order":"DESCENDING"}],"state":"READY","density":"SPARSE_ALL"}]}
+[debug] [2026-05-25T14:37:25.992Z] Checked if tokens are valid: true, expires at: 1779723437522
+[debug] [2026-05-25T14:37:25.992Z] Checked if tokens are valid: true, expires at: 1779723437522
+[debug] [2026-05-25T14:37:25.992Z] >>> [apiv2][query] GET https://firestore.googleapis.com/v1/projects/voratte-3fc9f/databases/(default)/collectionGroups/-/fields?filter=indexConfig.usesAncestorConfig=false OR ttlConfig:* [none]
+[debug] [2026-05-25T14:37:26.190Z] <<< [apiv2][status] GET https://firestore.googleapis.com/v1/projects/voratte-3fc9f/databases/(default)/collectionGroups/-/fields?filter=indexConfig.usesAncestorConfig=false OR ttlConfig:* 200
+[debug] [2026-05-25T14:37:26.191Z] <<< [apiv2][body] GET https://firestore.googleapis.com/v1/projects/voratte-3fc9f/databases/(default)/collectionGroups/-/fields?filter=indexConfig.usesAncestorConfig=false OR ttlConfig:* {"fields":[{"name":"projects/voratte-3fc9f/databases/(default)/collectionGroups/__default__/fields/*","indexConfig":{"indexes":[{"queryScope":"COLLECTION","fields":[{"fieldPath":"*","order":"ASCENDING"}],"state":"READY"},{"queryScope":"COLLECTION","fields":[{"fieldPath":"*","order":"DESCENDING"}],"state":"READY"},{"queryScope":"COLLECTION","fields":[{"fieldPath":"*","arrayConfig":"CONTAINS"}],"state":"READY"}]}}]}
+[debug] [2026-05-25T14:37:26.191Z] Checked if tokens are valid: true, expires at: 1779723437522
+[debug] [2026-05-25T14:37:26.191Z] Checked if tokens are valid: true, expires at: 1779723437522
+[debug] [2026-05-25T14:37:26.191Z] >>> [apiv2][query] GET https://firestore.googleapis.com/v1/projects/voratte-3fc9f/databases/(default) [none]
+[debug] [2026-05-25T14:37:26.291Z] <<< [apiv2][status] GET https://firestore.googleapis.com/v1/projects/voratte-3fc9f/databases/(default) 200
+[debug] [2026-05-25T14:37:26.291Z] <<< [apiv2][body] GET https://firestore.googleapis.com/v1/projects/voratte-3fc9f/databases/(default) {"name":"projects/voratte-3fc9f/databases/(default)","uid":"e47cf402-ae6b-4c3b-b32b-3f5c27bbb8f9","createTime":"2026-05-21T23:31:06.599694Z","updateTime":"2026-05-21T23:31:06.599694Z","locationId":"southamerica-east1","type":"FIRESTORE_NATIVE","concurrencyMode":"PESSIMISTIC","versionRetentionPeriod":"3600s","earliestVersionTime":"2026-05-25T13:37:28.349225Z","appEngineIntegrationMode":"DISABLED","keyPrefix":"i","pointInTimeRecoveryEnablement":"POINT_IN_TIME_RECOVERY_DISABLED","deleteProtectionState":"DELETE_PROTECTION_DISABLED","databaseEdition":"STANDARD","freeTier":true,"realtimeUpdatesMode":"REALTIME_UPDATES_MODE_ENABLED","etag":"IJaP8YrV1JQDMOfgxLjPy5QD"}
+[debug] [2026-05-25T14:37:26.292Z] Skipping existing index: {"collectionGroup":"users","queryScope":"COLLECTION","fields":[{"fieldPath":"gestorId","order":"ASCENDING"},{"fieldPath":"role","order":"ASCENDING"},{"fieldPath":"__name__","order":"ASCENDING"}]}
+[debug] [2026-05-25T14:37:26.292Z] Skipping existing index: {"collectionGroup":"reports","queryScope":"COLLECTION","fields":[{"fieldPath":"userId","order":"ASCENDING"},{"fieldPath":"createdAt","order":"DESCENDING"},{"fieldPath":"__name__","order":"DESCENDING"}]}
+[info] +  firestore: deployed indexes in firestore.indexes.json successfully for (default) database 
+[info] i  hosting[voratte-3fc9f]: beginning deploy... 
+[info] i  hosting[voratte-3fc9f]: found 26 files in . 
+[debug] [2026-05-25T14:37:26.315Z] [hosting] uploading with 200 concurrency
+[debug] [2026-05-25T14:37:26.344Z] Checked if tokens are valid: true, expires at: 1779723437522
+[debug] [2026-05-25T14:37:26.344Z] Checked if tokens are valid: true, expires at: 1779723437522
+[debug] [2026-05-25T14:37:26.348Z] [hosting] hash cache [] stored for 26 files
+[debug] [2026-05-25T14:37:26.348Z] [hosting][hash queue][FINAL] {"max":19,"min":1,"avg":10,"active":0,"complete":26,"success":26,"errored":0,"retried":0,"total":26,"elapsed":29}
+[debug] [2026-05-25T14:37:26.349Z] >>> [apiv2][query] POST https://firebasehosting.googleapis.com/v1beta1/projects/809155242230/sites/voratte-3fc9f/versions/f2a4e6ccae1ff7e1:populateFiles [none]
+[debug] [2026-05-25T14:37:26.349Z] >>> [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/809155242230/sites/voratte-3fc9f/versions/f2a4e6ccae1ff7e1:populateFiles {"files":{"/disc-questions.ts":"8a18a903b3b9b29664bffe476e1a77fa73bd0b9d6d75ede83ea2b3338822ba78","/disc-engine.ts":"0ddb48b12bdaf06b0498e2e353d2179206d36af5e0b2999ccf6fa60cc88568d9","/uploads/pasted-1779396862894-0.png":"84db0ffd9111bf5fc2e285bf08cf0e1a754cd810cccea476274f470c43f7580d","/uploads/pasted-1779396792744-0.png":"4b3215f29bd466cd84bdae68dc65ab45e2e7612044f70fb69266b65f85949912","/uploads/logo-voratte-grande.webp":"88f63898c75bc41024a643dc9689cbe51dbb72f237c8f6ed1db97d23485782be","/src/screen-objecoes.jsx":"b46c1675aacbae6fe30273680ac1ca5c4b65eadcccf51a1a1519ebc4791dffe4","/src/screen-kraljic.jsx":"05c92cea8b4318fb8d235740a51bcc262eebf421da63dc095346b86385ceab7c","/src/firebase-config.js":"addc4809ef6dc046991c0eac68bc2d103500e967d78fd7c9203fbab35aca8a7b","/src/donut.jsx":"fa80412612773cd84dd299a3174e4a21986cf3f8a14997b08d74e6e55c7f1fcd","/assets/voratte-logo.webp":"88f63898c75bc41024a643dc9689cbe51dbb72f237c8f6ed1db97d23485782be","/Voratte DISC Platform.html":"f413cf66f8ad4817133fe45344553983442e93bb3edbf264c16c1cf191ca4bbb","/src/screen-login.jsx":"3112db9c2c427a778c6f7aa49ec9ef774dd40612cd6212d45bbb53da6c5e3622","/styles.css":"5000e47f89a543fa05c26f8b210bb028936a97af9b6ac767fe2656ddb3fd583c","/src/screen-gestor.jsx":"f45d17a687cc058c6888ad1cc4fe29ded094175cd63b9bd15869e860a2685f27","/kraljic-engine.ts":"0cb2e00f0faf168f4b8e80500a44e7cf5212188d2994da29ad99a09487b8bc6a","/src/screen-rest.jsx":"1d8d2c7365b64764e8261f8d6cd4d236abb93a10d6e99463bc9919608caa409b","/src/screen-dashboard.jsx":"672d4ae6179835ae9547fab1ee725ca17dba0dbc74a8f4f8da07abc112cc6f23","/src/kraljic-data.jsx":"ac523e47f128222e508a7b364c5b532a0bc3078233bb72f033bff1f96abfff71","/src/screen-disc.jsx":"e11b23f3772f197274507952942be90f3ff04f4521d691b9d7a111830e6ea90e","/src/icons.jsx":"4d7de5dc7480e773f05fdaf5ef26428db38b6b71cf57110b9f574c601a509550","/src/report-export.jsx":"d3cc871f02b4f8fb4ba62f5e3177925fa4e4faa9843aade0695f91d9f0ea958f","/src/app.jsx":"1b5cf679299e9c39527671b88b14b856fd3eab9591db79b59129f575786819ab","/scripts/setup-admins.js":"51d1faa99065d77cd9aee3c25b42d19f118d208cb6dddbb7f9b466071d0e2f8b","/src/disc-data.jsx":"f214f1760d25208860ac071c433ead0350ac31a834e285bc4befc11f6c7bf8a1","/src/screen-admin.jsx":"2c6050d83dc35e31dedb8b27a9cb7166a2fd8749d68655746ae7a27c4d4030b5","/assets/voratte-png.webp":"70ba371a638b0d2a485e9ce6f855185918adf7cce371bfe662ced71613047551"}}
+[debug] [2026-05-25T14:37:27.114Z] <<< [apiv2][status] POST https://firebasehosting.googleapis.com/v1beta1/projects/809155242230/sites/voratte-3fc9f/versions/f2a4e6ccae1ff7e1:populateFiles 200
+[debug] [2026-05-25T14:37:27.115Z] <<< [apiv2][body] POST https://firebasehosting.googleapis.com/v1beta1/projects/809155242230/sites/voratte-3fc9f/versions/f2a4e6ccae1ff7e1:populateFiles {"uploadRequiredHashes":["f214f1760d25208860ac071c433ead0350ac31a834e285bc4befc11f6c7bf8a1","0cb2e00f0faf168f4b8e80500a44e7cf5212188d2994da29ad99a09487b8bc6a","f413cf66f8ad4817133fe45344553983442e93bb3edbf264c16c1cf191ca4bbb","70ba371a638b0d2a485e9ce6f855185918adf7cce371bfe662ced71613047551","1d8d2c7365b64764e8261f8d6cd4d236abb93a10d6e99463bc9919608caa409b","672d4ae6179835ae9547fab1ee725ca17dba0dbc74a8f4f8da07abc112cc6f23","5000e47f89a543fa05c26f8b210bb028936a97af9b6ac767fe2656ddb3fd583c","1b5cf679299e9c39527671b88b14b856fd3eab9591db79b59129f575786819ab","3112db9c2c427a778c6f7aa49ec9ef774dd40612cd6212d45bbb53da6c5e3622","f45d17a687cc058c6888ad1cc4fe29ded094175cd63b9bd15869e860a2685f27","e11b23f3772f197274507952942be90f3ff04f4521d691b9d7a111830e6ea90e","51d1faa99065d77cd9aee3c25b42d19f118d208cb6dddbb7f9b466071d0e2f8b","ac523e47f128222e508a7b364c5b532a0bc3078233bb72f033bff1f96abfff71","d3cc871f02b4f8fb4ba62f5e3177925fa4e4faa9843aade0695f91d9f0ea958f","2c6050d83dc35e31dedb8b27a9cb7166a2fd8749d68655746ae7a27c4d4030b5","4d7de5dc7480e773f05fdaf5ef26428db38b6b71cf57110b9f574c601a509550"],"uploadUrl":"https://upload-firebasehosting.googleapis.com/upload/sites/voratte-3fc9f/versions/f2a4e6ccae1ff7e1/files"}
+[debug] [2026-05-25T14:37:27.116Z] Checked if tokens are valid: true, expires at: 1779723437522
+[debug] [2026-05-25T14:37:27.116Z] Checked if tokens are valid: true, expires at: 1779723437522
+[debug] [2026-05-25T14:37:27.116Z] Checked if tokens are valid: true, expires at: 1779723437522
+[debug] [2026-05-25T14:37:27.116Z] Checked if tokens are valid: true, expires at: 1779723437522
+[debug] [2026-05-25T14:37:27.116Z] Checked if tokens are valid: true, expires at: 1779723437522
+[debug] [2026-05-25T14:37:27.116Z] Checked if tokens are valid: true, expires at: 1779723437522
+[debug] [2026-05-25T14:37:27.116Z] Checked if tokens are valid: true, expires at: 1779723437522
+[debug] [2026-05-25T14:37:27.116Z] Checked if tokens are valid: true, expires at: 1779723437522
+[debug] [2026-05-25T14:37:27.117Z] Checked if tokens are valid: true, expires at: 1779723437522
+[debug] [2026-05-25T14:37:27.117Z] Checked if tokens are valid: true, expires at: 1779723437522
+[debug] [2026-05-25T14:37:27.117Z] Checked if tokens are valid: true, expires at: 1779723437522
+[debug] [2026-05-25T14:37:27.117Z] Checked if tokens are valid: true, expires at: 1779723437522
+[debug] [2026-05-25T14:37:27.117Z] Checked if tokens are valid: true, expires at: 1779723437522
+[debug] [2026-05-25T14:37:27.118Z] Checked if tokens are valid: true, expires at: 1779723437522
+[debug] [2026-05-25T14:37:27.118Z] Checked if tokens are valid: true, expires at: 1779723437522
+[debug] [2026-05-25T14:37:27.118Z] Checked if tokens are valid: true, expires at: 1779723437522
+[debug] [2026-05-25T14:37:27.118Z] Checked if tokens are valid: true, expires at: 1779723437522
+[debug] [2026-05-25T14:37:27.119Z] Checked if tokens are valid: true, expires at: 1779723437522
+[debug] [2026-05-25T14:37:27.119Z] Checked if tokens are valid: true, expires at: 1779723437522
+[debug] [2026-05-25T14:37:27.119Z] Checked if tokens are valid: true, expires at: 1779723437522
+[debug] [2026-05-25T14:37:27.119Z] Checked if tokens are valid: true, expires at: 1779723437522
+[debug] [2026-05-25T14:37:27.119Z] Checked if tokens are valid: true, expires at: 1779723437522
+[debug] [2026-05-25T14:37:27.120Z] Checked if tokens are valid: true, expires at: 1779723437522
+[debug] [2026-05-25T14:37:27.120Z] Checked if tokens are valid: true, expires at: 1779723437522
+[debug] [2026-05-25T14:37:27.121Z] Checked if tokens are valid: true, expires at: 1779723437522
+[debug] [2026-05-25T14:37:27.121Z] Checked if tokens are valid: true, expires at: 1779723437522
+[debug] [2026-05-25T14:37:27.121Z] Checked if tokens are valid: true, expires at: 1779723437522
+[debug] [2026-05-25T14:37:27.121Z] Checked if tokens are valid: true, expires at: 1779723437522
+[debug] [2026-05-25T14:37:27.122Z] Checked if tokens are valid: true, expires at: 1779723437522
+[debug] [2026-05-25T14:37:27.122Z] Checked if tokens are valid: true, expires at: 1779723437522
+[debug] [2026-05-25T14:37:27.122Z] Checked if tokens are valid: true, expires at: 1779723437522
+[debug] [2026-05-25T14:37:27.122Z] Checked if tokens are valid: true, expires at: 1779723437522
+[debug] [2026-05-25T14:37:27.123Z] >>> [apiv2][query] POST https://upload-firebasehosting.googleapis.com/upload/sites/voratte-3fc9f/versions/f2a4e6ccae1ff7e1/files/f214f1760d25208860ac071c433ead0350ac31a834e285bc4befc11f6c7bf8a1 [none]
+[debug] [2026-05-25T14:37:27.123Z] >>> [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/voratte-3fc9f/versions/f2a4e6ccae1ff7e1/files/f214f1760d25208860ac071c433ead0350ac31a834e285bc4befc11f6c7bf8a1 [stream]
+[debug] [2026-05-25T14:37:27.126Z] >>> [apiv2][query] POST https://upload-firebasehosting.googleapis.com/upload/sites/voratte-3fc9f/versions/f2a4e6ccae1ff7e1/files/0cb2e00f0faf168f4b8e80500a44e7cf5212188d2994da29ad99a09487b8bc6a [none]
+[debug] [2026-05-25T14:37:27.126Z] >>> [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/voratte-3fc9f/versions/f2a4e6ccae1ff7e1/files/0cb2e00f0faf168f4b8e80500a44e7cf5212188d2994da29ad99a09487b8bc6a [stream]
+[debug] [2026-05-25T14:37:27.129Z] >>> [apiv2][query] POST https://upload-firebasehosting.googleapis.com/upload/sites/voratte-3fc9f/versions/f2a4e6ccae1ff7e1/files/f413cf66f8ad4817133fe45344553983442e93bb3edbf264c16c1cf191ca4bbb [none]
+[debug] [2026-05-25T14:37:27.129Z] >>> [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/voratte-3fc9f/versions/f2a4e6ccae1ff7e1/files/f413cf66f8ad4817133fe45344553983442e93bb3edbf264c16c1cf191ca4bbb [stream]
+[debug] [2026-05-25T14:37:27.131Z] >>> [apiv2][query] POST https://upload-firebasehosting.googleapis.com/upload/sites/voratte-3fc9f/versions/f2a4e6ccae1ff7e1/files/70ba371a638b0d2a485e9ce6f855185918adf7cce371bfe662ced71613047551 [none]
+[debug] [2026-05-25T14:37:27.131Z] >>> [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/voratte-3fc9f/versions/f2a4e6ccae1ff7e1/files/70ba371a638b0d2a485e9ce6f855185918adf7cce371bfe662ced71613047551 [stream]
+[debug] [2026-05-25T14:37:27.133Z] >>> [apiv2][query] POST https://upload-firebasehosting.googleapis.com/upload/sites/voratte-3fc9f/versions/f2a4e6ccae1ff7e1/files/1d8d2c7365b64764e8261f8d6cd4d236abb93a10d6e99463bc9919608caa409b [none]
+[debug] [2026-05-25T14:37:27.133Z] >>> [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/voratte-3fc9f/versions/f2a4e6ccae1ff7e1/files/1d8d2c7365b64764e8261f8d6cd4d236abb93a10d6e99463bc9919608caa409b [stream]
+[debug] [2026-05-25T14:37:27.135Z] >>> [apiv2][query] POST https://upload-firebasehosting.googleapis.com/upload/sites/voratte-3fc9f/versions/f2a4e6ccae1ff7e1/files/672d4ae6179835ae9547fab1ee725ca17dba0dbc74a8f4f8da07abc112cc6f23 [none]
+[debug] [2026-05-25T14:37:27.135Z] >>> [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/voratte-3fc9f/versions/f2a4e6ccae1ff7e1/files/672d4ae6179835ae9547fab1ee725ca17dba0dbc74a8f4f8da07abc112cc6f23 [stream]
+[debug] [2026-05-25T14:37:27.137Z] >>> [apiv2][query] POST https://upload-firebasehosting.googleapis.com/upload/sites/voratte-3fc9f/versions/f2a4e6ccae1ff7e1/files/5000e47f89a543fa05c26f8b210bb028936a97af9b6ac767fe2656ddb3fd583c [none]
+[debug] [2026-05-25T14:37:27.137Z] >>> [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/voratte-3fc9f/versions/f2a4e6ccae1ff7e1/files/5000e47f89a543fa05c26f8b210bb028936a97af9b6ac767fe2656ddb3fd583c [stream]
+[debug] [2026-05-25T14:37:27.139Z] >>> [apiv2][query] POST https://upload-firebasehosting.googleapis.com/upload/sites/voratte-3fc9f/versions/f2a4e6ccae1ff7e1/files/1b5cf679299e9c39527671b88b14b856fd3eab9591db79b59129f575786819ab [none]
+[debug] [2026-05-25T14:37:27.139Z] >>> [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/voratte-3fc9f/versions/f2a4e6ccae1ff7e1/files/1b5cf679299e9c39527671b88b14b856fd3eab9591db79b59129f575786819ab [stream]
+[debug] [2026-05-25T14:37:27.141Z] >>> [apiv2][query] POST https://upload-firebasehosting.googleapis.com/upload/sites/voratte-3fc9f/versions/f2a4e6ccae1ff7e1/files/3112db9c2c427a778c6f7aa49ec9ef774dd40612cd6212d45bbb53da6c5e3622 [none]
+[debug] [2026-05-25T14:37:27.142Z] >>> [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/voratte-3fc9f/versions/f2a4e6ccae1ff7e1/files/3112db9c2c427a778c6f7aa49ec9ef774dd40612cd6212d45bbb53da6c5e3622 [stream]
+[debug] [2026-05-25T14:37:27.144Z] >>> [apiv2][query] POST https://upload-firebasehosting.googleapis.com/upload/sites/voratte-3fc9f/versions/f2a4e6ccae1ff7e1/files/f45d17a687cc058c6888ad1cc4fe29ded094175cd63b9bd15869e860a2685f27 [none]
+[debug] [2026-05-25T14:37:27.144Z] >>> [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/voratte-3fc9f/versions/f2a4e6ccae1ff7e1/files/f45d17a687cc058c6888ad1cc4fe29ded094175cd63b9bd15869e860a2685f27 [stream]
+[debug] [2026-05-25T14:37:27.145Z] >>> [apiv2][query] POST https://upload-firebasehosting.googleapis.com/upload/sites/voratte-3fc9f/versions/f2a4e6ccae1ff7e1/files/e11b23f3772f197274507952942be90f3ff04f4521d691b9d7a111830e6ea90e [none]
+[debug] [2026-05-25T14:37:27.145Z] >>> [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/voratte-3fc9f/versions/f2a4e6ccae1ff7e1/files/e11b23f3772f197274507952942be90f3ff04f4521d691b9d7a111830e6ea90e [stream]
+[debug] [2026-05-25T14:37:27.147Z] >>> [apiv2][query] POST https://upload-firebasehosting.googleapis.com/upload/sites/voratte-3fc9f/versions/f2a4e6ccae1ff7e1/files/51d1faa99065d77cd9aee3c25b42d19f118d208cb6dddbb7f9b466071d0e2f8b [none]
+[debug] [2026-05-25T14:37:27.147Z] >>> [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/voratte-3fc9f/versions/f2a4e6ccae1ff7e1/files/51d1faa99065d77cd9aee3c25b42d19f118d208cb6dddbb7f9b466071d0e2f8b [stream]
+[debug] [2026-05-25T14:37:27.148Z] >>> [apiv2][query] POST https://upload-firebasehosting.googleapis.com/upload/sites/voratte-3fc9f/versions/f2a4e6ccae1ff7e1/files/ac523e47f128222e508a7b364c5b532a0bc3078233bb72f033bff1f96abfff71 [none]
+[debug] [2026-05-25T14:37:27.148Z] >>> [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/voratte-3fc9f/versions/f2a4e6ccae1ff7e1/files/ac523e47f128222e508a7b364c5b532a0bc3078233bb72f033bff1f96abfff71 [stream]
+[debug] [2026-05-25T14:37:27.149Z] >>> [apiv2][query] POST https://upload-firebasehosting.googleapis.com/upload/sites/voratte-3fc9f/versions/f2a4e6ccae1ff7e1/files/d3cc871f02b4f8fb4ba62f5e3177925fa4e4faa9843aade0695f91d9f0ea958f [none]
+[debug] [2026-05-25T14:37:27.149Z] >>> [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/voratte-3fc9f/versions/f2a4e6ccae1ff7e1/files/d3cc871f02b4f8fb4ba62f5e3177925fa4e4faa9843aade0695f91d9f0ea958f [stream]
+[debug] [2026-05-25T14:37:27.150Z] >>> [apiv2][query] POST https://upload-firebasehosting.googleapis.com/upload/sites/voratte-3fc9f/versions/f2a4e6ccae1ff7e1/files/2c6050d83dc35e31dedb8b27a9cb7166a2fd8749d68655746ae7a27c4d4030b5 [none]
+[debug] [2026-05-25T14:37:27.150Z] >>> [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/voratte-3fc9f/versions/f2a4e6ccae1ff7e1/files/2c6050d83dc35e31dedb8b27a9cb7166a2fd8749d68655746ae7a27c4d4030b5 [stream]
+[debug] [2026-05-25T14:37:27.151Z] >>> [apiv2][query] POST https://upload-firebasehosting.googleapis.com/upload/sites/voratte-3fc9f/versions/f2a4e6ccae1ff7e1/files/4d7de5dc7480e773f05fdaf5ef26428db38b6b71cf57110b9f574c601a509550 [none]
+[debug] [2026-05-25T14:37:27.151Z] >>> [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/voratte-3fc9f/versions/f2a4e6ccae1ff7e1/files/4d7de5dc7480e773f05fdaf5ef26428db38b6b71cf57110b9f574c601a509550 [stream]
+[debug] [2026-05-25T14:37:27.152Z] [hosting][populate queue][FINAL] {"max":779,"min":779,"avg":779,"active":0,"complete":1,"success":1,"errored":0,"retried":0,"total":1,"elapsed":808}
+[debug] [2026-05-25T14:37:27.152Z] [hosting] uploads queued: 16
+[debug] [2026-05-25T14:37:28.520Z] <<< [apiv2][status] POST https://upload-firebasehosting.googleapis.com/upload/sites/voratte-3fc9f/versions/f2a4e6ccae1ff7e1/files/1d8d2c7365b64764e8261f8d6cd4d236abb93a10d6e99463bc9919608caa409b 200
+[debug] [2026-05-25T14:37:28.521Z] <<< [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/voratte-3fc9f/versions/f2a4e6ccae1ff7e1/files/1d8d2c7365b64764e8261f8d6cd4d236abb93a10d6e99463bc9919608caa409b [stream]
+[debug] [2026-05-25T14:37:28.540Z] <<< [apiv2][status] POST https://upload-firebasehosting.googleapis.com/upload/sites/voratte-3fc9f/versions/f2a4e6ccae1ff7e1/files/0cb2e00f0faf168f4b8e80500a44e7cf5212188d2994da29ad99a09487b8bc6a 200
+[debug] [2026-05-25T14:37:28.541Z] <<< [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/voratte-3fc9f/versions/f2a4e6ccae1ff7e1/files/0cb2e00f0faf168f4b8e80500a44e7cf5212188d2994da29ad99a09487b8bc6a [stream]
+[debug] [2026-05-25T14:37:28.541Z] <<< [apiv2][status] POST https://upload-firebasehosting.googleapis.com/upload/sites/voratte-3fc9f/versions/f2a4e6ccae1ff7e1/files/5000e47f89a543fa05c26f8b210bb028936a97af9b6ac767fe2656ddb3fd583c 200
+[debug] [2026-05-25T14:37:28.541Z] <<< [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/voratte-3fc9f/versions/f2a4e6ccae1ff7e1/files/5000e47f89a543fa05c26f8b210bb028936a97af9b6ac767fe2656ddb3fd583c [stream]
+[debug] [2026-05-25T14:37:28.561Z] <<< [apiv2][status] POST https://upload-firebasehosting.googleapis.com/upload/sites/voratte-3fc9f/versions/f2a4e6ccae1ff7e1/files/d3cc871f02b4f8fb4ba62f5e3177925fa4e4faa9843aade0695f91d9f0ea958f 200
+[debug] [2026-05-25T14:37:28.562Z] <<< [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/voratte-3fc9f/versions/f2a4e6ccae1ff7e1/files/d3cc871f02b4f8fb4ba62f5e3177925fa4e4faa9843aade0695f91d9f0ea958f [stream]
+[debug] [2026-05-25T14:37:28.570Z] <<< [apiv2][status] POST https://upload-firebasehosting.googleapis.com/upload/sites/voratte-3fc9f/versions/f2a4e6ccae1ff7e1/files/f413cf66f8ad4817133fe45344553983442e93bb3edbf264c16c1cf191ca4bbb 200
+[debug] [2026-05-25T14:37:28.571Z] <<< [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/voratte-3fc9f/versions/f2a4e6ccae1ff7e1/files/f413cf66f8ad4817133fe45344553983442e93bb3edbf264c16c1cf191ca4bbb [stream]
+[debug] [2026-05-25T14:37:28.571Z] <<< [apiv2][status] POST https://upload-firebasehosting.googleapis.com/upload/sites/voratte-3fc9f/versions/f2a4e6ccae1ff7e1/files/f214f1760d25208860ac071c433ead0350ac31a834e285bc4befc11f6c7bf8a1 200
+[debug] [2026-05-25T14:37:28.571Z] <<< [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/voratte-3fc9f/versions/f2a4e6ccae1ff7e1/files/f214f1760d25208860ac071c433ead0350ac31a834e285bc4befc11f6c7bf8a1 [stream]
+[debug] [2026-05-25T14:37:28.581Z] <<< [apiv2][status] POST https://upload-firebasehosting.googleapis.com/upload/sites/voratte-3fc9f/versions/f2a4e6ccae1ff7e1/files/2c6050d83dc35e31dedb8b27a9cb7166a2fd8749d68655746ae7a27c4d4030b5 200
+[debug] [2026-05-25T14:37:28.581Z] <<< [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/voratte-3fc9f/versions/f2a4e6ccae1ff7e1/files/2c6050d83dc35e31dedb8b27a9cb7166a2fd8749d68655746ae7a27c4d4030b5 [stream]
+[debug] [2026-05-25T14:37:28.581Z] <<< [apiv2][status] POST https://upload-firebasehosting.googleapis.com/upload/sites/voratte-3fc9f/versions/f2a4e6ccae1ff7e1/files/672d4ae6179835ae9547fab1ee725ca17dba0dbc74a8f4f8da07abc112cc6f23 200
+[debug] [2026-05-25T14:37:28.581Z] <<< [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/voratte-3fc9f/versions/f2a4e6ccae1ff7e1/files/672d4ae6179835ae9547fab1ee725ca17dba0dbc74a8f4f8da07abc112cc6f23 [stream]
+[debug] [2026-05-25T14:37:28.591Z] <<< [apiv2][status] POST https://upload-firebasehosting.googleapis.com/upload/sites/voratte-3fc9f/versions/f2a4e6ccae1ff7e1/files/ac523e47f128222e508a7b364c5b532a0bc3078233bb72f033bff1f96abfff71 200
+[debug] [2026-05-25T14:37:28.591Z] <<< [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/voratte-3fc9f/versions/f2a4e6ccae1ff7e1/files/ac523e47f128222e508a7b364c5b532a0bc3078233bb72f033bff1f96abfff71 [stream]
+[debug] [2026-05-25T14:37:28.610Z] <<< [apiv2][status] POST https://upload-firebasehosting.googleapis.com/upload/sites/voratte-3fc9f/versions/f2a4e6ccae1ff7e1/files/70ba371a638b0d2a485e9ce6f855185918adf7cce371bfe662ced71613047551 200
+[debug] [2026-05-25T14:37:28.611Z] <<< [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/voratte-3fc9f/versions/f2a4e6ccae1ff7e1/files/70ba371a638b0d2a485e9ce6f855185918adf7cce371bfe662ced71613047551 [stream]
+[debug] [2026-05-25T14:37:28.611Z] <<< [apiv2][status] POST https://upload-firebasehosting.googleapis.com/upload/sites/voratte-3fc9f/versions/f2a4e6ccae1ff7e1/files/f45d17a687cc058c6888ad1cc4fe29ded094175cd63b9bd15869e860a2685f27 200
+[debug] [2026-05-25T14:37:28.611Z] <<< [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/voratte-3fc9f/versions/f2a4e6ccae1ff7e1/files/f45d17a687cc058c6888ad1cc4fe29ded094175cd63b9bd15869e860a2685f27 [stream]
+[debug] [2026-05-25T14:37:28.630Z] <<< [apiv2][status] POST https://upload-firebasehosting.googleapis.com/upload/sites/voratte-3fc9f/versions/f2a4e6ccae1ff7e1/files/4d7de5dc7480e773f05fdaf5ef26428db38b6b71cf57110b9f574c601a509550 200
+[debug] [2026-05-25T14:37:28.631Z] <<< [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/voratte-3fc9f/versions/f2a4e6ccae1ff7e1/files/4d7de5dc7480e773f05fdaf5ef26428db38b6b71cf57110b9f574c601a509550 [stream]
+[debug] [2026-05-25T14:37:28.645Z] <<< [apiv2][status] POST https://upload-firebasehosting.googleapis.com/upload/sites/voratte-3fc9f/versions/f2a4e6ccae1ff7e1/files/e11b23f3772f197274507952942be90f3ff04f4521d691b9d7a111830e6ea90e 200
+[debug] [2026-05-25T14:37:28.645Z] <<< [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/voratte-3fc9f/versions/f2a4e6ccae1ff7e1/files/e11b23f3772f197274507952942be90f3ff04f4521d691b9d7a111830e6ea90e [stream]
+[debug] [2026-05-25T14:37:28.670Z] <<< [apiv2][status] POST https://upload-firebasehosting.googleapis.com/upload/sites/voratte-3fc9f/versions/f2a4e6ccae1ff7e1/files/51d1faa99065d77cd9aee3c25b42d19f118d208cb6dddbb7f9b466071d0e2f8b 200
+[debug] [2026-05-25T14:37:28.670Z] <<< [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/voratte-3fc9f/versions/f2a4e6ccae1ff7e1/files/51d1faa99065d77cd9aee3c25b42d19f118d208cb6dddbb7f9b466071d0e2f8b [stream]
+[debug] [2026-05-25T14:37:28.691Z] <<< [apiv2][status] POST https://upload-firebasehosting.googleapis.com/upload/sites/voratte-3fc9f/versions/f2a4e6ccae1ff7e1/files/1b5cf679299e9c39527671b88b14b856fd3eab9591db79b59129f575786819ab 200
+[debug] [2026-05-25T14:37:28.691Z] <<< [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/voratte-3fc9f/versions/f2a4e6ccae1ff7e1/files/1b5cf679299e9c39527671b88b14b856fd3eab9591db79b59129f575786819ab [stream]
+[debug] [2026-05-25T14:37:28.760Z] <<< [apiv2][status] POST https://upload-firebasehosting.googleapis.com/upload/sites/voratte-3fc9f/versions/f2a4e6ccae1ff7e1/files/3112db9c2c427a778c6f7aa49ec9ef774dd40612cd6212d45bbb53da6c5e3622 200
+[debug] [2026-05-25T14:37:28.761Z] <<< [apiv2][body] POST https://upload-firebasehosting.googleapis.com/upload/sites/voratte-3fc9f/versions/f2a4e6ccae1ff7e1/files/3112db9c2c427a778c6f7aa49ec9ef774dd40612cd6212d45bbb53da6c5e3622 [stream]
+[debug] [2026-05-25T14:37:28.761Z] [hosting][upload queue][FINAL] {"max":1643,"min":1405,"avg":1486.8125,"active":0,"complete":16,"success":16,"errored":0,"retried":0,"total":16,"elapsed":1646}
+[info] +  hosting[voratte-3fc9f]: file upload complete 
+[debug] [2026-05-25T14:37:28.762Z] [hosting] deploy completed after 2466ms
+[debug] [2026-05-25T14:37:28.762Z] [rules] releasing cloud.firestore with ruleset projects/voratte-3fc9f/rulesets/3568bccb-3bab-4423-825b-54a9638eeaa0
+[debug] [2026-05-25T14:37:28.763Z] Checked if tokens are valid: true, expires at: 1779723437522
+[debug] [2026-05-25T14:37:28.763Z] Checked if tokens are valid: true, expires at: 1779723437522
+[debug] [2026-05-25T14:37:28.763Z] >>> [apiv2][query] PATCH https://firebaserules.googleapis.com/v1/projects/voratte-3fc9f/releases/cloud.firestore [none]
+[debug] [2026-05-25T14:37:28.763Z] >>> [apiv2][body] PATCH https://firebaserules.googleapis.com/v1/projects/voratte-3fc9f/releases/cloud.firestore {"release":{"name":"projects/voratte-3fc9f/releases/cloud.firestore","rulesetName":"projects/voratte-3fc9f/rulesets/3568bccb-3bab-4423-825b-54a9638eeaa0"}}

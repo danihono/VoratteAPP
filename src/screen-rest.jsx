@@ -650,6 +650,7 @@ function PerfilScreen({ go, user }) {
     ? u.name.split(' ').map(function (n) { return n[0]; }).join('').slice(0, 2).toUpperCase()
     : '·';
   const discMain = u.discMain;
+  const [theme, setTheme] = window.useTheme();
   const subtitleParts = [];
   if (u.jobTitle)    subtitleParts.push(u.jobTitle);
   if (u.companyName) subtitleParts.push(u.companyName);
@@ -685,6 +686,82 @@ function PerfilScreen({ go, user }) {
             )}
           </div>
           <button className="btn btn-secondary"><Ic.Settings s={14}/> Editar perfil</button>
+        </div>
+      </div>
+
+      <div className="card">
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 24, marginBottom: 18 }}>
+          <div>
+            <div className="card-title">Aparência</div>
+            <div className="card-sub" style={{ marginBottom: 0 }}>
+              Escolha como a plataforma vai se apresentar. Sua preferência fica salva neste dispositivo.
+            </div>
+          </div>
+          <div style={{ flexShrink: 0 }}>
+            <window.ThemeTogglePill />
+          </div>
+        </div>
+
+        <div className="theme-card-row">
+          <div
+            className={'theme-preview light' + (theme === 'light' ? ' active' : '')}
+            onClick={() => setTheme('light')}
+            role="button"
+            tabIndex={0}
+          >
+            <div className="tp-mock">
+              <div className="tp-sidebar">
+                <div className="tp-line bright" style={{ width: '70%' }} />
+                <div className="tp-line" style={{ width: '90%' }} />
+                <div className="tp-line" style={{ width: '60%' }} />
+                <div className="tp-line" style={{ width: '80%' }} />
+              </div>
+              <div className="tp-main">
+                <div className="tp-line" style={{ width: '40%' }} />
+                <div className="tp-card" />
+              </div>
+            </div>
+            <div className="tp-foot">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div className="tp-icon"><Ic.Sun s={14} /></div>
+                <div>
+                  <div>Modo claro</div>
+                  <div style={{ fontSize: 11.5, color: 'var(--muted)', fontWeight: 500 }}>Padrão · luminoso e leve</div>
+                </div>
+              </div>
+              <div className="tp-check"><Ic.Check s={12} /></div>
+            </div>
+          </div>
+
+          <div
+            className={'theme-preview dark' + (theme === 'dark' ? ' active' : '')}
+            onClick={() => setTheme('dark')}
+            role="button"
+            tabIndex={0}
+          >
+            <div className="tp-mock">
+              <div className="tp-sidebar">
+                <div className="tp-line bright" style={{ width: '70%' }} />
+                <div className="tp-line" style={{ width: '90%' }} />
+                <div className="tp-line" style={{ width: '60%' }} />
+                <div className="tp-line" style={{ width: '80%' }} />
+              </div>
+              <div className="tp-main">
+                <div className="tp-line" style={{ width: '40%' }} />
+                <div className="tp-card" />
+              </div>
+            </div>
+            <div className="tp-foot">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div className="tp-icon"><Ic.Moon s={14} /></div>
+                <div>
+                  <div>Modo escuro</div>
+                  <div style={{ fontSize: 11.5, color: 'var(--muted)', fontWeight: 500 }}>Quente · descansa a vista</div>
+                </div>
+              </div>
+              <div className="tp-check"><Ic.Check s={12} /></div>
+            </div>
+          </div>
         </div>
       </div>
 

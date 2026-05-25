@@ -14,8 +14,8 @@ async function _buildDemoSelfMember(currentUser) {
     if (!disc) return null;
     return {
       id:        currentUser.id,
-      name:      (currentUser.name || 'Você') + ' (demo)',
-      role:      currentUser.jobTitle || 'Aluno demo',
+      name:      (currentUser.name || t('gestor.demoSelf.fallbackName')) + t('gestor.demoSelf.suffix'),
+      role:      currentUser.jobTitle || t('gestor.demoSelf.fallbackJob'),
       d:         disc.d || 0,
       i:         disc.i || 0,
       s:         disc.s || 0,
@@ -71,11 +71,12 @@ function useGestorTeam(gestorId, currentUser) {
 }
 
 function GestorDashboard({ go, user }) {
+  useLang();
   var [team, teamLoading] = useGestorTeam(user && user.id, user);
   var GESTOR_TEAM = team;
   var done = GESTOR_TEAM.filter(function(p) { return p.status === 'done'; }).length;
   var pending = GESTOR_TEAM.length - done;
-  var firstName = user && user.name ? user.name.split(' ')[0] : 'Gestor';
+  var firstName = user && user.name ? user.name.split(' ')[0] : t('role.gestor');
 
   // Distribuição DISC real do time
   var dist = React.useMemo(function () {
@@ -83,14 +84,23 @@ function GestorDashboard({ go, user }) {
     GESTOR_TEAM.forEach(function (m) { if (m.main && counts.hasOwnProperty(m.main)) counts[m.main] += 1; });
     var total = counts.D + counts.I + counts.S + counts.C;
     if (!total) return null;
-    var labels = { D: 'Dominante', I: 'Influente', S: 'Estável', C: 'Conforme' };
+    var labels = { D: t('disc.D.label'), I: t('disc.I.label'), S: t('disc.S.label'), C: t('disc.C.label') };
     var top = ['D','I','S','C'].reduce(function (a, b) { return counts[a] >= counts[b] ? a : b; });
     return {
       counts: counts, total: total,
       topKey: top, topLabel: labels[top],
       topPct: Math.round(counts[top] / total * 100),
     };
-  }, [GESTOR_TEAM]);
+  }, [GESTOR_TEAM, window.getLang()]);
+
+  // Linha do hero: pluralização
+  var heroLine;
+  if (teamLoading) heroLine = t('gestor.loadingTeam');
+  else if (GESTOR_TEAM.length) {
+    heroLine = t(GESTOR_TEAM.length === 1 ? 'gestor.teamLine.one' : 'gestor.teamLine', {
+      n: GESTOR_TEAM.length, done: done,
+    });
+  } else heroLine = t('gestor.noTeam');
 
   return (
     <div className="page-enter" style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
@@ -98,51 +108,47 @@ function GestorDashboard({ go, user }) {
       <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 24 }}>
         <div className="card" style={{ padding: 28, position: 'relative', overflow: 'hidden' }}>
           <div style={{ position: 'absolute', right: -60, top: -60, width: 240, height: 240, background: 'radial-gradient(circle, var(--brown-50), transparent 70%)' }} />
-          <div className="badge badge-brown" style={{ position: 'relative' }}><Ic.Shield s={12}/> Visão de Gestor</div>
+          <div className="badge badge-brown" style={{ position: 'relative' }}><Ic.Shield s={12}/> {t('gestor.badge')}</div>
           <h2 className="serif" style={{ fontSize: 30, fontWeight: 500, letterSpacing: '-0.02em', marginTop: 14, lineHeight: 1.15, maxWidth: 460 }}>
-            Olá, {firstName}. <span style={{ color: 'var(--muted)' }}>
-              {teamLoading
-                ? 'Carregando dados do time…'
-                : GESTOR_TEAM.length
-                  ? GESTOR_TEAM.length + ' colaborador' + (GESTOR_TEAM.length === 1 ? '' : 'es') + ' · ' + done + ' avaliado' + (done === 1 ? '' : 's') + '.'
-                  : 'Você ainda não tem colaboradores vinculados.'}
+            {t('gestor.helloName', { name: firstName })} <span style={{ color: 'var(--muted)' }}>
+              {heroLine}
             </span>
           </h2>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginTop: 26 }}>
             <div className="stat">
-              <div className="stat-label">Colaboradores</div>
+              <div className="stat-label">{t('gestor.stat.collaborators')}</div>
               <div className="stat-value">{GESTOR_TEAM.length}</div>
-              <div className="stat-delta">{done} avaliados</div>
+              <div className="stat-delta">{t('gestor.stat.evaluated', { n: done })}</div>
             </div>
             <div className="stat">
-              <div className="stat-label">Pendentes</div>
+              <div className="stat-label">{t('gestor.stat.pending')}</div>
               <div className="stat-value" style={{ color: pending > 0 ? 'var(--disc-d)' : 'inherit' }}>{pending}</div>
-              <div className="stat-delta">{pending > 0 ? 'Aguardando avaliação' : 'Tudo em dia'}</div>
+              <div className="stat-delta">{pending > 0 ? t('gestor.stat.pendingWait') : t('gestor.stat.pendingOk')}</div>
             </div>
             <div className="stat">
-              <div className="stat-label">Perfil dominante</div>
+              <div className="stat-label">{t('gestor.stat.dominant')}</div>
               <div className="stat-value" style={{ fontSize: 26 }}>{dist ? dist.topKey + ' · ' + dist.topPct + '%' : '—'}</div>
-              <div className="stat-delta">{dist ? dist.topLabel : 'Sem dados'}</div>
+              <div className="stat-delta">{dist ? dist.topLabel : t('gestor.stat.noData')}</div>
             </div>
           </div>
 
           <div style={{ display: 'flex', gap: 10, marginTop: 24 }}>
             <button className="btn btn-primary" onClick={() => go('equipe')}>
-              Ver minha equipe <Ic.Arrow s={14}/>
+              {t('gestor.cta.viewTeam')} <Ic.Arrow s={14}/>
             </button>
             <button className="btn btn-secondary" onClick={() => go('relatorios')}>
-              <Ic.Pdf s={14}/> Relatório consolidado
+              <Ic.Pdf s={14}/> {t('gestor.cta.report')}
             </button>
           </div>
         </div>
 
         <div className="card">
-          <div className="card-title">Distribuição comportamental do time</div>
-          <div className="card-sub">Perfis predominantes</div>
+          <div className="card-title">{t('gestor.distTitle')}</div>
+          <div className="card-sub">{t('gestor.distSub')}</div>
           {!dist ? (
             <div style={{ padding: '24px 0', color: 'var(--muted)', fontSize: 13 }}>
-              Distribuição será exibida quando sua equipe completar avaliações.
+              {t('gestor.distEmpty')}
             </div>
           ) : (
             <div style={{ display: 'flex', gap: 18, alignItems: 'center' }}>
@@ -154,13 +160,13 @@ function GestorDashboard({ go, user }) {
                   { key: 'S', value: dist.counts.S, color: 'var(--disc-s)' },
                   { key: 'C', value: dist.counts.C, color: 'var(--disc-c)' },
                 ]}
-                center={<><div className="letter">{dist.total}</div><div className="label">{dist.total === 1 ? 'avaliado' : 'avaliados'}</div></>}
+                center={<><div className="letter">{dist.total}</div><div className="label">{dist.total === 1 ? t('gestor.donutEvaluated.one') : t('gestor.donutEvaluated')}</div></>}
               />
               <div className="legend" style={{ flex: 1 }}>
-                <div className="legend-row"><div className="sw" style={{ background: 'var(--disc-d)' }}/><span>Dominante</span><span className="pct">{dist.counts.D}</span></div>
-                <div className="legend-row"><div className="sw" style={{ background: 'var(--disc-i)' }}/><span>Influente</span><span className="pct">{dist.counts.I}</span></div>
-                <div className="legend-row"><div className="sw" style={{ background: 'var(--disc-s)' }}/><span>Estável</span><span className="pct">{dist.counts.S}</span></div>
-                <div className="legend-row"><div className="sw" style={{ background: 'var(--disc-c)' }}/><span>Conforme</span><span className="pct">{dist.counts.C}</span></div>
+                <div className="legend-row"><div className="sw" style={{ background: 'var(--disc-d)' }}/><span>{t('disc.D.label')}</span><span className="pct">{dist.counts.D}</span></div>
+                <div className="legend-row"><div className="sw" style={{ background: 'var(--disc-i)' }}/><span>{t('disc.I.label')}</span><span className="pct">{dist.counts.I}</span></div>
+                <div className="legend-row"><div className="sw" style={{ background: 'var(--disc-s)' }}/><span>{t('disc.S.label')}</span><span className="pct">{dist.counts.S}</span></div>
+                <div className="legend-row"><div className="sw" style={{ background: 'var(--disc-c)' }}/><span>{t('disc.C.label')}</span><span className="pct">{dist.counts.C}</span></div>
               </div>
             </div>
           )}
@@ -171,10 +177,10 @@ function GestorDashboard({ go, user }) {
       <div className="card">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
           <div>
-            <div className="card-title">Status de avaliação</div>
-            <div className="card-sub" style={{ marginBottom: 0 }}>Acompanhe quem ainda precisa responder o DISC</div>
+            <div className="card-title">{t('gestor.evalStatusTitle')}</div>
+            <div className="card-sub" style={{ marginBottom: 0 }}>{t('gestor.evalStatusSub')}</div>
           </div>
-          <button className="btn btn-secondary"><Ic.Bell s={14}/> Notificar pendentes</button>
+          <button className="btn btn-secondary"><Ic.Bell s={14}/> {t('gestor.notifyPending')}</button>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -186,11 +192,11 @@ function GestorDashboard({ go, user }) {
                 <div style={{ fontSize: 11.5, color: 'var(--muted)' }}>{p.role}</div>
               </div>
               <div>
-                {p.status === 'done' && <span className="badge badge-brown">● Avaliado</span>}
-                {p.status === 'pending' && <span className="badge" style={{ background: '#f8e8d4', color: '#a87139' }}>● Em andamento</span>}
-                {p.status === 'invited' && <span className="badge badge-outline">● Convidado</span>}
+                {p.status === 'done' && <span className="badge badge-brown">{t('gestor.status.done')}</span>}
+                {p.status === 'pending' && <span className="badge" style={{ background: '#f8e8d4', color: '#a87139' }}>{t('gestor.status.pending')}</span>}
+                {p.status === 'invited' && <span className="badge badge-outline">{t('gestor.status.invited')}</span>}
               </div>
-              <div style={{ fontSize: 12, color: 'var(--muted)' }}>Última: {p.last}</div>
+              <div style={{ fontSize: 12, color: 'var(--muted)' }}>{t('gestor.lastLabel', { date: p.last })}</div>
               <button className="icon-btn" onClick={() => go('equipe')}><Ic.Arrow s={16}/></button>
             </div>
           ))}
@@ -201,6 +207,7 @@ function GestorDashboard({ go, user }) {
 }
 
 function GestorEquipe({ go, user }) {
+  useLang();
   var [team, teamLoading] = useGestorTeam(user && user.id, user);
   var GESTOR_TEAM = team;
   var [sel, setSel] = React.useState(null);
@@ -208,10 +215,10 @@ function GestorEquipe({ go, user }) {
   var p = GESTOR_TEAM.find(function(x) { return x.id === selId; }) || null;
 
   if (teamLoading) {
-    return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 300, color: 'var(--muted)', fontSize: 13 }}>Carregando equipe…</div>;
+    return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 300, color: 'var(--muted)', fontSize: 13 }}>{t('gestor.team.loading')}</div>;
   }
   if (!GESTOR_TEAM.length) {
-    return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 300, color: 'var(--muted)', fontSize: 13 }}>Nenhum colaborador encontrado neste time.</div>;
+    return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 300, color: 'var(--muted)', fontSize: 13 }}>{t('gestor.team.empty')}</div>;
   }
 
   return (
@@ -220,8 +227,8 @@ function GestorEquipe({ go, user }) {
       {/* List */}
       <div className="card" style={{ padding: 0, display: 'flex', flexDirection: 'column' }}>
         <div style={{ padding: '16px 18px', borderBottom: '1px solid var(--line)' }}>
-          <div className="card-title" style={{ marginBottom: 2 }}>Minha equipe</div>
-          <div className="card-sub" style={{ marginBottom: 0 }}>{GESTOR_TEAM.length} colaboradores</div>
+          <div className="card-title" style={{ marginBottom: 2 }}>{t('gestor.team.title')}</div>
+          <div className="card-sub" style={{ marginBottom: 0 }}>{t('gestor.team.count', { n: GESTOR_TEAM.length })}</div>
         </div>
         <div style={{ flex: 1, overflowY: 'auto' }}>
           {GESTOR_TEAM.map(function(person) { return (
@@ -266,18 +273,18 @@ function GestorEquipe({ go, user }) {
               <h2 className="serif" style={{ fontSize: 24, fontWeight: 500, letterSpacing: '-0.01em' }}>{p.name}</h2>
               <div style={{ fontSize: 13, color: 'var(--muted)', marginTop: 2 }}>{p.role}</div>
               <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
-                {p.main !== '—' && <div className="badge badge-brown">Perfil {p.main}</div>}
-                <div className="badge badge-outline">Última avaliação: {p.last}</div>
-                <div className="badge badge-outline">{p.reports} relatórios</div>
+                {p.main !== '—' && <div className="badge badge-brown">{t('perfil.badgeProfile', { label: t('disc.' + p.main + '.label'), code: p.main })}</div>}
+                <div className="badge badge-outline">{t('gestor.detail.lastEval', { date: p.last })}</div>
+                <div className="badge badge-outline">{t('gestor.detail.reportsCount', { n: p.reports })}</div>
               </div>
             </div>
             {p.status === 'done' ? (
               <div style={{ display: 'flex', gap: 8 }}>
-                <button className="btn btn-secondary"><Ic.Chat s={14}/> Mensagem</button>
-                <button className="btn btn-primary"><Ic.Pdf s={14}/> Relatório</button>
+                <button className="btn btn-secondary"><Ic.Chat s={14}/> {t('gestor.detail.message')}</button>
+                <button className="btn btn-primary"><Ic.Pdf s={14}/> {t('gestor.detail.report')}</button>
               </div>
             ) : (
-              <button className="btn btn-primary"><Ic.Bell s={14}/> Lembrar avaliação</button>
+              <button className="btn btn-primary"><Ic.Bell s={14}/> {t('gestor.detail.remind')}</button>
             )}
           </div>
         </div>
@@ -285,8 +292,8 @@ function GestorEquipe({ go, user }) {
         {p.status === 'done' ? (
           <React.Fragment>
             <div className="card" style={{ padding: 24 }}>
-              <div className="card-title">Perfil DISC de {p.name.split(' ')[0]}</div>
-              <div className="card-sub">Composição comportamental</div>
+              <div className="card-title">{t('gestor.detail.discTitle', { name: p.name.split(' ')[0] })}</div>
+              <div className="card-sub">{t('gestor.detail.discSub')}</div>
               <div style={{ display: 'grid', gridTemplateColumns: '200px 1fr', gap: 24, alignItems: 'center' }}>
                 <Donut
                   size={170} stroke={22}
@@ -296,18 +303,18 @@ function GestorEquipe({ go, user }) {
                     { key: 'S', value: p.s, color: 'var(--disc-s)' },
                     { key: 'C', value: p.c, color: 'var(--disc-c)' },
                   ]}
-                  center={<><div className="letter">{p.main}</div><div className="label">{{D:'Dominante',I:'Influente',S:'Estável',C:'Conforme'}[p.main]}</div></>}
+                  center={<><div className="letter">{p.main}</div><div className="label">{t('disc.' + p.main + '.label')}</div></>}
                 />
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                   {[
-                    { k: 'D', v: p.d, l: 'Dominância', c: 'var(--disc-d)' },
-                    { k: 'I', v: p.i, l: 'Influência', c: 'var(--disc-i)' },
-                    { k: 'S', v: p.s, l: 'Estabilidade', c: 'var(--disc-s)' },
-                    { k: 'C', v: p.c, l: 'Conformidade', c: 'var(--disc-c)' },
+                    { k: 'D', v: p.d, c: 'var(--disc-d)' },
+                    { k: 'I', v: p.i, c: 'var(--disc-i)' },
+                    { k: 'S', v: p.s, c: 'var(--disc-s)' },
+                    { k: 'C', v: p.c, c: 'var(--disc-c)' },
                   ].map(d => (
                     <div key={d.k}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                        <div style={{ fontSize: 13, fontWeight: 600 }}>{d.l} ({d.k})</div>
+                        <div style={{ fontSize: 13, fontWeight: 600 }}>{t('disc.' + d.k + '.full')} ({d.k})</div>
                         <div style={{ fontSize: 13, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{d.v}%</div>
                       </div>
                       <div className="progress"><span style={{ width: d.v + '%', background: d.c }} /></div>
@@ -319,30 +326,30 @@ function GestorEquipe({ go, user }) {
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
               <div className="card">
-                <div className="card-title">Forças no contexto de Compras</div>
+                <div className="card-title">{t('gestor.detail.strengthsTitle')}</div>
                 {[
-                  'Fechamento ágil em pressão de prazo',
-                  'Defesa firme de margens',
-                  'Liderança em itens de Alavancagem',
-                  'Resiliência em rodadas longas',
+                  t('gestor.detail.strength.1'),
+                  t('gestor.detail.strength.2'),
+                  t('gestor.detail.strength.3'),
+                  t('gestor.detail.strength.4'),
                 ].map((s, i) => <div className="list-row" key={i}><Ic.Check s={14}/><span>{s}</span></div>)}
               </div>
               <div className="card">
-                <div className="card-title">Riscos a monitorar</div>
+                <div className="card-title">{t('gestor.detail.risksTitle')}</div>
                 {[
-                  'Pode acelerar decisões em itens estratégicos',
-                  'Desgaste com fornecedores S/C',
-                  'Pouca escuta em concessões mútuas',
-                  'Resistência a delegar análises técnicas',
+                  t('gestor.detail.risk.1'),
+                  t('gestor.detail.risk.2'),
+                  t('gestor.detail.risk.3'),
+                  t('gestor.detail.risk.4'),
                 ].map((s, i) => <div className="list-row" key={i}><div className="bullet" style={{ background: 'var(--disc-d)' }}/><span>{s}</span></div>)}
               </div>
             </div>
 
             <div className="card">
-              <div className="card-title">Relatórios de {p.name.split(' ')[0]}</div>
-              <div className="card-sub">{p.reports || 0} documentos disponíveis</div>
+              <div className="card-title">{t('gestor.detail.reportsTitle', { name: p.name.split(' ')[0] })}</div>
+              <div className="card-sub">{t('gestor.detail.reportsSub', { n: p.reports || 0 })}</div>
               <div style={{ padding: '20px 0', color: 'var(--muted)', fontSize: 13.5 }}>
-                Lista de relatórios disponíveis em breve.
+                {t('gestor.detail.reportsEmpty')}
               </div>
             </div>
           </React.Fragment>
@@ -351,12 +358,12 @@ function GestorEquipe({ go, user }) {
             <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'var(--brown-50)', color: 'var(--brown-700)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }}>
               <Ic.Disc s={28}/>
             </div>
-            <h3 className="serif" style={{ fontSize: 22, fontWeight: 500 }}>{p.name.split(' ')[0]} ainda não respondeu o DISC</h3>
+            <h3 className="serif" style={{ fontSize: 22, fontWeight: 500 }}>{t('gestor.detail.noDiscTitle', { name: p.name.split(' ')[0] })}</h3>
             <p style={{ fontSize: 13, color: 'var(--muted)', marginTop: 6, maxWidth: 380, margin: '6px auto 0' }}>
-              {p.status === 'invited' ? 'O convite foi enviado e está aguardando aceite.' : 'A avaliação foi iniciada mas não foi concluída.'}
+              {p.status === 'invited' ? t('gestor.detail.noDiscInvited') : t('gestor.detail.noDiscPending')}
             </p>
             <button className="btn btn-primary" style={{ marginTop: 18 }}>
-              <Ic.Bell s={14}/> Enviar lembrete
+              <Ic.Bell s={14}/> {t('gestor.detail.remindBtn')}
             </button>
           </div>
         )}
@@ -366,6 +373,7 @@ function GestorEquipe({ go, user }) {
 }
 
 function GestorMapa({ go, user }) {
+  useLang();
   var [team, teamLoading] = useGestorTeam(user && user.id, user);
 
   // Agrega a equipe por cargo (jobTitle), contando o perfil principal (DISC main) de cada membro.
@@ -374,12 +382,12 @@ function GestorMapa({ go, user }) {
     const byRole = {};
     team.forEach(function (m) {
       if (!m.main) return; // ignora membros sem DISC
-      const role = m.role || 'Sem cargo';
+      const role = m.role || t('gestor.mapa.noJob');
       if (!byRole[role]) byRole[role] = { role: role, D: 0, I: 0, S: 0, C: 0 };
       byRole[role][m.main] += 1;
     });
     return Object.values(byRole);
-  }, [team]);
+  }, [team, window.getLang()]);
 
   const maxV = matrix.reduce(function (max, row) {
     return Math.max(max, row.D, row.I, row.S, row.C);
@@ -394,14 +402,14 @@ function GestorMapa({ go, user }) {
   return (
     <div className="page-enter" style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
       <div className="card">
-        <div className="card-title">Mapa comportamental por cargo</div>
-        <div className="card-sub">Quantos colaboradores de cada perfil em cada nível</div>
+        <div className="card-title">{t('gestor.mapa.title')}</div>
+        <div className="card-sub">{t('gestor.mapa.sub')}</div>
 
         {teamLoading ? (
-          <div style={{ padding: '32px 0', textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>Carregando equipe…</div>
+          <div style={{ padding: '32px 0', textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>{t('gestor.team.loading')}</div>
         ) : !matrix.length ? (
           <div style={{ padding: '40px 0', textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>
-            O mapa será gerado quando sua equipe completar avaliações DISC.
+            {t('gestor.mapa.empty')}
           </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: '220px repeat(4, 1fr)', gap: 4, alignItems: 'center' }}>
@@ -409,7 +417,7 @@ function GestorMapa({ go, user }) {
             {['D','I','S','C'].map(k => (
               <div key={k} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '8px 0' }}>
                 <div className={'disc-tile disc-' + k.toLowerCase()} style={{ width: 26, height: 26, fontSize: 13, borderRadius: 6 }}>{k}</div>
-                <span style={{ fontSize: 12, fontWeight: 600 }}>{{D:'Dominante',I:'Influente',S:'Estável',C:'Conforme'}[k]}</span>
+                <span style={{ fontSize: 12, fontWeight: 600 }}>{t('disc.' + k + '.label')}</span>
               </div>
             ))}
 
@@ -434,27 +442,32 @@ function GestorMapa({ go, user }) {
 }
 
 function GestorRelatorios({ go, user }) {
+  useLang();
   const rows = [];
   return (
     <div className="page-enter" style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div className="tabs">
-          <button className="tab active">Da equipe</button>
-          <button className="tab">Consolidados</button>
-          <button className="tab">Por cargo</button>
+          <button className="tab active">{t('gestor.relatorios.tab.team')}</button>
+          <button className="tab">{t('gestor.relatorios.tab.cons')}</button>
+          <button className="tab">{t('gestor.relatorios.tab.role')}</button>
         </div>
-        <button className="btn btn-primary"><Ic.Plus s={14}/> Gerar consolidado</button>
+        <button className="btn btn-primary"><Ic.Plus s={14}/> {t('gestor.relatorios.new')}</button>
       </div>
 
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
         {rows.length === 0 ? (
           <div style={{ padding: '48px 24px', textAlign: 'center', color: 'var(--muted)', fontSize: 13.5 }}>
-            Nenhum relatório gerado ainda.
+            {t('gestor.relatorios.empty')}
           </div>
         ) : (
           <table className="tbl">
             <thead><tr>
-              <th style={{ paddingLeft: 24 }}>Relatório</th><th>Tipo</th><th>Autor</th><th>Data</th><th style={{ textAlign: 'right', paddingRight: 24 }}>Ações</th>
+              <th style={{ paddingLeft: 24 }}>{t('gestor.relatorios.col.report')}</th>
+              <th>{t('gestor.relatorios.col.type')}</th>
+              <th>{t('gestor.relatorios.col.author')}</th>
+              <th>{t('gestor.relatorios.col.date')}</th>
+              <th style={{ textAlign: 'right', paddingRight: 24 }}>{t('common.actions')}</th>
             </tr></thead>
             <tbody>
               {rows.map((r, i) => (

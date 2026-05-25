@@ -114,6 +114,26 @@ window.fbGetAllReports = async function(limit) {
   return snap.docs.map(function(doc) { return { id: doc.id, ...doc.data() }; });
 };
 
+window.fbGetAllDiscResults = async function(limit) {
+  var snap = await window.db.collection('disc_results')
+    .orderBy('completedAt', 'desc')
+    .limit(limit || 500)
+    .get();
+  return snap.docs.map(function(doc) { return { id: doc.id, ...doc.data() }; });
+};
+
+window.fbSaveReport = async function(report, docId) {
+  var payload = Object.assign({
+    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+  }, report || {});
+  if (docId) {
+    await window.db.collection('reports').doc(docId).set(payload);
+    return docId;
+  }
+  var ref = await window.db.collection('reports').add(payload);
+  return ref.id;
+};
+
 window.fbSaveDiscResult = async function(uid, result) {
   await window.db.collection('disc_results').doc(uid).set({
     userId:      uid,

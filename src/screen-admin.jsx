@@ -193,15 +193,23 @@ function AdminStat({ label, value }) {
   );
 }
 
-// Placeholder de gráfico de crescimento — série histórica ainda não implementada
-function GrowthChartPlaceholder() {
+// Gráfico de barras: avaliações DISC concluídas nos últimos 12 meses
+function MonthlyBars({ series, max }) {
+  const safeMax = max || 1;
   return (
-    <div style={{
-      padding: '48px 24px', textAlign: 'center',
-      color: 'var(--muted)', fontSize: 13,
-      border: '1px dashed var(--line)', borderRadius: 10,
-    }}>
-      Gráfico de crescimento será exibido quando houver série histórica disponível.
+    <div style={{ padding: '20px 4px 4px', display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: 8, alignItems: 'end', minHeight: 200 }}>
+      {series.map(function (b, i) {
+        const h = b.n === 0 ? 4 : Math.max(8, Math.round(b.n / safeMax * 150));
+        return (
+          <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+            <div style={{ fontSize: 11, color: b.n > 0 ? 'var(--ink)' : 'transparent', fontWeight: 600, fontVariantNumeric: 'tabular-nums', minHeight: 14 }}>
+              {b.n > 0 ? b.n : '·'}
+            </div>
+            <div style={{ width: '100%', height: h, background: b.n > 0 ? 'var(--brown-700)' : 'var(--brown-100)', borderRadius: 4, transition: 'height .3s' }} />
+            <div style={{ fontSize: 10.5, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{b.label}</div>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -532,18 +540,23 @@ function AdminGestores({ go }) {
 }
 
 // ============ ADMIN — ESTATÍSTICAS ============
+const MES_LABELS = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+
 function AdminEstatisticas({ go }) {
-  var [users, setUsers]         = React.useState([]);
-  var [companies, setCompanies] = React.useState([]);
-  var [loading, setLoading]     = React.useState(true);
+  var [users, setUsers]               = React.useState([]);
+  var [companies, setCompanies]       = React.useState([]);
+  var [discResults, setDiscResults]   = React.useState([]);
+  var [loading, setLoading]           = React.useState(true);
 
   React.useEffect(function () {
     Promise.all([
       window.fbGetAllUsers(500).catch(function () { return []; }),
       window.fbGetAllCompanies().catch(function () { return []; }),
+      window.fbGetAllDiscResults ? window.fbGetAllDiscResults(500).catch(function () { return []; }) : Promise.resolve([]),
     ]).then(function (results) {
       setUsers(results[0] || []);
       setCompanies(results[1] || []);
+      setDiscResults(results[2] || []);
       setLoading(false);
     });
   }, []);
@@ -555,6 +568,47 @@ function AdminEstatisticas({ go }) {
   const completionRate = React.useMemo(function () {
     return users.length ? Math.round(completed / users.length * 100) + '%' : '—';
   }, [users, completed]);
+
+  // Perfil de comprador mais frequente (substitui o antigo "Tempo médio")
+  const topBuyer = React.useMemo(function () {
+    const counts = {};
+    discResults.forEach(function (r) {
+      const c = r.code || r.main;
+      if (!c) return;
+      counts[c] = (counts[c] || 0) + 1;
+    });
+    const entries = Object.entries(counts).sort(function (a, b) { return b[1] - a[1]; });
+    if (!entries.length) return null;
+    const top = entries[0];
+    const profile = window.BUYER_PROFILES && window.BUYER_PROFILES[top[0]];
+    return { code: top[0], n: top[1], label: profile ? profile.shortLabel : top[0] };
+  }, [discResults]);
+
+  // Série mensal: últimos 12 meses, contagem de DISCs concluídos por mês
+  const monthlySeries = React.useMemo(function () {
+    const now = new Date();
+    const buckets = [];
+    const idx = {};
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key = d.getFullYear() + '-' + d.getMonth();
+      buckets.push({ key: key, label: MES_LABELS[d.getMonth()], n: 0 });
+      idx[key] = buckets.length - 1;
+    }
+    discResults.forEach(function (r) {
+      if (!r.completedAt) return;
+      try {
+        const d = r.completedAt.toDate ? r.completedAt.toDate() : new Date(r.completedAt);
+        const key = d.getFullYear() + '-' + d.getMonth();
+        if (idx[key] != null) buckets[idx[key]].n += 1;
+      } catch (e) {}
+    });
+    return buckets;
+  }, [discResults]);
+
+  const maxMonthly = React.useMemo(function () {
+    return monthlySeries.reduce(function (m, b) { return Math.max(m, b.n); }, 0);
+  }, [monthlySeries]);
 
   // Setores: agregação a partir do campo sector das empresas, ponderado por userCount
   const sectors = React.useMemo(function () {
@@ -571,31 +625,81 @@ function AdminEstatisticas({ go }) {
       .sort(function (a, b) { return b.pct - a.pct; });
   }, [companies]);
 
+  // Fallback: top empresas por número de usuários cadastrados (deriva de users[].companyName)
+  const topCompaniesByUser = React.useMemo(function () {
+    if (sectors.length > 0) return [];
+    const counts = {};
+    users.forEach(function (u) {
+      const name = (u.companyName || '').trim();
+      if (!name) return;
+      counts[name] = (counts[name] || 0) + 1;
+    });
+    const entries = Object.entries(counts);
+    if (!entries.length) return [];
+    const maxN = entries.reduce(function (m, e) { return Math.max(m, e[1]); }, 1);
+    return entries
+      .map(function (e) { return { name: e[0], n: e[1], pct: Math.round(e[1] / maxN * 100) }; })
+      .sort(function (a, b) { return b.n - a.n; })
+      .slice(0, 6);
+  }, [users, sectors]);
+
+  // Cruzamento DISC × Cargo: top jobTitles com distribuição empilhada D/I/S/C
+  const discByRole = React.useMemo(function () {
+    const groups = {};
+    users.forEach(function (u) {
+      const j = u.jobTitle && u.jobTitle.trim();
+      const m = u.discMain;
+      if (!j || !m || 'DISC'.indexOf(m) < 0) return;
+      if (!groups[j]) groups[j] = { D: 0, I: 0, S: 0, C: 0, total: 0 };
+      groups[j][m] += 1;
+      groups[j].total += 1;
+    });
+    return Object.entries(groups)
+      .map(function (e) {
+        const g = e[1];
+        return {
+          role: e[0], total: g.total,
+          d: Math.round(g.D / g.total * 100),
+          i: Math.round(g.I / g.total * 100),
+          s: Math.round(g.S / g.total * 100),
+          c: Math.round(g.C / g.total * 100),
+        };
+      })
+      .sort(function (a, b) { return b.total - a.total; })
+      .slice(0, 6);
+  }, [users]);
+
   return (
     <div className="page-enter" style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
-        <Mini2 label="DISC concluídos"   value={loading ? '—' : String(completed)} sub={loading ? '' : 'de ' + users.length + ' usuários'} />
-        <Mini2 label="Taxa de conclusão" value={loading ? '—' : completionRate}    sub="usuários que completaram" />
-        <Mini2 label="Empresas"          value={loading ? '—' : String(companies.length)} sub="cadastradas na plataforma" />
-        <Mini2 label="Tempo médio"       value="—"                                  sub="série ainda não disponível" />
+        <Mini2 label="DISC concluídos"     value={loading ? '—' : String(completed)} sub={loading ? '' : 'de ' + users.length + ' usuários'} />
+        <Mini2 label="Taxa de conclusão"   value={loading ? '—' : completionRate}    sub="usuários que completaram" />
+        <Mini2 label="Empresas"            value={loading ? '—' : String(companies.length)} sub="cadastradas na plataforma" />
+        <Mini2 label="Perfil mais comum"   value={loading ? '—' : (topBuyer ? topBuyer.code : '—')} sub={loading ? '' : (topBuyer ? topBuyer.label + ' · ' + topBuyer.n + ' avaliações' : 'sem dados ainda')} />
       </div>
 
       <div className="card">
         <div className="card-title">Avaliações por mês · 12 meses</div>
         <div className="card-sub">Volume de DISC concluídos na plataforma</div>
-        <GrowthChartPlaceholder />
+        {loading ? (
+          <div style={{ padding: '32px 0', color: 'var(--muted)', fontSize: 13 }}>Carregando…</div>
+        ) : maxMonthly === 0 ? (
+          <div style={{ padding: '32px 0', color: 'var(--muted)', fontSize: 13, textAlign: 'center', border: '1px dashed var(--line)', borderRadius: 10 }}>
+            Volume mensal será exibido quando houver DISCs concluídos no período.
+          </div>
+        ) : (
+          <MonthlyBars series={monthlySeries} max={maxMonthly} />
+        )}
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
         <div className="card">
           <div className="card-title">Setores mais ativos</div>
-          <div className="card-sub">Distribuição de usuários por setor</div>
+          <div className="card-sub">{sectors.length > 0 ? 'Distribuição de usuários por setor' : (topCompaniesByUser.length > 0 ? 'Top empresas por usuários cadastrados' : 'Distribuição de usuários')}</div>
           {loading ? (
             <div style={{ padding: '24px 0', color: 'var(--muted)', fontSize: 13 }}>Carregando…</div>
-          ) : sectors.length === 0 ? (
-            <div style={{ padding: '24px 0', color: 'var(--muted)', fontSize: 13 }}>Cadastre setores nas empresas para ver a distribuição.</div>
-          ) : sectors.map(function (s) {
+          ) : sectors.length > 0 ? sectors.map(function (s) {
             return (
               <div key={s.name} style={{ padding: '10px 0' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, fontSize: 13 }}>
@@ -605,14 +709,49 @@ function AdminEstatisticas({ go }) {
                 <div className="progress" style={{ height: 6 }}><span style={{ width: Math.min(s.pct * 4, 100) + '%' }}/></div>
               </div>
             );
-          })}
+          }) : topCompaniesByUser.length > 0 ? topCompaniesByUser.map(function (c) {
+            return (
+              <div key={c.name} style={{ padding: '10px 0' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, fontSize: 13 }}>
+                  <span style={{ fontWeight: 500 }}>{c.name}</span>
+                  <span style={{ fontVariantNumeric: 'tabular-nums', color: 'var(--muted)' }}>{c.n} usuários</span>
+                </div>
+                <div className="progress" style={{ height: 6 }}><span style={{ width: c.pct + '%' }}/></div>
+              </div>
+            );
+          }) : (
+            <div style={{ padding: '24px 0', color: 'var(--muted)', fontSize: 13 }}>Cadastre setores nas empresas ou associe usuários a empresas para ver a distribuição.</div>
+          )}
         </div>
         <div className="card">
           <div className="card-title">Cruzamento DISC × Cargo</div>
-          <div className="card-sub">Perfis dominantes nos cargos sênior</div>
-          <div style={{ padding: '32px 0', textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>
-            Cruzamento detalhado será exibido quando houver volume suficiente de avaliações por cargo.
-          </div>
+          <div className="card-sub">Perfis dominantes nos cargos com avaliações</div>
+          {loading ? (
+            <div style={{ padding: '24px 0', color: 'var(--muted)', fontSize: 13 }}>Carregando…</div>
+          ) : discByRole.length === 0 ? (
+            <div style={{ padding: '24px 0', color: 'var(--muted)', fontSize: 13 }}>Cruzamento será exibido quando houver cargos preenchidos com DISC concluído.</div>
+          ) : discByRole.map(function (r) {
+            return (
+              <div key={r.role} style={{ padding: '10px 0' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5, fontSize: 13 }}>
+                  <span style={{ fontWeight: 500 }}>{r.role}</span>
+                  <span style={{ fontSize: 11.5, color: 'var(--muted)', fontVariantNumeric: 'tabular-nums' }}>{r.total} {r.total === 1 ? 'avaliação' : 'avaliações'}</span>
+                </div>
+                <div style={{ display: 'flex', height: 8, borderRadius: 4, overflow: 'hidden', background: 'var(--brown-50)' }}>
+                  {r.d > 0 && <div style={{ width: r.d + '%', background: 'var(--disc-d)' }} title={'D ' + r.d + '%'} />}
+                  {r.i > 0 && <div style={{ width: r.i + '%', background: 'var(--disc-i)' }} title={'I ' + r.i + '%'} />}
+                  {r.s > 0 && <div style={{ width: r.s + '%', background: 'var(--disc-s)' }} title={'S ' + r.s + '%'} />}
+                  {r.c > 0 && <div style={{ width: r.c + '%', background: 'var(--disc-c)' }} title={'C ' + r.c + '%'} />}
+                </div>
+                <div style={{ display: 'flex', gap: 12, marginTop: 5, fontSize: 11, color: 'var(--muted)', fontVariantNumeric: 'tabular-nums' }}>
+                  <span><span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: 2, background: 'var(--disc-d)', marginRight: 4, verticalAlign: 'middle' }}/>D {r.d}%</span>
+                  <span><span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: 2, background: 'var(--disc-i)', marginRight: 4, verticalAlign: 'middle' }}/>I {r.i}%</span>
+                  <span><span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: 2, background: 'var(--disc-s)', marginRight: 4, verticalAlign: 'middle' }}/>S {r.s}%</span>
+                  <span><span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: 2, background: 'var(--disc-c)', marginRight: 4, verticalAlign: 'middle' }}/>C {r.c}%</span>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>

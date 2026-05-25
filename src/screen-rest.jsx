@@ -1,39 +1,69 @@
 // Relatórios list + Relatório (single report cover/page) + Plano + Comparações + Perfil
 
+// Persiste o relatório do próprio aluno em /reports com doc ID determinístico
+// ('self_{uid}') para garantir 1 doc único por aluno — reexportações sobrescrevem
+// o mesmo doc (apenas atualizam createdAt), evitando duplicatas na listagem.
+async function persistOwnReport(user) {
+  if (!user || !user.id || !window.fbSaveReport) return;
+  try {
+    await window.fbSaveReport({
+      userId: user.id,
+      type: 'individual',
+      title: 'Meu relatório DISC' + (user.name ? (' · ' + user.name) : ''),
+      targetId: user.id,
+      targetLabel: user.name || user.email || '',
+      createdBy: user.id,
+      createdByName: user.name || '',
+    }, 'self_' + user.id);
+  } catch (e) {
+    console.warn('persistOwnReport falhou (PDF foi gerado mesmo assim):', e);
+  }
+}
+
 function RelatoriosScreen({ go, user }) {
+  useLang();
   var [rows, setRows]       = React.useState([]);
   var [loading, setLoading] = React.useState(true);
 
-  React.useEffect(function () {
+  function reloadReports() {
     if (!user || !user.id || !window.fbGetReportsByUser) { setLoading(false); return; }
-    window.fbGetReportsByUser(user.id).then(function (docs) {
+    return window.fbGetReportsByUser(user.id).then(function (docs) {
       setRows(docs || []);
       setLoading(false);
     }).catch(function () { setLoading(false); });
+  }
+
+  React.useEffect(function () {
+    reloadReports();
   }, [user && user.id]);
 
   function fmtDate(ts) {
     if (!ts) return '—';
-    try { return ts.toDate().toLocaleDateString('pt-BR'); } catch (e) {}
+    try {
+      var lang = window.getLang();
+      var loc = lang === 'es' ? 'es' : lang === 'en' ? 'en-US' : 'pt-BR';
+      return ts.toDate().toLocaleDateString(loc);
+    } catch (e) {}
     if (typeof ts === 'string') return ts;
     return '—';
   }
 
-  // Exporta o relatório real do usuário em PDF (busca o DISC se necessário)
+  // Exporta o relatório real do usuário em PDF (busca o DISC se necessário) e persiste em /reports
   function handleExport() {
-    if (window.DISC_LAST_RESULT) {
-      window.exportReportPDF(window.buildReportData(user, window.DISC_LAST_RESULT));
-      return;
+    function doExport(disc) {
+      window.exportReportPDF(window.buildReportData(user, disc));
+      persistOwnReport(user).then(function () { reloadReports(); });
     }
+    if (window.DISC_LAST_RESULT) { doExport(window.DISC_LAST_RESULT); return; }
     if (user && user.id) {
       window.fbGetDiscResult(user.id).then(function (doc) {
         const r = relDiscResultFromDoc(doc);
-        if (!r) { alert('Faça o teste DISC antes de gerar o relatório.'); return; }
+        if (!r) { alert(t('relatorios.alert.doTestFirst')); return; }
         window.DISC_LAST_RESULT = r;
-        window.exportReportPDF(window.buildReportData(user, r));
-      }).catch(function () { alert('Não foi possível carregar o resultado DISC.'); });
+        doExport(r);
+      }).catch(function () { alert(t('relatorios.alert.cantLoad')); });
     } else {
-      alert('Faça o teste DISC antes de gerar o relatório.');
+      alert(t('relatorios.alert.doTestFirst'));
     }
   }
 
@@ -43,33 +73,32 @@ function RelatoriosScreen({ go, user }) {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <div style={{ position: 'relative', width: 280 }}>
-            <input className="input" placeholder="Buscar relatórios..." style={{ paddingLeft: 38 }} />
+            <input className="input" placeholder={t('relatorios.searchPlaceholder')} style={{ paddingLeft: 38 }} />
             <div style={{ position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)' }}>
               <Ic.Search s={16}/>
             </div>
           </div>
-          <button className="btn btn-secondary"><Ic.Settings s={14}/> Filtros</button>
+          <button className="btn btn-secondary"><Ic.Settings s={14}/> {t('relatorios.filters')}</button>
         </div>
         <button className="btn btn-primary" onClick={() => go('relatorio')}>
-          <Ic.Plus s={14}/> Gerar novo relatório
+          <Ic.Plus s={14}/> {t('relatorios.new')}
         </button>
       </div>
 
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
         {loading ? (
-          <div style={{ padding: '48px 24px', textAlign: 'center', color: 'var(--muted)', fontSize: 13.5 }}>Carregando relatórios…</div>
+          <div style={{ padding: '48px 24px', textAlign: 'center', color: 'var(--muted)', fontSize: 13.5 }}>{t('relatorios.loading')}</div>
         ) : rows.length === 0 ? (
-          <div style={{ padding: '48px 24px', textAlign: 'center', color: 'var(--muted)', fontSize: 13.5 }}>
-            Nenhum relatório gerado ainda. Clique em <strong>Gerar novo relatório</strong> para criar o primeiro.
-          </div>
+          <div style={{ padding: '48px 24px', textAlign: 'center', color: 'var(--muted)', fontSize: 13.5 }}
+               dangerouslySetInnerHTML={{ __html: t('relatorios.empty') }} />
         ) : (
           <table className="tbl">
             <thead>
               <tr>
-                <th style={{ paddingLeft: 24 }}>Relatório</th>
-                <th>Data</th>
-                <th>Tipo</th>
-                <th style={{ textAlign: 'right', paddingRight: 24 }}>Ações</th>
+                <th style={{ paddingLeft: 24 }}>{t('relatorios.col.report')}</th>
+                <th>{t('relatorios.col.date')}</th>
+                <th>{t('relatorios.col.type')}</th>
+                <th style={{ textAlign: 'right', paddingRight: 24 }}>{t('relatorios.col.actions')}</th>
               </tr>
             </thead>
             <tbody>
@@ -81,7 +110,7 @@ function RelatoriosScreen({ go, user }) {
                         <Ic.Pdf s={16}/>
                       </div>
                       <div>
-                        <div style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--ink)' }}>{r.title || 'Relatório'}</div>
+                        <div style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--ink)' }}>{r.title || t('relatorios.itemTitle')}</div>
                       </div>
                     </div>
                   </td>
@@ -90,7 +119,7 @@ function RelatoriosScreen({ go, user }) {
                   <td style={{ paddingRight: 24 }}>
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 4 }}>
                       <button className="icon-btn" onClick={() => go('relatorio')}><Ic.Eye s={16}/></button>
-                      <button className="icon-btn" onClick={handleExport} title="Baixar PDF"><Ic.Download s={16}/></button>
+                      <button className="icon-btn" onClick={handleExport} title={t('relatorios.downloadTitle')}><Ic.Download s={16}/></button>
                     </div>
                   </td>
                 </tr>
@@ -102,7 +131,7 @@ function RelatoriosScreen({ go, user }) {
 
       {!loading && rows.length > 0 && (
         <div style={{ fontSize: 12.5, color: 'var(--muted)' }}>
-          Mostrando {rows.length} relatório{rows.length === 1 ? '' : 's'}
+          {t(rows.length === 1 ? 'relatorios.showing' : 'relatorios.showingPlural', { count: rows.length })}
         </div>
       )}
     </div>
@@ -127,6 +156,7 @@ function relDiscResultFromDoc(doc) {
 }
 
 function RelatorioScreen({ go, user }) {
+  useLang();
   const [result, setResult] = React.useState(window.DISC_LAST_RESULT || null);
   const [loading, setLoading] = React.useState(!window.DISC_LAST_RESULT);
 
@@ -140,18 +170,18 @@ function RelatorioScreen({ go, user }) {
   }, [user && user.id]);
 
   if (loading) {
-    return <div className="card" style={{ padding: 40, textAlign: 'center', color: 'var(--muted)' }}>Carregando relatório…</div>;
+    return <div className="card" style={{ padding: 40, textAlign: 'center', color: 'var(--muted)' }}>{t('relatorio.loading')}</div>;
   }
 
   if (!result) {
     return (
       <div className="card" style={{ padding: 44, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}>
-        <h2 className="serif" style={{ fontSize: 24, fontWeight: 500 }}>Relatório indisponível</h2>
+        <h2 className="serif" style={{ fontSize: 24, fontWeight: 500 }}>{t('relatorio.unavailableTitle')}</h2>
         <p style={{ fontSize: 14, color: 'var(--muted)', maxWidth: 420 }}>
-          Faça o teste DISC para gerar seu relatório completo — perfil, matriz de Kraljic e exportação em PDF.
+          {t('relatorio.unavailableBody')}
         </p>
         <button className="btn btn-primary" onClick={function () { go('teste'); }}>
-          Fazer o teste DISC <Ic.Arrow s={14} />
+          {t('relatorio.takeTest')} <Ic.Arrow s={14} />
         </button>
       </div>
     );
@@ -161,22 +191,38 @@ function RelatorioScreen({ go, user }) {
   const mainColor = REL_DISC_COLORS[data.primary];
   const profile = data.profile;
   const kr = data.kraljic;
+  // Labels traduzidos para o donut e legenda
+  const primaryLabel = t('disc.' + data.primary + '.full');
   const donutData = data.composition.map(function (c) {
-    return { key: c.key, label: c.full, value: c.value, color: c.color };
+    return { key: c.key, label: t('disc.' + c.key + '.full'), value: c.value, color: c.color };
   });
 
-  function exportPDF() { window.exportReportPDF(data); }
+  function exportPDF() {
+    window.exportReportPDF(data);
+    persistOwnReport(user);
+  }
+
+  // Estrutura PT-BR-resolved do profile preservada (Fase 2 traduzirá o conteúdo).
+  // Helpers para o blurb da seção 1 (formato com strong/em via interpolação).
+  const secondaryPart = profile.secondary ? t('relatorio.secondaryAnd', { sec: profile.secondary }) : '';
+  const blurbHtml = t('relatorio.profileBlurb', {
+    type: profile.buyerType,
+    primary: primaryLabel,
+    code: data.primary,
+    pct: data.predominance,
+    secondaryPart: secondaryPart,
+  });
 
   return (
     <div className="page-enter" style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <button className="btn btn-ghost" onClick={function () { go('relatorios'); }}>
-          <Ic.ArrowL s={14} /> Voltar aos relatórios
+          <Ic.ArrowL s={14} /> {t('relatorio.back')}
         </button>
         <div style={{ display: 'flex', gap: 10 }}>
-          <button className="btn btn-secondary" onClick={exportPDF}><Ic.Pdf s={14} /> Exportar PDF</button>
-          <button className="btn btn-primary" onClick={exportPDF}><Ic.Download s={14} /> Baixar relatório completo</button>
+          <button className="btn btn-secondary" onClick={exportPDF}><Ic.Pdf s={14} /> {t('relatorio.exportPDF')}</button>
+          <button className="btn btn-primary" onClick={exportPDF}><Ic.Download s={14} /> {t('relatorio.downloadFull')}</button>
         </div>
       </div>
 
@@ -185,58 +231,58 @@ function RelatorioScreen({ go, user }) {
         <div className="cover-image" />
         <div className="login-brand" style={{ marginBottom: 'auto' }}>
           <img src="assets/voratte-logo.webp" alt="Vorätte" style={{ height: 24 }} />
-          <div className="login-tag">DISC<br/>Compras &amp; Negociação</div>
+          <div className="login-tag">{t('app.brandTag').split('\n').map(function (line, i, arr) {
+            return <React.Fragment key={i}>{line}{i < arr.length - 1 ? <br/> : null}</React.Fragment>;
+          })}</div>
         </div>
 
         <div style={{ flex: 1 }} />
 
-        <div className="report-eyebrow">Relatório executivo · Vorätte</div>
+        <div className="report-eyebrow">{t('relatorio.eyebrow')}</div>
         <h1 className="report-title">
-          Perfil de Comprador<br/>
-          <em>DISC &amp; Matriz de Kraljic</em>
+          {t('relatorio.title')}<br/>
+          <em>{t('relatorio.titleEm')}</em>
         </h1>
 
         <div style={{ marginTop: 32, display: 'grid', gridTemplateColumns: 'repeat(4, auto)', gap: 40, fontSize: 12 }}>
           <div>
-            <div style={{ fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--brown-300)', fontWeight: 600 }}>Profissional</div>
+            <div style={{ fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--brown-300)', fontWeight: 600 }}>{t('relatorio.cover.professional')}</div>
             <div style={{ fontFamily: 'Fraunces, serif', fontSize: 22, fontWeight: 500, marginTop: 4 }}>{data.name}</div>
             <div style={{ color: 'var(--brown-300)', marginTop: 2 }}>{data.jobTitle || '—'}</div>
           </div>
           <div>
-            <div style={{ fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--brown-300)', fontWeight: 600 }}>Empresa</div>
+            <div style={{ fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--brown-300)', fontWeight: 600 }}>{t('relatorio.cover.company')}</div>
             <div style={{ fontFamily: 'Fraunces, serif', fontSize: 22, fontWeight: 500, marginTop: 4 }}>{data.company || '—'}</div>
             <div style={{ color: 'var(--brown-300)', marginTop: 2 }}>{data.email || ''}</div>
           </div>
           <div>
-            <div style={{ fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--brown-300)', fontWeight: 600 }}>Perfil</div>
+            <div style={{ fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--brown-300)', fontWeight: 600 }}>{t('relatorio.cover.profile')}</div>
             <div style={{ fontFamily: 'Fraunces, serif', fontSize: 22, fontWeight: 500, marginTop: 4, color: mainColor }}>
-              {data.code} · {data.primaryLabel}
+              {data.code} · {primaryLabel}
             </div>
-            <div style={{ color: 'var(--brown-300)', marginTop: 2 }}>{data.predominance}% predominância</div>
+            <div style={{ color: 'var(--brown-300)', marginTop: 2 }}>{t('relatorio.cover.predominance', { pct: data.predominance })}</div>
           </div>
           <div>
-            <div style={{ fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--brown-300)', fontWeight: 600 }}>Emitido em</div>
+            <div style={{ fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--brown-300)', fontWeight: 600 }}>{t('relatorio.cover.issuedOn')}</div>
             <div style={{ fontFamily: 'Fraunces, serif', fontSize: 22, fontWeight: 500, marginTop: 4 }}>{data.dateStr}</div>
-            <div style={{ color: 'var(--brown-300)', marginTop: 2 }}>Vorätte · DISC</div>
+            <div style={{ color: 'var(--brown-300)', marginTop: 2 }}>{t('relatorio.cover.discNote')}</div>
           </div>
         </div>
       </div>
 
       {/* SECTION 1 — análise comportamental */}
       <section className="card" style={{ padding: 36 }}>
-        <SectionLabel num="01" label="Análise comportamental" />
+        <SectionLabel num="01" label={t('relatorio.sec01')} />
         <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: 36, alignItems: 'center' }}>
           <Donut size={220} stroke={26} data={donutData}
-            center={<><div className="letter" style={{ color: mainColor }}>{data.primary}</div><div className="label">{data.primaryLabel}</div></>}
+            center={<><div className="letter" style={{ color: mainColor }}>{data.primary}</div><div className="label">{primaryLabel}</div></>}
           />
           <div>
             <h2 className="serif" style={{ fontSize: 28, fontWeight: 500, lineHeight: 1.15, letterSpacing: '-0.015em', marginBottom: 12 }}>
-              Perfil <em style={{ color: mainColor }}>{profile.label}</em>
+              {t('relatorio.profileLine')} <em style={{ color: mainColor }}>{profile.label}</em>
             </h2>
-            <p style={{ fontSize: 14, color: 'var(--ink-soft)', lineHeight: 1.65, maxWidth: 580 }}>
-              {profile.buyerType}. Sua dimensão predominante é <strong>{data.primaryLabel} ({data.primary})</strong>,
-              com {data.predominance}% de composição{profile.secondary ? ' e traço secundário ' + profile.secondary : ''}.
-            </p>
+            <p style={{ fontSize: 14, color: 'var(--ink-soft)', lineHeight: 1.65, maxWidth: 580 }}
+               dangerouslySetInnerHTML={{ __html: blurbHtml }} />
             <div className="legend" style={{ marginTop: 22, maxWidth: 380 }}>
               {donutData.map(function (d) {
                 return (
@@ -254,16 +300,16 @@ function RelatorioScreen({ go, user }) {
 
       {/* SECTION 2 — o que move / o que trava */}
       <section className="card" style={{ padding: 36 }}>
-        <SectionLabel num="02" label="O que move & o que trava" />
+        <SectionLabel num="02" label={t('relatorio.sec02')} />
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
           <div>
-            <div className="serif" style={{ fontSize: 18, fontWeight: 600, marginBottom: 12 }}>O que move a compra</div>
+            <div className="serif" style={{ fontSize: 18, fontWeight: 600, marginBottom: 12 }}>{t('relatorio.movesTitle')}</div>
             {profile.motivators.map(function (s) {
               return <div className="list-row" key={s}><div className="bullet" /><span>{s}</span></div>;
             })}
           </div>
           <div>
-            <div className="serif" style={{ fontSize: 18, fontWeight: 600, marginBottom: 12 }}>O que trava a decisão</div>
+            <div className="serif" style={{ fontSize: 18, fontWeight: 600, marginBottom: 12 }}>{t('relatorio.brakesTitle')}</div>
             {profile.fears.map(function (s) {
               return <div className="list-row" key={s}><div className="bullet" style={{ background: 'var(--disc-d)' }} /><span>{s}</span></div>;
             })}
@@ -273,24 +319,24 @@ function RelatorioScreen({ go, user }) {
 
       {/* SECTION 3 — Kraljic */}
       <section className="card" style={{ padding: 36 }}>
-        <SectionLabel num="03" label="Matriz de Kraljic — posicionamento" />
+        <SectionLabel num="03" label={t('relatorio.sec03')} />
         <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: 36, alignItems: 'center' }}>
           <RelKraljicMatrix kr={kr} />
           <div>
             <div className="badge badge-brown" style={{ marginBottom: 10 }}>{kr.positionLabel}</div>
             <h2 className="serif" style={{ fontSize: 22, fontWeight: 500, marginBottom: 8 }}>
-              Comprador {kr.label}
+              {t('relatorio.buyerLabel', { label: kr.label })}
             </h2>
             <p style={{ fontSize: 13.5, color: 'var(--ink-soft)', lineHeight: 1.65, marginBottom: 14, maxWidth: 540 }}>
               {kr.buyerPosture}
             </p>
             <div style={{ display: 'flex', gap: 10 }}>
               <div className="stat" style={{ flex: 1 }}>
-                <div className="stat-label">Impacto financeiro</div>
+                <div className="stat-label">{t('relatorio.financialImpact')}</div>
                 <div className="stat-value" style={{ fontSize: 22 }}>{kr.axis.impactoFinanceiro}</div>
               </div>
               <div className="stat" style={{ flex: 1 }}>
-                <div className="stat-label">Risco de suprimento</div>
+                <div className="stat-label">{t('relatorio.supplyRisk')}</div>
                 <div className="stat-value" style={{ fontSize: 22 }}>{kr.axis.riscoSuprimento}</div>
               </div>
             </div>
@@ -300,16 +346,16 @@ function RelatorioScreen({ go, user }) {
 
       {/* SECTION 4 — leitura completa do quadrante */}
       <section className="card" style={{ padding: 36 }}>
-        <SectionLabel num="04" label="Leitura completa do quadrante" />
+        <SectionLabel num="04" label={t('relatorio.sec04')} />
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 20 }}>
           <div>
-            <div className="serif" style={{ fontSize: 17, fontWeight: 600, marginBottom: 10 }}>O que você quer do fornecedor</div>
+            <div className="serif" style={{ fontSize: 17, fontWeight: 600, marginBottom: 10 }}>{t('relatorio.wantsTitle')}</div>
             {kr.whatHeWants.map(function (s) {
               return <div className="list-row" key={s}><div className="bullet" /><span>{s}</span></div>;
             })}
           </div>
           <div>
-            <div className="serif" style={{ fontSize: 17, fontWeight: 600, marginBottom: 10 }}>O que evitar com você</div>
+            <div className="serif" style={{ fontSize: 17, fontWeight: 600, marginBottom: 10 }}>{t('relatorio.avoidTitle')}</div>
             {kr.whatToAvoid.map(function (s) {
               return <div className="list-row" key={s}><div className="bullet" style={{ background: 'var(--disc-d)' }} /><span>{s}</span></div>;
             })}
@@ -317,10 +363,10 @@ function RelatorioScreen({ go, user }) {
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
           {[
-            ['Poder de negociação', kr.negotiationLeverage],
-            ['Foco da proposta', kr.proposalFocus],
-            ['Estilo de contrato', kr.contractStyle],
-            ['Risco para o vendedor', kr.riskForVendor],
+            [t('relatorio.metricLeverage'), kr.negotiationLeverage],
+            [t('relatorio.metricProposal'), kr.proposalFocus],
+            [t('relatorio.metricContract'), kr.contractStyle],
+            [t('relatorio.metricRisk'),     kr.riskForVendor],
           ].map(function (row) {
             return (
               <div key={row[0]} style={{ padding: 16, borderRadius: 12, background: 'var(--paper-warm)', border: '1px solid var(--line)' }}>
@@ -334,7 +380,7 @@ function RelatorioScreen({ go, user }) {
 
       {/* SECTION 5 — recomendações de abordagem */}
       <section className="card" style={{ padding: 36 }}>
-        <SectionLabel num="05" label="Recomendações de abordagem" />
+        <SectionLabel num="05" label={t('relatorio.sec05')} />
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           {profile.salesApproach.map(function (r, i) {
             return (
@@ -346,7 +392,11 @@ function RelatorioScreen({ go, user }) {
           })}
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginTop: 18 }}>
-          {[['Tom ideal', profile.pitchTone], ['Fechamento', profile.closingStrategy], ['Objeções', profile.objectionHandling]].map(function (row) {
+          {[
+            [t('relatorio.toneIdeal'), profile.pitchTone],
+            [t('relatorio.closing'),   profile.closingStrategy],
+            [t('relatorio.objections'),profile.objectionHandling],
+          ].map(function (row) {
             return (
               <div key={row[0]} style={{ padding: 14, background: 'var(--paper-warm)', borderRadius: 10, border: '1px solid var(--line)' }}>
                 <div style={{ fontSize: 10.5, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--muted)', fontWeight: 700, marginBottom: 4 }}>{row[0]}</div>
@@ -358,8 +408,8 @@ function RelatorioScreen({ go, user }) {
       </section>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 8px', fontSize: 11.5, color: 'var(--muted)' }}>
-        <span>Relatório gerado em {data.dateStr} · Vorätte</span>
-        <button className="btn btn-secondary" onClick={exportPDF}><Ic.Pdf s={14} /> Exportar este relatório em PDF</button>
+        <span>{t('relatorio.footer', { date: data.dateStr })}</span>
+        <button className="btn btn-secondary" onClick={exportPDF}><Ic.Pdf s={14} /> {t('relatorio.footerExport')}</button>
       </div>
     </div>
   );
@@ -370,14 +420,14 @@ function RelKraljicMatrix({ kr }) {
   const x = kr.axis.riscoSuprimento;
   const y = kr.axis.impactoFinanceiro;
   const cells = [
-    { id: 'alavancagem', dim: 'D', name: 'Alavancagem' },
-    { id: 'estrategico', dim: 'I', name: 'Estratégico' },
-    { id: 'nao_criticos', dim: 'C', name: 'Não-críticos' },
-    { id: 'gargalo', dim: 'S', name: 'Gargalo' },
+    { id: 'alavancagem',  dim: 'D', nameKey: 'relatorio.cellAlavancagem' },
+    { id: 'estrategico',  dim: 'I', nameKey: 'relatorio.cellEstrategico' },
+    { id: 'nao_criticos', dim: 'C', nameKey: 'relatorio.cellNaoCriticos' },
+    { id: 'gargalo',      dim: 'S', nameKey: 'relatorio.cellGargalo' },
   ];
   return (
     <div>
-      <div style={{ fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--muted)', fontWeight: 600, marginBottom: 4 }}>↑ Impacto financeiro</div>
+      <div style={{ fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--muted)', fontWeight: 600, marginBottom: 4 }}>{t('relatorio.matrixAxisY')}</div>
       <div style={{ position: 'relative', display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', aspectRatio: '1.25 / 1' }}>
         {cells.map(function (c) {
           const mine = kr.dominantQuadrant === c.id;
@@ -388,7 +438,7 @@ function RelKraljicMatrix({ kr }) {
               padding: 10, display: 'flex', flexDirection: 'column', gap: 3,
             }}>
               <div className={'disc-tile disc-' + c.dim.toLowerCase()} style={{ width: 26, height: 26, fontSize: 13 }}>{c.dim}</div>
-              <div style={{ fontSize: 12, fontWeight: 600 }}>{c.name}</div>
+              <div style={{ fontSize: 12, fontWeight: 600 }}>{t(c.nameKey)}</div>
             </div>
           );
         })}
@@ -399,7 +449,7 @@ function RelKraljicMatrix({ kr }) {
           boxShadow: '0 0 0 3px var(--brown-700)',
         }} />
       </div>
-      <div style={{ fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--muted)', fontWeight: 600, marginTop: 4, textAlign: 'right' }}>Risco de suprimento →</div>
+      <div style={{ fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--muted)', fontWeight: 600, marginTop: 4, textAlign: 'right' }}>{t('relatorio.matrixAxisX')}</div>
     </div>
   );
 }
@@ -416,6 +466,7 @@ function SectionLabel({ num, label }) {
 
 // ============ PLANO ============
 function PlanoScreen({ go, user }) {
+  useLang();
   const firstName = user && user.name ? user.name.split(' ')[0] : '';
   const items = [];
 
@@ -426,13 +477,13 @@ function PlanoScreen({ go, user }) {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 24, alignItems: 'center' }}>
           <div>
             <div style={{ fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--brown-300)', fontWeight: 600 }}>
-              Trilha personalizada
+              {t('plano.eyebrow')}
             </div>
-            <h2 className="serif" style={{ fontSize: 28, fontWeight: 500, lineHeight: 1.15, letterSpacing: '-0.015em', marginTop: 8 }}>
-              {firstName ? <>Seu plano de desenvolvimento, <em style={{ color: 'var(--brown-300)' }}>{firstName}</em></> : 'Seu plano de desenvolvimento'}
-            </h2>
+            <h2 className="serif" style={{ fontSize: 28, fontWeight: 500, lineHeight: 1.15, letterSpacing: '-0.015em', marginTop: 8 }}
+                dangerouslySetInnerHTML={{ __html: firstName ? t('plano.titleWith', { name: firstName }) : t('plano.titleNoName') }}
+            />
             <p style={{ fontSize: 13.5, color: 'var(--brown-200)', marginTop: 8, maxWidth: 560 }}>
-              Em breve seu plano será construído a partir do seu perfil DISC e do seu contexto profissional.
+              {t('plano.lede')}
             </p>
           </div>
         </div>
@@ -440,10 +491,10 @@ function PlanoScreen({ go, user }) {
 
       {items.length === 0 ? (
         <div className="card" style={{ padding: 36, textAlign: 'center', color: 'var(--muted)', fontSize: 13.5 }}>
-          Seu plano personalizado estará disponível em breve. Conclua o teste DISC para liberar as primeiras recomendações.
+          {t('plano.emptyMsg')}
           <div style={{ marginTop: 16 }}>
             <button className="btn btn-primary" onClick={() => go('teste')}>
-              <Ic.Disc s={14}/> Ir para o teste DISC
+              <Ic.Disc s={14}/> {t('plano.goTest')}
             </button>
           </div>
         </div>
@@ -468,7 +519,7 @@ function PlanoScreen({ go, user }) {
               </div>
               <div className="divider" style={{ margin: '18px 0 14px' }} />
               <div style={{ fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--muted)', fontWeight: 600, marginBottom: 10 }}>
-                Próximas ações
+                {t('plano.nextActions')}
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {it.actions.map((a, i) => (
@@ -488,6 +539,7 @@ function PlanoScreen({ go, user }) {
 
 // ============ COMPARAÇÕES ============
 function ComparacoesScreen({ go, user }) {
+  useLang();
   var [team, setTeam]       = React.useState([]);
   var [loading, setLoading] = React.useState(true);
 
@@ -505,7 +557,7 @@ function ComparacoesScreen({ go, user }) {
     team.forEach(function (m) { if (counts.hasOwnProperty(m.main)) counts[m.main] += 1; });
     const total = counts.D + counts.I + counts.S + counts.C;
     if (!total) return null;
-    const labels = { D: 'Dominante', I: 'Influente', S: 'Estável', C: 'Conforme' };
+    const labels = { D: t('disc.D.label'), I: t('disc.I.label'), S: t('disc.S.label'), C: t('disc.C.label') };
     const top = ['D','I','S','C'].reduce(function (a, b) { return counts[a] >= counts[b] ? a : b; });
     const bottom = ['D','I','S','C'].reduce(function (a, b) { return counts[a] <= counts[b] ? a : b; });
     return {
@@ -517,7 +569,7 @@ function ComparacoesScreen({ go, user }) {
         S: Math.round(counts.S/total*100), C: Math.round(counts.C/total*100),
       },
     };
-  }, [team]);
+  }, [team, window.getLang()]);
 
   return (
     <div className="page-enter" style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
@@ -525,36 +577,36 @@ function ComparacoesScreen({ go, user }) {
       <div className="card" style={{ padding: 24 }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr', gap: 20 }}>
           <div>
-            <div className="card-title" style={{ marginBottom: 2 }}>Comparativo da sua equipe</div>
+            <div className="card-title" style={{ marginBottom: 2 }}>{t('comp.summary')}</div>
             <div className="card-sub" style={{ marginBottom: 0 }}>
-              {loading ? 'Carregando…' : (team.length ? team.length + ' colaboradores avaliados' : 'Sem colaboradores avaliados ainda')}
+              {loading ? t('comp.loadingTeam') : (team.length ? t('comp.teamAvaliados', { n: team.length }) : t('comp.teamEmpty'))}
             </div>
           </div>
-          <Mini label="Mais comum" value={dist ? dist.mostCommonLabel : '—'} sub={dist ? dist.mostCommonCount + ' colaborador(es)' : '—'} />
-          <Mini label="Mais raro"  value={dist ? dist.rarestLabel    : '—'} sub={dist ? dist.rarestCount    + ' colaborador(es)' : '—'} />
+          <Mini label={t('comp.mostCommon')} value={dist ? dist.mostCommonLabel : '—'} sub={dist ? t('comp.peopleSingular', { n: dist.mostCommonCount }) : '—'} />
+          <Mini label={t('comp.rarest')}     value={dist ? dist.rarestLabel    : '—'} sub={dist ? t('comp.peopleSingular', { n: dist.rarestCount    }) : '—'} />
         </div>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 16 }}>
         <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
           <div style={{ padding: '18px 24px', borderBottom: '1px solid var(--line)' }}>
-            <div className="card-title" style={{ marginBottom: 2 }}>Comparativo de perfis</div>
-            <div className="card-sub" style={{ marginBottom: 0 }}>Composição DISC por colaborador</div>
+            <div className="card-title" style={{ marginBottom: 2 }}>{t('comp.tableTitle')}</div>
+            <div className="card-sub" style={{ marginBottom: 0 }}>{t('comp.tableSub')}</div>
           </div>
           {loading ? (
-            <div style={{ padding: '48px 24px', textAlign: 'center', color: 'var(--muted)', fontSize: 13.5 }}>Carregando equipe…</div>
+            <div style={{ padding: '48px 24px', textAlign: 'center', color: 'var(--muted)', fontSize: 13.5 }}>{t('comp.tableLoading')}</div>
           ) : team.length === 0 ? (
             <div style={{ padding: '48px 24px', textAlign: 'center', color: 'var(--muted)', fontSize: 13.5 }}>
-              Comparações disponíveis quando você fizer parte de uma equipe com avaliações concluídas.
+              {t('comp.tableEmpty')}
             </div>
           ) : (
             <table className="tbl">
               <thead>
                 <tr>
-                  <th style={{ paddingLeft: 24 }}>Colaborador</th>
-                  <th>Perfil</th>
-                  <th>Composição DISC</th>
-                  <th style={{ paddingRight: 24, textAlign: 'right' }}>Ações</th>
+                  <th style={{ paddingLeft: 24 }}>{t('comp.col.person')}</th>
+                  <th>{t('comp.col.profile')}</th>
+                  <th>{t('comp.col.disc')}</th>
+                  <th style={{ paddingRight: 24, textAlign: 'right' }}>{t('common.actions')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -574,7 +626,7 @@ function ComparacoesScreen({ go, user }) {
                     <td>
                       <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
                         <div className={'disc-tile disc-' + p.main.toLowerCase()} style={{ width: 30, height: 30, fontSize: 14 }}>{p.main}</div>
-                        <span style={{ fontSize: 13, fontWeight: 600 }}>{ {D:'Dominante',I:'Influente',S:'Estável',C:'Conforme'}[p.main] }</span>
+                        <span style={{ fontSize: 13, fontWeight: 600 }}>{t('disc.' + p.main + '.label')}</span>
                       </div>
                     </td>
                     <td style={{ minWidth: 280 }}>
@@ -602,11 +654,11 @@ function ComparacoesScreen({ go, user }) {
         </div>
 
         <div className="card">
-          <div className="card-title">Distribuição da equipe</div>
-          <div className="card-sub">Perfis predominantes</div>
+          <div className="card-title">{t('comp.distTitle')}</div>
+          <div className="card-sub">{t('comp.distSub')}</div>
           {!dist ? (
             <div style={{ padding: '24px 0', color: 'var(--muted)', fontSize: 13 }}>
-              Sem dados suficientes.
+              {t('comp.distEmpty')}
             </div>
           ) : (
             <>
@@ -615,12 +667,12 @@ function ComparacoesScreen({ go, user }) {
                 { key: 'I', value: dist.pct.I, color: 'var(--disc-i)' },
                 { key: 'S', value: dist.pct.S, color: 'var(--disc-s)' },
                 { key: 'C', value: dist.pct.C, color: 'var(--disc-c)' },
-              ]} center={<><div className="letter" style={{ fontSize: 28 }}>{dist.total}</div><div className="label">{dist.total === 1 ? 'Pessoa' : 'Pessoas'}</div></>} />
+              ]} center={<><div className="letter" style={{ fontSize: 28 }}>{dist.total}</div><div className="label">{dist.total === 1 ? t('comp.donutPerson') : t('comp.donutPeople')}</div></>} />
               <div className="legend" style={{ marginTop: 18 }}>
-                <div className="legend-row"><div className="sw" style={{ background: 'var(--disc-d)' }}/><span>Dominante</span><span className="pct">{dist.counts.D}</span></div>
-                <div className="legend-row"><div className="sw" style={{ background: 'var(--disc-i)' }}/><span>Influente</span><span className="pct">{dist.counts.I}</span></div>
-                <div className="legend-row"><div className="sw" style={{ background: 'var(--disc-s)' }}/><span>Estável</span><span className="pct">{dist.counts.S}</span></div>
-                <div className="legend-row"><div className="sw" style={{ background: 'var(--disc-c)' }}/><span>Conforme</span><span className="pct">{dist.counts.C}</span></div>
+                <div className="legend-row"><div className="sw" style={{ background: 'var(--disc-d)' }}/><span>{t('disc.D.label')}</span><span className="pct">{dist.counts.D}</span></div>
+                <div className="legend-row"><div className="sw" style={{ background: 'var(--disc-i)' }}/><span>{t('disc.I.label')}</span><span className="pct">{dist.counts.I}</span></div>
+                <div className="legend-row"><div className="sw" style={{ background: 'var(--disc-s)' }}/><span>{t('disc.S.label')}</span><span className="pct">{dist.counts.S}</span></div>
+                <div className="legend-row"><div className="sw" style={{ background: 'var(--disc-c)' }}/><span>{t('disc.C.label')}</span><span className="pct">{dist.counts.C}</span></div>
               </div>
             </>
           )}
@@ -641,9 +693,8 @@ function Mini({ label, value, sub }) {
 }
 
 // ============ PERFIL ============
-const DISC_LABELS = { D: 'Dominante', I: 'Influente', S: 'Estável', C: 'Conforme' };
-
 function PerfilScreen({ go, user }) {
+  useLang();
   const u = user || {};
   const name = u.name || '—';
   const initials = u.name
@@ -654,14 +705,14 @@ function PerfilScreen({ go, user }) {
   const subtitleParts = [];
   if (u.jobTitle)    subtitleParts.push(u.jobTitle);
   if (u.companyName) subtitleParts.push(u.companyName);
-  const subtitle = subtitleParts.join(' · ') || 'Sem informações de cargo cadastradas';
+  const subtitle = subtitleParts.join(' · ') || t('perfil.noJob');
 
   // Tabela de dados profissionais: somente campos com valor real
   const profileFields = [];
-  if (u.name)        profileFields.push(['Nome completo', u.name]);
-  if (u.email)       profileFields.push(['E-mail', u.email]);
-  if (u.companyName) profileFields.push(['Empresa', u.companyName]);
-  if (u.jobTitle)    profileFields.push(['Cargo', u.jobTitle]);
+  if (u.name)        profileFields.push([t('perfil.field.name'),    u.name]);
+  if (u.email)       profileFields.push([t('perfil.field.email'),   u.email]);
+  if (u.companyName) profileFields.push([t('perfil.field.company'), u.companyName]);
+  if (u.jobTitle)    profileFields.push([t('perfil.field.job'),     u.jobTitle]);
 
   return (
     <div className="page-enter" style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
@@ -677,7 +728,9 @@ function PerfilScreen({ go, user }) {
             {(discMain || u.companyName) && (
               <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
                 {discMain && (
-                  <div className="badge badge-brown">Perfil {DISC_LABELS[discMain] || discMain} ({discMain})</div>
+                  <div className="badge badge-brown">
+                    {t('perfil.badgeProfile', { label: t('disc.' + discMain + '.label'), code: discMain })}
+                  </div>
                 )}
                 {u.companyName && (
                   <div className="badge badge-outline">{u.companyName}</div>
@@ -685,16 +738,16 @@ function PerfilScreen({ go, user }) {
               </div>
             )}
           </div>
-          <button className="btn btn-secondary"><Ic.Settings s={14}/> Editar perfil</button>
+          <button className="btn btn-secondary"><Ic.Settings s={14}/> {t('perfil.editBtn')}</button>
         </div>
       </div>
 
       <div className="card">
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 24, marginBottom: 18 }}>
           <div>
-            <div className="card-title">Aparência</div>
+            <div className="card-title">{t('perfil.appearance')}</div>
             <div className="card-sub" style={{ marginBottom: 0 }}>
-              Escolha como a plataforma vai se apresentar. Sua preferência fica salva neste dispositivo.
+              {t('perfil.appearanceSub')}
             </div>
           </div>
           <div style={{ flexShrink: 0 }}>
@@ -725,8 +778,8 @@ function PerfilScreen({ go, user }) {
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <div className="tp-icon"><Ic.Sun s={14} /></div>
                 <div>
-                  <div>Modo claro</div>
-                  <div style={{ fontSize: 11.5, color: 'var(--muted)', fontWeight: 500 }}>Padrão · luminoso e leve</div>
+                  <div>{t('perfil.themeLight')}</div>
+                  <div style={{ fontSize: 11.5, color: 'var(--muted)', fontWeight: 500 }}>{t('perfil.themeLightSub')}</div>
                 </div>
               </div>
               <div className="tp-check"><Ic.Check s={12} /></div>
@@ -755,8 +808,8 @@ function PerfilScreen({ go, user }) {
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <div className="tp-icon"><Ic.Moon s={14} /></div>
                 <div>
-                  <div>Modo escuro</div>
-                  <div style={{ fontSize: 11.5, color: 'var(--muted)', fontWeight: 500 }}>Quente · descansa a vista</div>
+                  <div>{t('perfil.themeDark')}</div>
+                  <div style={{ fontSize: 11.5, color: 'var(--muted)', fontWeight: 500 }}>{t('perfil.themeDarkSub')}</div>
                 </div>
               </div>
               <div className="tp-check"><Ic.Check s={12} /></div>
@@ -767,11 +820,11 @@ function PerfilScreen({ go, user }) {
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
         <div className="card">
-          <div className="card-title">Dados profissionais</div>
-          <div className="card-sub">Contexto considerado nas análises</div>
+          <div className="card-title">{t('perfil.profDataTitle')}</div>
+          <div className="card-sub">{t('perfil.profDataSub')}</div>
           {profileFields.length === 0 ? (
             <div style={{ padding: '20px 0', color: 'var(--muted)', fontSize: 13.5 }}>
-              Sem dados cadastrados. Use “Editar perfil” para preencher.
+              {t('perfil.profDataEmpty')}
             </div>
           ) : profileFields.map(function (f, i) {
             return (
@@ -784,15 +837,15 @@ function PerfilScreen({ go, user }) {
         </div>
 
         <div className="card">
-          <div className="card-title">Histórico de avaliações</div>
-          <div className="card-sub">Evolução do seu perfil ao longo do tempo</div>
+          <div className="card-title">{t('perfil.history')}</div>
+          <div className="card-sub">{t('perfil.historySub')}</div>
           <div style={{ padding: '24px 0', color: 'var(--muted)', fontSize: 13.5 }}>
-            Suas avaliações anteriores aparecerão aqui.
+            {t('perfil.historyEmpty')}
           </div>
 
           <div style={{ marginTop: 18 }}>
             <button className="btn btn-primary btn-block" onClick={() => go('teste')}>
-              {discMain ? 'Refazer avaliação DISC' : 'Fazer avaliação DISC'} <Ic.Arrow s={14}/>
+              {discMain ? t('perfil.redoTest') : t('perfil.doTest')} <Ic.Arrow s={14}/>
             </button>
           </div>
         </div>

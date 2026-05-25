@@ -35,20 +35,22 @@ window.useTheme = useTheme;
 // Pill toggle reutilizável (Sol / Lua) — usado na topbar
 function ThemeTogglePill() {
   const [theme, setTheme] = useTheme();
+  // Necessário useLang para re-renderizar labels traduzidos
+  useLang();
   return (
-    <div className="theme-pill" data-mode={theme} title={theme === 'dark' ? 'Modo escuro ativo' : 'Modo claro ativo'}>
+    <div className="theme-pill" data-mode={theme} title={theme === 'dark' ? t('topbar.themeDarkActive') : t('topbar.themeLightActive')}>
       <span className="thumb" />
       <button
         className={theme === 'light' ? 'active' : ''}
         onClick={() => setTheme('light')}
-        aria-label="Modo claro"
+        aria-label={t('topbar.themeLight')}
       >
         <Ic.Sun s={15} />
       </button>
       <button
         className={theme === 'dark' ? 'active' : ''}
         onClick={() => setTheme('dark')}
-        aria-label="Modo escuro"
+        aria-label={t('topbar.themeDark')}
       >
         <Ic.Moon s={15} />
       </button>
@@ -57,90 +59,136 @@ function ThemeTogglePill() {
 }
 window.ThemeTogglePill = ThemeTogglePill;
 
-// Different sidebar navs per role
-const NAV_ALUNO = [
-  { key: 'dashboard',  label: 'Início',                    icon: <Ic.Dashboard/>, group: 'Minha jornada' },
-  { key: 'teste',      label: 'Teste DISC',                icon: <Ic.Disc/>,      group: 'Minha jornada' },
-  { key: 'analise',    label: 'Minha análise',             icon: <Ic.Target/>,    group: 'Minha jornada' },
-  { key: 'cruzamento', label: 'Cruzamento de perfis',      icon: <Ic.Compare/>,   group: 'Minha jornada' },
-  { key: 'kraljic',    label: 'Matriz Kraljic',            icon: <Ic.Kraljic/>,   group: 'Estratégia' },
-  { key: 'objecoes',   label: 'Objeções',                  icon: <Ic.Object/>,    group: 'Estratégia' },
-  { key: 'plano',      label: 'Plano de desenvolvimento',  icon: <Ic.Plan/>,      group: 'Desenvolvimento' },
-  { key: 'relatorios', label: 'Meus relatórios',           icon: <Ic.Report/>,    group: 'Documentos' },
-  { key: 'perfil',     label: 'Meu perfil',                icon: <Ic.User/>,      group: 'Conta' },
-];
+// Seletor de idioma — botão globo + popover com chips PT / ES / EN
+function LangPicker() {
+  const [lang, setLang] = useLang();
+  const [open, setOpen] = React.useState(false);
+  const ref = React.useRef(null);
+  React.useEffect(() => {
+    if (!open) return;
+    function onDoc(e) { if (ref.current && !ref.current.contains(e.target)) setOpen(false); }
+    function onKey(e) { if (e.key === 'Escape') setOpen(false); }
+    document.addEventListener('mousedown', onDoc);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDoc);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+  const langs = [
+    { code: 'ptBR', short: 'PT', labelKey: 'topbar.lang.ptBR' },
+    { code: 'es',   short: 'ES', labelKey: 'topbar.lang.es' },
+    { code: 'en',   short: 'EN', labelKey: 'topbar.lang.en' },
+  ];
+  return (
+    <div className="lang-wrap" ref={ref}>
+      <button
+        className="icon-btn"
+        onClick={() => setOpen(o => !o)}
+        aria-label={t('topbar.changeLanguage')}
+        aria-expanded={open}
+        title={t('topbar.changeLanguage')}
+      >
+        <Ic.Globe s={18}/>
+      </button>
+      {open && (
+        <div className="lang-popover" role="menu">
+          {langs.map(l => (
+            <button
+              key={l.code}
+              role="menuitemradio"
+              aria-checked={lang === l.code}
+              className={'lang-chip' + (lang === l.code ? ' active' : '')}
+              onClick={() => { setLang(l.code); setOpen(false); }}
+            >
+              <span className="lang-chip-code serif">{l.short}</span>
+              <span className="lang-chip-label">{t(l.labelKey)}</span>
+              {lang === l.code && <Ic.Check s={14}/>}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+window.LangPicker = LangPicker;
 
-const NAV_GESTOR = [
-  { key: 'dashboard',  label: 'Painel da equipe',          icon: <Ic.Dashboard/>, group: 'Gestão' },
-  { key: 'equipe',     label: 'Minha equipe',              icon: <Ic.User/>,      group: 'Gestão' },
-  { key: 'comparacoes',label: 'Comparativo de perfis',     icon: <Ic.Compare/>,   group: 'Gestão' },
-  { key: 'mapa',       label: 'Mapa comportamental',       icon: <Ic.Kraljic/>,   group: 'Gestão' },
-  { key: 'kraljic',    label: 'Matriz Kraljic',            icon: <Ic.Diamond/>,   group: 'Estratégia' },
-  { key: 'objecoes',   label: 'Biblioteca de objeções',    icon: <Ic.Object/>,    group: 'Estratégia' },
-  { key: 'relatorios', label: 'Relatórios da equipe',      icon: <Ic.Report/>,    group: 'Documentos' },
-  { key: 'analise',    label: 'Meu próprio DISC',          icon: <Ic.Disc/>,      group: 'Conta' },
-  { key: 'perfil',     label: 'Meu perfil',                icon: <Ic.User/>,      group: 'Conta' },
-];
+// Sidebar navs por papel — funções para t() ser resolvido no idioma atual no render
+function buildNavAluno() {
+  return [
+    { key: 'dashboard',  label: t('nav.dashboard'),    icon: <Ic.Dashboard/>, group: t('navGroup.minhaJornada') },
+    { key: 'teste',      label: t('nav.teste'),        icon: <Ic.Disc/>,      group: t('navGroup.minhaJornada') },
+    { key: 'analise',    label: t('nav.analise'),      icon: <Ic.Target/>,    group: t('navGroup.minhaJornada') },
+    { key: 'cruzamento', label: t('nav.cruzamento'),   icon: <Ic.Compare/>,   group: t('navGroup.minhaJornada') },
+    { key: 'kraljic',    label: t('nav.kraljic'),      icon: <Ic.Kraljic/>,   group: t('navGroup.estrategia') },
+    { key: 'objecoes',   label: t('nav.objecoes'),     icon: <Ic.Object/>,    group: t('navGroup.estrategia') },
+    { key: 'plano',      label: t('nav.plano'),        icon: <Ic.Plan/>,      group: t('navGroup.desenvolvimento') },
+    { key: 'relatorios', label: t('nav.relatorios'),   icon: <Ic.Report/>,    group: t('navGroup.documentos') },
+    { key: 'perfil',     label: t('nav.perfil'),       icon: <Ic.User/>,      group: t('navGroup.conta') },
+  ];
+}
+function buildNavGestor() {
+  return [
+    { key: 'dashboard',   label: t('nav.gestor.dashboard'),    icon: <Ic.Dashboard/>, group: t('navGroup.gestao') },
+    { key: 'equipe',      label: t('nav.gestor.equipe'),       icon: <Ic.User/>,      group: t('navGroup.gestao') },
+    { key: 'comparacoes', label: t('nav.gestor.comparacoes'),  icon: <Ic.Compare/>,   group: t('navGroup.gestao') },
+    { key: 'mapa',        label: t('nav.gestor.mapa'),         icon: <Ic.Kraljic/>,   group: t('navGroup.gestao') },
+    { key: 'kraljic',     label: t('nav.kraljic'),             icon: <Ic.Diamond/>,   group: t('navGroup.estrategia') },
+    { key: 'objecoes',    label: t('nav.gestor.objecoes'),     icon: <Ic.Object/>,    group: t('navGroup.estrategia') },
+    { key: 'relatorios',  label: t('nav.gestor.relatorios'),   icon: <Ic.Report/>,    group: t('navGroup.documentos') },
+    { key: 'analise',     label: t('nav.gestor.analise'),      icon: <Ic.Disc/>,      group: t('navGroup.conta') },
+    { key: 'perfil',      label: t('nav.perfil'),              icon: <Ic.User/>,      group: t('navGroup.conta') },
+  ];
+}
+function buildNavAdmin() {
+  return [
+    { key: 'dashboard',    label: t('nav.admin.dashboard'),    icon: <Ic.Dashboard/>, group: t('navGroup.console') },
+    { key: 'usuarios',     label: t('nav.admin.usuarios'),     icon: <Ic.User/>,      group: t('navGroup.console') },
+    { key: 'empresas',     label: t('nav.admin.empresas'),     icon: <Ic.Kraljic/>,   group: t('navGroup.console') },
+    { key: 'gestores',     label: t('nav.admin.gestores'),     icon: <Ic.Shield/>,    group: t('navGroup.console') },
+    { key: 'estatisticas', label: t('nav.admin.estatisticas'), icon: <Ic.Chart/>,     group: t('navGroup.analytics') },
+    { key: 'relatorios',   label: t('nav.admin.relatorios'),   icon: <Ic.Report/>,    group: t('navGroup.analytics') },
+    { key: 'permissoes',   label: t('nav.admin.permissoes'),   icon: <Ic.Lock/>,      group: t('navGroup.config') },
+    { key: 'perfil',       label: t('nav.admin.perfil'),       icon: <Ic.Settings/>,  group: t('navGroup.conta') },
+  ];
+}
 
-const NAV_ADMIN = [
-  { key: 'dashboard',    label: 'Visão global',            icon: <Ic.Dashboard/>, group: 'Console' },
-  { key: 'usuarios',     label: 'Usuários',                icon: <Ic.User/>,      group: 'Console' },
-  { key: 'empresas',     label: 'Empresas',                icon: <Ic.Kraljic/>,   group: 'Console' },
-  { key: 'gestores',     label: 'Gestores',                icon: <Ic.Shield/>,    group: 'Console' },
-  { key: 'estatisticas', label: 'Estatísticas globais',    icon: <Ic.Chart/>,     group: 'Analytics' },
-  { key: 'relatorios',   label: 'Todos os relatórios',     icon: <Ic.Report/>,    group: 'Analytics' },
-  { key: 'permissoes',   label: 'Permissões',              icon: <Ic.Lock/>,      group: 'Configuração' },
-  { key: 'perfil',       label: 'Minha conta',             icon: <Ic.Settings/>,  group: 'Conta' },
-];
-
-const PAGE_META = {
-  // shared
-  perfil:        { title: 'Meu perfil',                    sub: 'Informações da sua conta Vorätte' },
-  kraljic:       { title: 'Matriz de Kraljic',             sub: 'Analise categorias e estratégias' },
-  objecoes:      { title: 'Objeções por perfil',           sub: 'Como contornar cada estilo' },
-  relatorio:     { title: 'Relatório DISC completo',       sub: 'Documento executivo · 24 páginas' },
-
-  // aluno
-  aluno: {
-    dashboard:   { title: 'Bem-vindo',                     sub: 'Seu painel estratégico Vorätte' },
-    teste:       { title: 'Teste DISC',                    sub: 'Responda às afirmações abaixo' },
-    analise:     { title: 'Análise completa do seu perfil DISC', sub: 'Entenda seu comportamento e potencial' },
-    cruzamento:  { title: 'Como você lida com outros perfis',    sub: 'Estratégias para cada perfil' },
-    plano:       { title: 'Plano de desenvolvimento',      sub: 'Sua trilha personalizada' },
-    relatorios:  { title: 'Meus relatórios',               sub: 'Seus documentos pessoais' },
-  },
-  gestor: {
-    dashboard:   { title: 'Painel da equipe',              sub: 'Visão consolidada do seu time' },
-    equipe:      { title: 'Minha equipe',                  sub: '' },
-    comparacoes: { title: 'Comparativo de perfis',         sub: 'Como sua equipe se distribui' },
-    mapa:        { title: 'Mapa comportamental',           sub: 'DISC × cargo do seu time' },
-    relatorios:  { title: 'Relatórios da equipe',          sub: 'Documentos dos seus colaboradores' },
-    analise:     { title: 'Meu próprio perfil DISC',       sub: 'Sua análise individual' },
-  },
-  admin: {
-    dashboard:    { title: 'Visão global Vorätte',         sub: 'Console de administração' },
-    usuarios:     { title: 'Usuários',                     sub: '' },
-    empresas:     { title: 'Empresas',                     sub: '' },
-    gestores:     { title: 'Gestores',                     sub: '' },
-    estatisticas: { title: 'Estatísticas globais',         sub: 'Indicadores de uso e comportamento' },
-    relatorios:   { title: 'Todos os relatórios',          sub: '' },
-    permissoes:   { title: 'Permissões',                   sub: 'Configure o que cada papel pode fazer' },
-  },
-};
-
-const ROLE_PROFILES = {
-  aluno:    { name: '', role: 'Aluno',    initials: '·' },
-  gestor:   { name: '', role: 'Gestor',   initials: '·' },
-  admin:    { name: '', role: 'Admin Vorätte', initials: '·' },
-};
-
-const ROLE_LABELS = {
-  aluno:    'Aluno',
-  gestor:   'Gestor',
-  admin:    'Admin',
-};
+function buildPageMeta() {
+  return {
+    perfil:     { title: t('page.perfil.title'),    sub: t('page.perfil.sub') },
+    kraljic:    { title: t('page.kraljic.title'),   sub: t('page.kraljic.sub') },
+    objecoes:   { title: t('page.objecoes.title'),  sub: t('page.objecoes.sub') },
+    relatorio:  { title: t('page.relatorio.title'), sub: t('page.relatorio.sub') },
+    aluno: {
+      dashboard:  { title: t('page.aluno.dashboard.title'),   sub: t('page.aluno.dashboard.sub') },
+      teste:      { title: t('page.aluno.teste.title'),       sub: t('page.aluno.teste.sub') },
+      analise:    { title: t('page.aluno.analise.title'),     sub: t('page.aluno.analise.sub') },
+      cruzamento: { title: t('page.aluno.cruzamento.title'),  sub: t('page.aluno.cruzamento.sub') },
+      plano:      { title: t('page.aluno.plano.title'),       sub: t('page.aluno.plano.sub') },
+      relatorios: { title: t('page.aluno.relatorios.title'),  sub: t('page.aluno.relatorios.sub') },
+    },
+    gestor: {
+      dashboard:   { title: t('page.gestor.dashboard.title'),   sub: t('page.gestor.dashboard.sub') },
+      equipe:      { title: t('page.gestor.equipe.title'),      sub: t('page.gestor.equipe.sub') },
+      comparacoes: { title: t('page.gestor.comparacoes.title'), sub: t('page.gestor.comparacoes.sub') },
+      mapa:        { title: t('page.gestor.mapa.title'),        sub: t('page.gestor.mapa.sub') },
+      relatorios:  { title: t('page.gestor.relatorios.title'),  sub: t('page.gestor.relatorios.sub') },
+      analise:     { title: t('page.gestor.analise.title'),     sub: t('page.gestor.analise.sub') },
+    },
+    admin: {
+      dashboard:    { title: t('page.admin.dashboard.title'),    sub: t('page.admin.dashboard.sub') },
+      usuarios:     { title: t('page.admin.usuarios.title'),     sub: t('page.admin.usuarios.sub') },
+      empresas:     { title: t('page.admin.empresas.title'),     sub: t('page.admin.empresas.sub') },
+      gestores:     { title: t('page.admin.gestores.title'),     sub: t('page.admin.gestores.sub') },
+      estatisticas: { title: t('page.admin.estatisticas.title'), sub: t('page.admin.estatisticas.sub') },
+      relatorios:   { title: t('page.admin.relatorios.title'),   sub: t('page.admin.relatorios.sub') },
+      permissoes:   { title: t('page.admin.permissoes.title'),   sub: t('page.admin.permissoes.sub') },
+    },
+  };
+}
 
 function App() {
+  const [lang] = useLang();
   const [loggedIn, setLoggedIn] = React.useState(false);
   const [authLoading, setAuthLoading] = React.useState(true);
   const [currentUser, setCurrentUser] = React.useState(null);
@@ -165,7 +213,7 @@ function App() {
         setLoggedIn(true);
       } else {
         await window.fbLogout();
-        setAuthError('Conta não configurada. Fale com o administrador.');
+        setAuthError(t('auth.error.notConfigured'));
       }
     } catch (err) {
       console.error('Erro ao carregar perfil:', err);
@@ -186,6 +234,11 @@ function App() {
     });
   }, [loadProfile]);
 
+  // Mantém document.title sincronizado com o idioma
+  React.useEffect(function () {
+    document.title = t('app.title');
+  }, [lang]);
+
   // Admin pode trocar a visão sem alterar role real no Firestore.
   // Selecionar o próprio role desativa o modo demo.
   const switchRole = (r) => {
@@ -199,7 +252,7 @@ function App() {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: 'var(--paper)', flexDirection: 'column', gap: 20 }}>
         <img src="assets/voratte-logo.webp" alt="Vorätte" style={{ width: 64, opacity: 0.7 }} />
-        <div style={{ fontSize: 13, color: 'var(--muted)', letterSpacing: '0.06em' }}>Carregando…</div>
+        <div style={{ fontSize: 13, color: 'var(--muted)', letterSpacing: '0.06em' }}>{t('app.loading')}</div>
       </div>
     );
   }
@@ -211,24 +264,27 @@ function App() {
   const effectiveRole = viewAsRole || role;
   const isDemoMode = !!viewAsRole;
 
-  const nav = effectiveRole === 'gestor' ? NAV_GESTOR : effectiveRole === 'admin' ? NAV_ADMIN : NAV_ALUNO;
+  const nav = effectiveRole === 'gestor' ? buildNavGestor() : effectiveRole === 'admin' ? buildNavAdmin() : buildNavAluno();
+  const PAGE_META = buildPageMeta();
 
   // Sobrescreve título do dashboard com o nome real do usuário
   const firstName = currentUser && currentUser.name ? currentUser.name.split(' ')[0] : null;
   const baseMeta = (PAGE_META[effectiveRole] && PAGE_META[effectiveRole][route]) || PAGE_META[route] || { title: 'Vorätte', sub: '' };
   const meta = (route === 'dashboard' && firstName)
-    ? { ...baseMeta, title: 'Olá, ' + firstName }
+    ? { ...baseMeta, title: t('page.aluno.dashboard.greeting', { name: firstName }) }
     : baseMeta;
 
-  // Perfil exibido na sidebar: usa dados reais quando disponível, fallback para ROLE_PROFILES
-  const roleProfile = ROLE_PROFILES[effectiveRole] || ROLE_PROFILES.aluno;
+  // Perfil exibido na sidebar: usa dados reais quando disponível, fallback para role labels
+  const roleLabel = effectiveRole === 'admin' ? t('role.adminFull')
+                  : effectiveRole === 'gestor' ? t('role.gestor')
+                  : t('role.aluno');
   const profile = currentUser ? {
-    name:     currentUser.name || roleProfile.name || '—',
-    role:     currentUser.jobTitle || roleProfile.role,
+    name:     currentUser.name || '—',
+    role:     currentUser.jobTitle || roleLabel,
     initials: currentUser.name
       ? currentUser.name.split(' ').map(function(n) { return n[0]; }).join('').slice(0,2).toUpperCase()
-      : roleProfile.initials,
-  } : roleProfile;
+      : '·',
+  } : { name: '—', role: roleLabel, initials: '·' };
 
   return (
     <div className="app-shell">
@@ -236,7 +292,9 @@ function App() {
       <aside className="sidebar">
         <div className="sidebar-logo">
           <img src="assets/voratte-logo.webp" alt="Vorätte" />
-          <div className="sidebar-tag">DISC<br/>Compras</div>
+          <div className="sidebar-tag">{t('app.brandTag').split('\n').map(function (line, i, arr) {
+            return <React.Fragment key={i}>{line}{i < arr.length - 1 ? <br/> : null}</React.Fragment>;
+          })}</div>
         </div>
 
         {(() => {
@@ -276,13 +334,13 @@ function App() {
             <button
               onClick={() => window.fbLogout()}
               style={{ color: 'var(--brown-400)', display: 'flex', alignItems: 'center', justifyContent: 'center', width: 28, height: 28, borderRadius: 6 }}
-              title="Sair"
+              title={t('app.logout')}
             >
               <Ic.Logout s={15}/>
             </button>
           </div>
           <div style={{ marginTop: 10, textAlign: 'center', fontSize: 10, letterSpacing: '0.06em', color: 'var(--brown-400)', opacity: 0.7 }}>
-            Desenvolvido por Daniel Honorato
+            {t('app.devCredit')}
           </div>
         </div>
       </aside>
@@ -298,7 +356,7 @@ function App() {
             {/* Badge avisando que o admin está navegando como outra role */}
             {isDemoMode && (
               <div
-                title="Você está visualizando o sistema como outra role. Dados salvos vão para sua conta admin."
+                title={t('topbar.demoBadgeTitle')}
                 style={{
                   display: 'inline-flex', alignItems: 'center', gap: 6,
                   padding: '6px 12px', borderRadius: 999,
@@ -307,13 +365,14 @@ function App() {
                   fontSize: 11, fontWeight: 600, letterSpacing: '0.04em',
                 }}
               >
-                <Ic.Sparkle s={12}/> Modo demo · dados salvam na sua conta
+                <Ic.Sparkle s={12}/> {t('topbar.demoBadge')}
               </div>
             )}
             {/* Role switcher — apenas para administradores (ferramenta de demo) */}
             {currentUser && currentUser.role === 'admin' && (
               <RoleSwitcher current={effectiveRole} onChange={switchRole} />
             )}
+            <LangPicker />
             <ThemeTogglePill />
             <button className="icon-btn"><Ic.Bell s={18}/><span className="dot"/></button>
             <div className="top-user">
@@ -380,16 +439,18 @@ function renderScreen(role, route, go, user, refreshProfile) {
 
 // Role switcher — DEMO control to navigate between the 3 views
 function RoleSwitcher({ current, onChange }) {
+  useLang();
   const [open, setOpen] = React.useState(false);
+  const roleLabels = { aluno: t('role.aluno'), gestor: t('role.gestor'), admin: t('role.admin') };
   return (
     <div style={{ position: 'relative' }}>
       <button
         onClick={() => setOpen(o => !o)}
         className="btn btn-secondary"
         style={{ padding: '8px 14px', fontSize: 12, gap: 8 }}
-        title="Trocar visão (demo)"
+        title={t('roleSwitcher.title')}
       >
-        <Ic.Sparkle s={14}/> Visão: <strong>{ROLE_LABELS[current]}</strong>
+        <Ic.Sparkle s={14}/> {t('roleSwitcher.label')} <strong>{roleLabels[current]}</strong>
         <Ic.Arrow s={12} />
       </button>
       {open && (
@@ -403,12 +464,12 @@ function RoleSwitcher({ current, onChange }) {
             overflow: 'hidden',
           }}>
             <div style={{ padding: '10px 14px', borderBottom: '1px solid var(--line-soft)', fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--muted)', fontWeight: 600 }}>
-              Demo · alternar visão
+              {t('roleSwitcher.header')}
             </div>
             {[
-              { k: 'aluno',  label: 'Aluno',         desc: 'Visão do aluno · pode fazer o DISC' },
-              { k: 'gestor', label: 'Gestor',        desc: 'Visão da equipe' },
-              { k: 'admin',  label: 'Administrador', desc: 'Visão global Vorätte' },
+              { k: 'aluno',  label: t('roleSwitcher.aluno.label'),  desc: t('roleSwitcher.aluno.desc') },
+              { k: 'gestor', label: t('roleSwitcher.gestor.label'), desc: t('roleSwitcher.gestor.desc') },
+              { k: 'admin',  label: t('roleSwitcher.admin.label'),  desc: t('roleSwitcher.admin.desc') },
             ].map(r => (
               <button key={r.k}
                 onClick={() => { onChange(r.k); setOpen(false); }}

@@ -393,4 +393,6 @@
   window.buildReportData = buildReportData;
   window.generateReportHTML = generateReportHTML;
   window.exportReportPDF = exportReportPDF;
+  window.vorattePrintHTML = printViaIframe;
+  window.voratteLoadLogo = loadLogo;
 })();

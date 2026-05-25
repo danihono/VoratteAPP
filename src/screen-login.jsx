@@ -1,14 +1,15 @@
-const AUTH_ERRORS = {
-  'auth/user-not-found':      'E-mail não encontrado.',
-  'auth/invalid-email':       'E-mail inválido.',
-  'auth/wrong-password':      'Senha incorreta.',
-  'auth/invalid-credential':  'E-mail ou senha incorretos.',
-  'auth/too-many-requests':   'Muitas tentativas. Aguarde alguns minutos e tente novamente.',
-  'auth/user-disabled':       'Conta desativada. Fale com seu administrador.',
+const AUTH_ERROR_KEYS = {
+  'auth/user-not-found':      'auth.error.userNotFound',
+  'auth/invalid-email':       'auth.error.invalidEmail',
+  'auth/wrong-password':      'auth.error.wrongPassword',
+  'auth/invalid-credential':  'auth.error.invalidCred',
+  'auth/too-many-requests':   'auth.error.tooMany',
+  'auth/user-disabled':       'auth.error.userDisabled',
 };
 
 // Login screen — split panel: dark editorial side + light form
 function LoginScreen({ authError }) {
+  useLang();
   const [email, setEmail] = React.useState('');
   const [pwd, setPwd] = React.useState('');
   const [remember, setRemember] = React.useState(true);
@@ -18,14 +19,15 @@ function LoginScreen({ authError }) {
 
   async function handleLogin(e) {
     if (e && e.preventDefault) e.preventDefault();
-    if (!email || !pwd) { setError('Preencha e-mail e senha.'); return; }
+    if (!email || !pwd) { setError(t('auth.error.fillBoth')); return; }
     setError('');
     setLoading(true);
     try {
       await window.fbLogin(email, pwd);
       // auth.onAuthStateChanged em app.jsx cuida do redirect automaticamente
     } catch (err) {
-      setError(AUTH_ERRORS[err.code] || 'Erro ao entrar. Tente novamente.');
+      const key = AUTH_ERROR_KEYS[err.code];
+      setError(key ? t(key) : t('auth.error.generic'));
     } finally {
       setLoading(false);
     }
@@ -41,14 +43,11 @@ function LoginScreen({ authError }) {
 
         <div className="login-headline">
           <div style={{ fontSize: 11, letterSpacing: '0.24em', textTransform: 'uppercase', color: 'var(--brown-300)', marginBottom: 20, fontWeight: 600 }}>
-            Plataforma executiva
+            {t('login.eyebrow')}
           </div>
-          <h2>
-            Inteligência comportamental aplicada à <em>compras estratégicas.</em>
-          </h2>
+          <h2 dangerouslySetInnerHTML={{ __html: t('login.headline') }} />
           <p>
-            Mapeie perfis DISC, cruze com a matriz de Kraljic e gere relatórios
-            executivos prontos para a sua mesa de negociação.
+            {t('login.lede')}
           </p>
         </div>
       </div>
@@ -56,8 +55,8 @@ function LoginScreen({ authError }) {
       {/* Form side */}
       <div className="login-form-side">
         <div className="login-form">
-          <h3>Acesse sua conta</h3>
-          <div className="sub">Bem-vindo de volta. Entre para continuar.</div>
+          <h3>{t('login.formTitle')}</h3>
+          <div className="sub">{t('login.formSub')}</div>
 
           {authError && (
             <div style={{ padding: '10px 14px', borderRadius: 8, background: '#fff7ed', border: '1px solid #fed7aa', color: '#9a3412', fontSize: 13, marginBottom: 4 }}>
@@ -67,19 +66,19 @@ function LoginScreen({ authError }) {
 
           <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
             <div className="field">
-              <label>E-mail corporativo</label>
+              <label>{t('login.emailLabel')}</label>
               <input
                 className="input"
                 type="email"
                 value={email}
                 onChange={e => { setEmail(e.target.value); setError(''); }}
-                placeholder="seu@email.com"
+                placeholder={t('login.emailPlaceholder')}
                 autoComplete="email"
               />
             </div>
 
             <div className="field">
-              <label>Senha</label>
+              <label>{t('login.passwordLabel')}</label>
               <div style={{ position: 'relative' }}>
                 <input
                   className="input"
@@ -114,9 +113,9 @@ function LoginScreen({ authError }) {
             <div className="row">
               <label className="checkbox-row">
                 <input type="checkbox" checked={remember} onChange={e => setRemember(e.target.checked)} />
-                Lembrar de mim
+                {t('login.remember')}
               </label>
-              <a className="forgot">Esqueci minha senha</a>
+              <a className="forgot">{t('login.forgot')}</a>
             </div>
 
             <button
@@ -125,30 +124,30 @@ function LoginScreen({ authError }) {
               style={{ marginTop: 8 }}
               disabled={loading}
             >
-              {loading ? 'Entrando…' : <><span>Entrar na plataforma</span> <Ic.Arrow s={16} /></>}
+              {loading ? t('login.submitting') : <><span>{t('login.submit')}</span> <Ic.Arrow s={16} /></>}
             </button>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, color: 'var(--muted)', fontSize: 12 }}>
               <div style={{ flex: 1, height: 1, background: 'var(--line)' }} />
-              ou
+              {t('login.divider')}
               <div style={{ flex: 1, height: 1, background: 'var(--line)' }} />
             </div>
 
             <button type="button" className="btn btn-secondary btn-block" style={{ padding: '12px 20px' }}>
-              <Ic.Shield s={16} /> Acessar via SSO corporativo
+              <Ic.Shield s={16} /> {t('login.sso')}
             </button>
           </form>
 
           <div className="signup-row">
-            Sua empresa ainda não usa a Vorätte? <a>Solicitar demonstração</a>
+            {t('login.signupRow')} <a>{t('login.signupLink')}</a>
           </div>
 
           <div style={{ marginTop: 36, paddingTop: 20, borderTop: '1px solid var(--line-soft)', fontSize: 11, color: 'var(--muted-soft)', display: 'flex', justifyContent: 'space-between', gap: 12 }}>
-            <span><Ic.Lock s={12}/> Conexão criptografada</span>
-            <span>© 2026 Vorätte</span>
+            <span><Ic.Lock s={12}/> {t('login.secure')}</span>
+            <span>{t('login.copyright')}</span>
           </div>
           <div style={{ marginTop: 10, textAlign: 'center', fontSize: 10.5, color: 'var(--muted-soft)', letterSpacing: '0.04em' }}>
-            Desenvolvido por Daniel Honorato
+            {t('app.devCredit')}
           </div>
         </div>
       </div>

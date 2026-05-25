@@ -33,7 +33,22 @@ function GestorDashboard({ go, user }) {
   var GESTOR_TEAM = team;
   var done = GESTOR_TEAM.filter(function(p) { return p.status === 'done'; }).length;
   var pending = GESTOR_TEAM.length - done;
-  var firstName = user ? user.name.split(' ')[0] : 'Gestor';
+  var firstName = user && user.name ? user.name.split(' ')[0] : 'Gestor';
+
+  // Distribuição DISC real do time
+  var dist = React.useMemo(function () {
+    var counts = { D: 0, I: 0, S: 0, C: 0 };
+    GESTOR_TEAM.forEach(function (m) { if (m.main && counts.hasOwnProperty(m.main)) counts[m.main] += 1; });
+    var total = counts.D + counts.I + counts.S + counts.C;
+    if (!total) return null;
+    var labels = { D: 'Dominante', I: 'Influente', S: 'Estável', C: 'Conforme' };
+    var top = ['D','I','S','C'].reduce(function (a, b) { return counts[a] >= counts[b] ? a : b; });
+    return {
+      counts: counts, total: total,
+      topKey: top, topLabel: labels[top],
+      topPct: Math.round(counts[top] / total * 100),
+    };
+  }, [GESTOR_TEAM]);
 
   return (
     <div className="page-enter" style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
@@ -41,14 +56,18 @@ function GestorDashboard({ go, user }) {
       <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 24 }}>
         <div className="card" style={{ padding: 28, position: 'relative', overflow: 'hidden' }}>
           <div style={{ position: 'absolute', right: -60, top: -60, width: 240, height: 240, background: 'radial-gradient(circle, var(--brown-50), transparent 70%)' }} />
-          <div className="badge badge-brown" style={{ position: 'relative' }}><Ic.Shield s={12}/> Visão de Gestor · Time Compras ABC</div>
+          <div className="badge badge-brown" style={{ position: 'relative' }}><Ic.Shield s={12}/> Visão de Gestor</div>
           <h2 className="serif" style={{ fontSize: 30, fontWeight: 500, letterSpacing: '-0.02em', marginTop: 14, lineHeight: 1.15, maxWidth: 460 }}>
             Olá, {firstName}. <span style={{ color: 'var(--muted)' }}>
-              {teamLoading ? 'Carregando dados do time…' : GESTOR_TEAM.length + ' colaboradores · ' + done + ' avaliados.'}
+              {teamLoading
+                ? 'Carregando dados do time…'
+                : GESTOR_TEAM.length
+                  ? GESTOR_TEAM.length + ' colaborador' + (GESTOR_TEAM.length === 1 ? '' : 'es') + ' · ' + done + ' avaliado' + (done === 1 ? '' : 's') + '.'
+                  : 'Você ainda não tem colaboradores vinculados.'}
             </span>
           </h2>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginTop: 26 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginTop: 26 }}>
             <div className="stat">
               <div className="stat-label">Colaboradores</div>
               <div className="stat-value">{GESTOR_TEAM.length}</div>
@@ -56,18 +75,13 @@ function GestorDashboard({ go, user }) {
             </div>
             <div className="stat">
               <div className="stat-label">Pendentes</div>
-              <div className="stat-value" style={{ color: 'var(--disc-d)' }}>{pending}</div>
-              <div className="stat-delta">Aguardando avaliação</div>
+              <div className="stat-value" style={{ color: pending > 0 ? 'var(--disc-d)' : 'inherit' }}>{pending}</div>
+              <div className="stat-delta">{pending > 0 ? 'Aguardando avaliação' : 'Tudo em dia'}</div>
             </div>
             <div className="stat">
               <div className="stat-label">Perfil dominante</div>
-              <div className="stat-value" style={{ fontSize: 26 }}>I · 33%</div>
-              <div className="stat-delta">Influência</div>
-            </div>
-            <div className="stat">
-              <div className="stat-label">Risco crítico</div>
-              <div className="stat-value" style={{ fontSize: 26 }}>Baixo</div>
-              <div className="stat-delta">2 alertas leves</div>
+              <div className="stat-value" style={{ fontSize: 26 }}>{dist ? dist.topKey + ' · ' + dist.topPct + '%' : '—'}</div>
+              <div className="stat-delta">{dist ? dist.topLabel : 'Sem dados'}</div>
             </div>
           </div>
 
@@ -84,61 +98,30 @@ function GestorDashboard({ go, user }) {
         <div className="card">
           <div className="card-title">Distribuição comportamental do time</div>
           <div className="card-sub">Perfis predominantes</div>
-          <div style={{ display: 'flex', gap: 18, alignItems: 'center' }}>
-            <Donut
-              size={170} stroke={22}
-              data={[
-                { key: 'D', value: 2, color: 'var(--disc-d)' },
-                { key: 'I', value: 2, color: 'var(--disc-i)' },
-                { key: 'S', value: 1, color: 'var(--disc-s)' },
-                { key: 'C', value: 1, color: 'var(--disc-c)' },
-              ]}
-              center={<><div className="letter">6</div><div className="label">avaliados</div></>}
-            />
-            <div className="legend" style={{ flex: 1 }}>
-              <div className="legend-row"><div className="sw" style={{ background: 'var(--disc-d)' }}/><span>Dominante</span><span className="pct">2</span></div>
-              <div className="legend-row"><div className="sw" style={{ background: 'var(--disc-i)' }}/><span>Influente</span><span className="pct">2</span></div>
-              <div className="legend-row"><div className="sw" style={{ background: 'var(--disc-s)' }}/><span>Estável</span><span className="pct">1</span></div>
-              <div className="legend-row"><div className="sw" style={{ background: 'var(--disc-c)' }}/><span>Conforme</span><span className="pct">1</span></div>
+          {!dist ? (
+            <div style={{ padding: '24px 0', color: 'var(--muted)', fontSize: 13 }}>
+              Distribuição será exibida quando sua equipe completar avaliações.
             </div>
-          </div>
-          <div className="divider" />
-          <p style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.6 }}>
-            Equipe equilibrada entre <strong style={{ color: 'var(--ink)' }}>execução (D/I)</strong> e
-            <strong style={{ color: 'var(--ink)' }}> análise (S/C)</strong> — boa cobertura para
-            negociações distributivas e itens estratégicos.
-          </p>
-        </div>
-      </div>
-
-      {/* Forças & riscos */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-        <div className="card">
-          <div className="card-title">Forças da equipe</div>
-          <div className="card-sub">O que esse mix entrega bem</div>
-          {[
-            'Fechamento rápido em itens de Alavancagem (D)',
-            'Construção de relacionamento com fornecedores estratégicos (I)',
-            'Análise de risco e qualificação alternativa (C)',
-            'Continuidade operacional em itens de Gargalo (S)',
-          ].map((s, i) => (
-            <div className="list-row" key={i}><Ic.Check s={14}/><span>{s}</span></div>
-          ))}
-        </div>
-        <div className="card">
-          <div className="card-title">Riscos comportamentais</div>
-          <div className="card-sub">Pontos para o seu radar</div>
-          {[
-            'Excesso de D no fechamento de itens estratégicos (Rafael, Marcos)',
-            'Pouca representação C em decisões plurianuais',
-            'Conflito potencial entre perfis D e S em prazos curtos',
-            '2 colaboradores ainda sem avaliação DISC',
-          ].map((s, i) => (
-            <div className="list-row" key={i}>
-              <div className="bullet" style={{ background: 'var(--disc-d)' }} />
-              <span>{s}</span>
+          ) : (
+            <div style={{ display: 'flex', gap: 18, alignItems: 'center' }}>
+              <Donut
+                size={170} stroke={22}
+                data={[
+                  { key: 'D', value: dist.counts.D, color: 'var(--disc-d)' },
+                  { key: 'I', value: dist.counts.I, color: 'var(--disc-i)' },
+                  { key: 'S', value: dist.counts.S, color: 'var(--disc-s)' },
+                  { key: 'C', value: dist.counts.C, color: 'var(--disc-c)' },
+                ]}
+                center={<><div className="letter">{dist.total}</div><div className="label">{dist.total === 1 ? 'avaliado' : 'avaliados'}</div></>}
+              />
+              <div className="legend" style={{ flex: 1 }}>
+                <div className="legend-row"><div className="sw" style={{ background: 'var(--disc-d)' }}/><span>Dominante</span><span className="pct">{dist.counts.D}</span></div>
+                <div className="legend-row"><div className="sw" style={{ background: 'var(--disc-i)' }}/><span>Influente</span><span className="pct">{dist.counts.I}</span></div>
+                <div className="legend-row"><div className="sw" style={{ background: 'var(--disc-s)' }}/><span>Estável</span><span className="pct">{dist.counts.S}</span></div>
+                <div className="legend-row"><div className="sw" style={{ background: 'var(--disc-c)' }}/><span>Conforme</span><span className="pct">{dist.counts.C}</span></div>
+              </div>
             </div>
-          ))}
+          )}
         </div>
       </div>
 
@@ -239,7 +222,7 @@ function GestorEquipe({ go, user }) {
             </div>
             <div style={{ flex: 1 }}>
               <h2 className="serif" style={{ fontSize: 24, fontWeight: 500, letterSpacing: '-0.01em' }}>{p.name}</h2>
-              <div style={{ fontSize: 13, color: 'var(--muted)', marginTop: 2 }}>{p.role} · Compras estratégicas</div>
+              <div style={{ fontSize: 13, color: 'var(--muted)', marginTop: 2 }}>{p.role}</div>
               <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
                 {p.main !== '—' && <div className="badge badge-brown">Perfil {p.main}</div>}
                 <div className="badge badge-outline">Última avaliação: {p.last}</div>
@@ -315,30 +298,10 @@ function GestorEquipe({ go, user }) {
 
             <div className="card">
               <div className="card-title">Relatórios de {p.name.split(' ')[0]}</div>
-              <div className="card-sub">{p.reports} documentos disponíveis</div>
-              <table className="tbl">
-                <thead><tr><th>Nome</th><th>Tipo</th><th>Data</th><th style={{ textAlign: 'right' }}>Ações</th></tr></thead>
-                <tbody>
-                  {[
-                    ['Relatório DISC completo', 'Completo', p.last],
-                    ['Matriz de Kraljic', 'Estratégico', '20/05/2026'],
-                    ['Comparativo perfis', 'Comparação', '15/05/2026'],
-                    ['Plano de desenvolvimento', 'Desenvolvimento', '10/05/2026'],
-                  ].slice(0, p.reports).map((r, i) => (
-                    <tr key={i}>
-                      <td>{r[0]}</td>
-                      <td><span className="badge badge-outline">{r[1]}</span></td>
-                      <td>{r[2]}</td>
-                      <td style={{ textAlign: 'right' }}>
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 4 }}>
-                          <button className="icon-btn"><Ic.Eye s={16}/></button>
-                          <button className="icon-btn"><Ic.Download s={16}/></button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <div className="card-sub">{p.reports || 0} documentos disponíveis</div>
+              <div style={{ padding: '20px 0', color: 'var(--muted)', fontSize: 13.5 }}>
+                Lista de relatórios disponíveis em breve.
+              </div>
             </div>
           </React.Fragment>
         ) : (
@@ -361,18 +324,25 @@ function GestorEquipe({ go, user }) {
 }
 
 function GestorMapa({ go, user }) {
-  // Behavioural heatmap by role
-  const matrix = [
-    { role: 'Diretor de Compras',     D: 2, I: 1, S: 0, C: 1 },
-    { role: 'Gerente de Compras',     D: 1, I: 2, S: 1, C: 0 },
-    { role: 'Coordenador',            D: 0, I: 0, S: 1, C: 0 },
-    { role: 'Comprador Sênior',       D: 2, I: 0, S: 0, C: 0 },
-    { role: 'Comprador Pleno',        D: 0, I: 2, S: 0, C: 0 },
-    { role: 'Comprador Júnior',       D: 1, I: 0, S: 0, C: 0 },
-    { role: 'Especialista',           D: 0, I: 0, S: 0, C: 1 },
-    { role: 'Assistente de Compras',  D: 0, I: 0, S: 0, C: 0 },
-  ];
-  const maxV = 2;
+  var [team, teamLoading] = useGestorTeam(user && user.id);
+
+  // Agrega a equipe por cargo (jobTitle), contando o perfil principal (DISC main) de cada membro.
+  const matrix = React.useMemo(() => {
+    if (!team || !team.length) return [];
+    const byRole = {};
+    team.forEach(function (m) {
+      if (!m.main) return; // ignora membros sem DISC
+      const role = m.role || 'Sem cargo';
+      if (!byRole[role]) byRole[role] = { role: role, D: 0, I: 0, S: 0, C: 0 };
+      byRole[role][m.main] += 1;
+    });
+    return Object.values(byRole);
+  }, [team]);
+
+  const maxV = matrix.reduce(function (max, row) {
+    return Math.max(max, row.D, row.I, row.S, row.C);
+  }, 1);
+
   const cell = (v) => {
     if (!v) return { background: 'var(--paper-warm)', color: 'var(--muted-soft)' };
     const alpha = 0.18 + 0.6 * (v / maxV);
@@ -385,66 +355,44 @@ function GestorMapa({ go, user }) {
         <div className="card-title">Mapa comportamental por cargo</div>
         <div className="card-sub">Quantos colaboradores de cada perfil em cada nível</div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '220px repeat(4, 1fr)', gap: 4, alignItems: 'center' }}>
-          <div />
-          {['D','I','S','C'].map(k => (
-            <div key={k} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '8px 0' }}>
-              <div className={'disc-tile disc-' + k.toLowerCase()} style={{ width: 26, height: 26, fontSize: 13, borderRadius: 6 }}>{k}</div>
-              <span style={{ fontSize: 12, fontWeight: 600 }}>{{D:'Dominante',I:'Influente',S:'Estável',C:'Conforme'}[k]}</span>
-            </div>
-          ))}
+        {teamLoading ? (
+          <div style={{ padding: '32px 0', textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>Carregando equipe…</div>
+        ) : !matrix.length ? (
+          <div style={{ padding: '40px 0', textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>
+            O mapa será gerado quando sua equipe completar avaliações DISC.
+          </div>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: '220px repeat(4, 1fr)', gap: 4, alignItems: 'center' }}>
+            <div />
+            {['D','I','S','C'].map(k => (
+              <div key={k} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '8px 0' }}>
+                <div className={'disc-tile disc-' + k.toLowerCase()} style={{ width: 26, height: 26, fontSize: 13, borderRadius: 6 }}>{k}</div>
+                <span style={{ fontSize: 12, fontWeight: 600 }}>{{D:'Dominante',I:'Influente',S:'Estável',C:'Conforme'}[k]}</span>
+              </div>
+            ))}
 
-          {matrix.map((row, i) => (
-            <React.Fragment key={i}>
-              <div style={{ padding: '12px 0', fontSize: 13, color: 'var(--ink-soft)', fontWeight: 500 }}>{row.role}</div>
-              {['D','I','S','C'].map(k => (
-                <div key={k} style={{
-                  height: 44, borderRadius: 8,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 14, fontWeight: 700,
-                  ...cell(row[k]),
-                }}>{row[k] || '—'}</div>
-              ))}
-            </React.Fragment>
-          ))}
-        </div>
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-        <div className="card">
-          <div className="card-title">Insight da equipe</div>
-          <div className="card-sub">O que o mapa revela</div>
-          {[
-            'Liderança concentrada em perfis D — diretor e seniores',
-            'Camada operacional balanceada entre I e S',
-            'Cobertura analítica (C) baixa para o porte do time',
-            'Faltam perfis C em decisões estratégicas',
-          ].map((s, i) => <div className="list-row" key={i}><div className="bullet"/><span>{s}</span></div>)}
-        </div>
-        <div className="card">
-          <div className="card-title">Recomendações gerenciais</div>
-          <div className="card-sub">Próximas ações sugeridas</div>
-          {[
-            'Recrutar perfil C para cobrir análise de risco',
-            'Pareamento de Marcos (D) com Helena (C) em fornecedores estratégicos',
-            'Coaching de escuta ativa para perfis D',
-            'Treinamento de negociação distributiva para perfis I',
-          ].map((s, i) => <div className="list-row" key={i}><Ic.Check s={14}/><span>{s}</span></div>)}
-        </div>
+            {matrix.map((row, i) => (
+              <React.Fragment key={i}>
+                <div style={{ padding: '12px 0', fontSize: 13, color: 'var(--ink-soft)', fontWeight: 500 }}>{row.role}</div>
+                {['D','I','S','C'].map(k => (
+                  <div key={k} style={{
+                    height: 44, borderRadius: 8,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 14, fontWeight: 700,
+                    ...cell(row[k]),
+                  }}>{row[k] || '—'}</div>
+                ))}
+              </React.Fragment>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
 function GestorRelatorios({ go, user }) {
-  const rows = [
-    { name: 'Consolidado Time Compras · maio/26', date: '25/05/2026', type: 'Consolidado', author: 'Sistema · IA Voratte' },
-    { name: 'Relatório DISC · Rafael Mendes',     date: '25/05/2026', type: 'Individual',  author: 'Rafael Mendes' },
-    { name: 'Relatório DISC · Júlia Cordeiro',    date: '18/05/2026', type: 'Individual',  author: 'Júlia Cordeiro' },
-    { name: 'Matriz Kraljic · Categoria MRO',     date: '15/05/2026', type: 'Estratégico', author: 'Bruno Tavares' },
-    { name: 'Comparativo perfis · Compras Plenas',date: '12/05/2026', type: 'Comparação',  author: 'Sistema · IA Voratte' },
-    { name: 'Relatório DISC · Helena Antunes',    date: '08/05/2026', type: 'Individual',  author: 'Helena Antunes' },
-  ];
+  const rows = [];
   return (
     <div className="page-enter" style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -457,34 +405,40 @@ function GestorRelatorios({ go, user }) {
       </div>
 
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-        <table className="tbl">
-          <thead><tr>
-            <th style={{ paddingLeft: 24 }}>Relatório</th><th>Tipo</th><th>Autor</th><th>Data</th><th style={{ textAlign: 'right', paddingRight: 24 }}>Ações</th>
-          </tr></thead>
-          <tbody>
-            {rows.map((r, i) => (
-              <tr key={i}>
-                <td style={{ paddingLeft: 24 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <div style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--brown-50)', color: 'var(--brown-700)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Ic.Pdf s={14}/>
+        {rows.length === 0 ? (
+          <div style={{ padding: '48px 24px', textAlign: 'center', color: 'var(--muted)', fontSize: 13.5 }}>
+            Nenhum relatório gerado ainda.
+          </div>
+        ) : (
+          <table className="tbl">
+            <thead><tr>
+              <th style={{ paddingLeft: 24 }}>Relatório</th><th>Tipo</th><th>Autor</th><th>Data</th><th style={{ textAlign: 'right', paddingRight: 24 }}>Ações</th>
+            </tr></thead>
+            <tbody>
+              {rows.map((r, i) => (
+                <tr key={i}>
+                  <td style={{ paddingLeft: 24 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <div style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--brown-50)', color: 'var(--brown-700)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Ic.Pdf s={14}/>
+                      </div>
+                      <div style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--ink)' }}>{r.name}</div>
                     </div>
-                    <div style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--ink)' }}>{r.name}</div>
-                  </div>
-                </td>
-                <td><span className="badge badge-outline">{r.type}</span></td>
-                <td>{r.author}</td>
-                <td>{r.date}</td>
-                <td style={{ paddingRight: 24 }}>
-                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 4 }}>
-                    <button className="icon-btn" onClick={() => go('relatorio')}><Ic.Eye s={16}/></button>
-                    <button className="icon-btn"><Ic.Download s={16}/></button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                  </td>
+                  <td><span className="badge badge-outline">{r.type}</span></td>
+                  <td>{r.author}</td>
+                  <td>{r.date}</td>
+                  <td style={{ paddingRight: 24 }}>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 4 }}>
+                      <button className="icon-btn" onClick={() => go('relatorio')}><Ic.Eye s={16}/></button>
+                      <button className="icon-btn"><Ic.Download s={16}/></button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   );

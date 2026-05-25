@@ -3,7 +3,7 @@
 // canônica/referência; este arquivo é o que roda na arquitetura sem bundler.
 // Exposto: window.KRALJIC_PROFILES, window.calculateKraljic.
 
-// Mapeamento DISC → Kraljic (regra Voratte):
+// Mapeamento DISC → Kraljic (regra Vorätte):
 // D = Alavancagem | I = Estratégico | S = Gargalo | C = Não-críticos
 const DIMENSION_TO_QUADRANT = {
   D: 'alavancagem',

@@ -29,7 +29,7 @@ function DashboardScreen({ go, user }) {
   }, [user && user.id]);
 
   const dominant = discData ? discData.reduce(function(a, b) { return a.value > b.value ? a : b; }) : null;
-  const firstName = user ? user.name.split(' ')[0] : 'você';
+  const firstName = user && user.name ? user.name.split(' ')[0] : 'você';
 
   return (
     <div className="page-enter" style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
@@ -39,14 +39,18 @@ function DashboardScreen({ go, user }) {
         <div className="card" style={{ padding: 28, position: 'relative', overflow: 'hidden' }}>
           <div style={{ position: 'absolute', right: -60, top: -60, width: 240, height: 240, background: 'radial-gradient(circle, var(--brown-50), transparent 70%)' }} />
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, position: 'relative' }}>
-            <div className="badge badge-brown"><Ic.Sparkle s={12}/> Análise atualizada · há 2 dias</div>
-          </div>
+          {dominant && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, position: 'relative' }}>
+              <div className="badge badge-brown"><Ic.Sparkle s={12}/> Avaliação DISC concluída</div>
+            </div>
+          )}
           <h2 className="serif" style={{ fontSize: 30, fontWeight: 500, letterSpacing: '-0.02em', marginTop: 14, lineHeight: 1.15, maxWidth: 460 }}>
-            Olá, {firstName}. <span style={{ color: 'var(--muted)' }}>Aqui está seu panorama estratégico de hoje.</span>
+            Olá, {firstName}. <span style={{ color: 'var(--muted)' }}>
+              {dominant ? 'Aqui está seu panorama estratégico.' : 'Faça o teste DISC para liberar seu painel.'}
+            </span>
           </h2>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginTop: 26 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, marginTop: 26 }}>
             <div className="stat">
               <div className="stat-label">Perfil predominante</div>
               <div className="stat-value">
@@ -55,24 +59,27 @@ function DashboardScreen({ go, user }) {
               <div className="stat-delta">{dominant ? DISC_LABELS[dominant.key] : 'Aguardando avaliação'}</div>
             </div>
             <div className="stat">
-              <div className="stat-label">Compatibilidade equipe</div>
-              <div className="stat-value">84%</div>
-              <div className="stat-delta">Alto alinhamento</div>
-            </div>
-            <div className="stat">
-              <div className="stat-label">Quadrante Kraljic</div>
-              <div className="stat-value" style={{ fontSize: 26 }}>Alavancagem</div>
-              <div className="stat-delta">Coerente com perfil D</div>
+              <div className="stat-label">Status</div>
+              <div className="stat-value" style={{ fontSize: 26 }}>{discLoading ? '…' : dominant ? 'Avaliado' : 'Pendente'}</div>
+              <div className="stat-delta">{dominant ? 'Resultado disponível' : 'Inicie pelo teste'}</div>
             </div>
           </div>
 
           <div style={{ display: 'flex', gap: 10, marginTop: 24 }}>
-            <button className="btn btn-primary" onClick={() => go('analise')}>
-              Acessar análise completa <Ic.Arrow s={14} />
-            </button>
-            <button className="btn btn-secondary" onClick={() => go('relatorio')}>
-              <Ic.Pdf s={14} /> Exportar relatório
-            </button>
+            {dominant ? (
+              <>
+                <button className="btn btn-primary" onClick={() => go('analise')}>
+                  Acessar análise completa <Ic.Arrow s={14} />
+                </button>
+                <button className="btn btn-secondary" onClick={() => go('relatorio')}>
+                  <Ic.Pdf s={14} /> Exportar relatório
+                </button>
+              </>
+            ) : (
+              <button className="btn btn-primary" onClick={() => go('teste')}>
+                <Ic.Disc s={14}/> Iniciar avaliação DISC
+              </button>
+            )}
           </div>
         </div>
 
@@ -131,60 +138,28 @@ function DashboardScreen({ go, user }) {
         </div>
       </div>
 
-      {/* Bottom row — DISC test progress + recent activity */}
+      {/* Bottom row — plano + atividade recente (empty states até existirem dados reais) */}
       <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 24 }}>
         <div className="card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18 }}>
             <div>
               <div className="card-title">Plano de desenvolvimento</div>
-              <div className="card-sub" style={{ marginBottom: 0 }}>4 dimensões em evolução</div>
+              <div className="card-sub" style={{ marginBottom: 0 }}>Recomendações personalizadas</div>
             </div>
             <button className="btn btn-ghost" style={{ padding: '6px 10px', fontSize: 12 }} onClick={() => go('plano')}>
               Ver tudo <Ic.Arrow s={12}/>
             </button>
           </div>
-
-          {[
-            { label: 'Comunicação', icon: <Ic.Chat s={16}/>, sub: 'Escuta ativa e empatia', pct: 60 },
-            { label: 'Negociação', icon: <Ic.Handshake s={16}/>, sub: 'Estratégias de concessão', pct: 40 },
-            { label: 'Gestão de conflitos', icon: <Ic.Shield s={16}/>, sub: 'Paciência e diplomacia', pct: 30 },
-            { label: 'Liderança', icon: <Ic.Sparkle s={16}/>, sub: 'Inspirar e desenvolver', pct: 50 },
-          ].map(row => (
-            <div key={row.label} style={{ display: 'grid', gridTemplateColumns: '32px 1fr 60px', gap: 14, alignItems: 'center', padding: '12px 0', borderBottom: '1px solid var(--line-soft)' }}>
-              <div style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--brown-50)', color: 'var(--brown-700)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {row.icon}
-              </div>
-              <div>
-                <div style={{ fontSize: 13.5, fontWeight: 600 }}>{row.label}</div>
-                <div style={{ fontSize: 12, color: 'var(--muted)' }}>{row.sub}</div>
-              </div>
-              <div style={{ textAlign: 'right', fontVariantNumeric: 'tabular-numeric', fontWeight: 600, color: 'var(--brown-700)' }}>{row.pct}%</div>
-            </div>
-          ))}
+          <div style={{ padding: '24px 0', color: 'var(--muted)', fontSize: 13.5 }}>
+            Seu plano será gerado a partir do seu perfil DISC. {dominant ? 'Em breve disponível.' : 'Conclua o teste para liberar.'}
+          </div>
         </div>
 
         <div className="card">
           <div className="card-title">Atividade recente</div>
           <div className="card-sub">Últimas ações na plataforma</div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            {[
-              { t: 'Relatório DISC gerado', sub: 'PDF · 24 páginas', when: 'há 2 dias', icon: <Ic.Pdf s={14}/> },
-              { t: 'Quadrante Kraljic atualizado', sub: 'Alavancagem · 12 itens', when: 'há 5 dias', icon: <Ic.Kraljic s={14}/> },
-              { t: 'Comparação com perfil C', sub: 'Fornecedor Estratégico Sul', when: 'há 8 dias', icon: <Ic.Compare s={14}/> },
-              { t: 'Reavaliação DISC concluída', sub: '28 questões · 9 min', when: 'há 14 dias', icon: <Ic.Disc s={14}/> },
-            ].map((r, i) => (
-              <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                <div style={{ width: 28, height: 28, borderRadius: 8, background: 'var(--brown-50)', color: 'var(--brown-700)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  {r.icon}
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 13, fontWeight: 600 }}>{r.t}</div>
-                  <div style={{ fontSize: 11.5, color: 'var(--muted)' }}>{r.sub}</div>
-                </div>
-                <div style={{ fontSize: 11, color: 'var(--muted-soft)', whiteSpace: 'nowrap' }}>{r.when}</div>
-              </div>
-            ))}
+          <div style={{ padding: '24px 0', color: 'var(--muted)', fontSize: 13.5 }}>
+            Suas ações aparecerão aqui assim que você gerar relatórios ou refizer avaliações.
           </div>
         </div>
       </div>

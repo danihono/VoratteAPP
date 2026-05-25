@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Voratte — setup-admins.js
+ * Vorätte — setup-admins.js
  * Cria os usuários admin no Firebase Auth + doc no Firestore.
  * Rode UMA VEZ: node scripts/setup-admins.js
  * Pode deletar este arquivo depois que rodar com sucesso.
@@ -21,10 +21,10 @@ const ADMINS = [
     email:    'danielboy200627@gmail.com',
     password: 'dani2006',
     name:     'Daniel',
-    jobTitle: 'Admin Voratte',
+    jobTitle: 'Admin Vorätte',
   },
   // Adicione o segundo admin aqui quando tiver os dados:
-  // { email: '...', password: '...', name: '...', jobTitle: 'Admin Voratte' },
+  // { email: '...', password: '...', name: '...', jobTitle: 'Admin Vorätte' },
 ];
 // ────────────────────────────────────────────────────────────────────────────
 
@@ -132,7 +132,7 @@ async function writeDoc(uid, token, data) {
 }
 
 async function main() {
-  console.log('\n🚀 Voratte — Setup de Admins\n');
+  console.log('\n🚀 Vorätte — Setup de Admins\n');
 
   try {
     openRules();
@@ -150,7 +150,7 @@ async function main() {
           role:          'admin',
           jobTitle:      adm.jobTitle,
           discCompleted: false,
-          companyName:   'Voratte',
+          companyName:   'Vorätte',
         });
         console.log(`  ✅ Doc Firestore criado`);
       } catch(err) {

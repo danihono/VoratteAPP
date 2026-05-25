@@ -192,7 +192,7 @@ const BUYER_PROFILES = {
   },
 };
 
-// ===== TABELA DOS 11 TIPOS — resumo "como cada perfil aparece pra Voratte" =====
+// ===== TABELA DOS 11 TIPOS — resumo "como cada perfil aparece pra Vorätte" =====
 const BUYER_TYPE_TABLE = [
   { code: 'D',  type: 'Executor',      comoVender: 'Direto, ROI, fechamento rápido' },
   { code: 'I',  type: 'Relacional',    comoVender: 'Rapport, cases, energia' },

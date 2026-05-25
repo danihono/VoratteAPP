@@ -2,6 +2,72 @@
 // O admin geral vê TUDO: todas as empresas, gestores, usuários, estatísticas globais.
 
 function AdminDashboard({ go }) {
+  var [users, setUsers]         = React.useState([]);
+  var [companies, setCompanies] = React.useState([]);
+  var [gestores, setGestores]   = React.useState([]);
+  var [loading, setLoading]     = React.useState(true);
+
+  React.useEffect(function () {
+    Promise.all([
+      window.fbGetAllUsers(500).catch(function () { return []; }),
+      window.fbGetAllCompanies().catch(function () { return []; }),
+      window.fbGetAllGestores().catch(function () { return []; }),
+    ]).then(function (results) {
+      setUsers(results[0] || []);
+      setCompanies(results[1] || []);
+      setGestores(results[2] || []);
+      setLoading(false);
+    });
+  }, []);
+
+  // Stats globais derivados
+  const stats = React.useMemo(() => {
+    const completed = users.filter(function (u) { return u.discCompleted; }).length;
+    return {
+      empresas: companies.length,
+      gestores: gestores.length,
+      usuarios: users.length,
+      avaliacoes: completed,
+    };
+  }, [users, companies, gestores]);
+
+  // Top 5 empresas por userCount
+  const topCompanies = React.useMemo(() => {
+    return companies
+      .slice()
+      .sort(function (a, b) { return (b.userCount || 0) - (a.userCount || 0); })
+      .slice(0, 5);
+  }, [companies]);
+
+  // Distribuição DISC global (a partir de discMain dos usuários)
+  const discDist = React.useMemo(() => {
+    const buckets = { D: 0, I: 0, S: 0, C: 0 };
+    users.forEach(function (u) { if (u.discMain && buckets.hasOwnProperty(u.discMain)) buckets[u.discMain] += 1; });
+    const total = buckets.D + buckets.I + buckets.S + buckets.C;
+    if (!total) return null;
+    return {
+      total: total,
+      pct: { D: Math.round(buckets.D/total*100), I: Math.round(buckets.I/total*100), S: Math.round(buckets.S/total*100), C: Math.round(buckets.C/total*100) },
+      main: ['D','I','S','C'].reduce(function (a, b) { return buckets[a] >= buckets[b] ? a : b; }),
+    };
+  }, [users]);
+
+  // Distribuição por cargo (jobTitle)
+  const roleDist = React.useMemo(() => {
+    const counts = {};
+    users.forEach(function (u) {
+      const j = u.jobTitle && u.jobTitle.trim();
+      if (!j) return;
+      counts[j] = (counts[j] || 0) + 1;
+    });
+    const total = Object.values(counts).reduce(function (a, b) { return a + b; }, 0);
+    if (!total) return [];
+    return Object.entries(counts)
+      .map(function (e) { return { role: e[0], n: e[1], pct: Math.round(e[1]/total*100) }; })
+      .sort(function (a, b) { return b.n - a.n; })
+      .slice(0, 9);
+  }, [users]);
+
   return (
     <div className="page-enter" style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
 
@@ -9,68 +75,52 @@ function AdminDashboard({ go }) {
         <div style={{ position: 'absolute', right: -100, top: -100, width: 400, height: 400, background: 'radial-gradient(circle, rgba(164,113,72,0.3), transparent 60%)' }} />
         <div style={{ position: 'relative' }}>
           <div className="badge" style={{ background: 'rgba(255,255,255,0.08)', color: 'var(--brown-200)' }}>
-            <Ic.Shield s={12}/> Console de Administração · Voratte v2.6
+            <Ic.Shield s={12}/> Console de Administração · Vorätte
           </div>
           <h2 className="serif" style={{ fontSize: 32, fontWeight: 500, letterSpacing: '-0.02em', marginTop: 14, lineHeight: 1.1 }}>
             Visão global da plataforma
           </h2>
           <p style={{ fontSize: 13.5, color: 'var(--brown-200)', marginTop: 8, maxWidth: 520 }}>
-            Acompanhe o uso da Voratte em todas as empresas, gestores e profissionais conectados.
+            Acompanhe o uso da Vorätte em todas as empresas, gestores e profissionais conectados.
           </p>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 16, marginTop: 28 }}>
-            <AdminStat label="Empresas" value="147" delta="+8 no mês" />
-            <AdminStat label="Gestores" value="384" delta="+22 no mês" />
-            <AdminStat label="Usuários ativos" value="2 814" delta="+184 no mês" />
-            <AdminStat label="Avaliações concluídas" value="11 562" delta="+612 no mês" />
-            <AdminStat label="Relatórios gerados" value="38 904" delta="+2.1k no mês" />
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginTop: 28 }}>
+            <AdminStat label="Empresas" value={loading ? '—' : String(stats.empresas)} />
+            <AdminStat label="Gestores" value={loading ? '—' : String(stats.gestores)} />
+            <AdminStat label="Usuários" value={loading ? '—' : String(stats.usuarios)} />
+            <AdminStat label="Avaliações concluídas" value={loading ? '—' : String(stats.avaliacoes)} />
           </div>
         </div>
       </div>
 
-      {/* charts row */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: 16 }}>
-
-        {/* Growth chart */}
-        <div className="card">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18 }}>
-            <div>
-              <div className="card-title">Crescimento da plataforma</div>
-              <div className="card-sub" style={{ marginBottom: 0 }}>Usuários ativos · últimos 12 meses</div>
-            </div>
-            <div className="tabs">
-              <button className="tab active">12m</button>
-              <button className="tab">6m</button>
-              <button className="tab">30d</button>
-            </div>
+      {/* Distribuição DISC global */}
+      <div className="card">
+        <div className="card-title">Distribuição DISC global</div>
+        <div className="card-sub">Perfis predominantes · {discDist ? discDist.total + ' avaliações' : 'sem dados'}</div>
+        {!discDist ? (
+          <div style={{ padding: '24px 0', color: 'var(--muted)', fontSize: 13 }}>
+            Distribuição será exibida quando houver avaliações concluídas.
           </div>
-
-          <GrowthChart />
-        </div>
-
-        {/* Global DISC distribution */}
-        <div className="card">
-          <div className="card-title">Distribuição DISC global</div>
-          <div className="card-sub">Perfis predominantes · 11.562 avaliações</div>
+        ) : (
           <div style={{ display: 'flex', gap: 18, alignItems: 'center' }}>
             <Donut
               size={170} stroke={22}
               data={[
-                { key: 'D', value: 28, color: 'var(--disc-d)' },
-                { key: 'I', value: 31, color: 'var(--disc-i)' },
-                { key: 'S', value: 22, color: 'var(--disc-s)' },
-                { key: 'C', value: 19, color: 'var(--disc-c)' },
+                { key: 'D', value: discDist.pct.D, color: 'var(--disc-d)' },
+                { key: 'I', value: discDist.pct.I, color: 'var(--disc-i)' },
+                { key: 'S', value: discDist.pct.S, color: 'var(--disc-s)' },
+                { key: 'C', value: discDist.pct.C, color: 'var(--disc-c)' },
               ]}
-              center={<><div className="letter" style={{ fontSize: 32 }}>I</div><div className="label">+ comum</div></>}
+              center={<><div className="letter" style={{ fontSize: 32 }}>{discDist.main}</div><div className="label">+ comum</div></>}
             />
             <div className="legend" style={{ flex: 1 }}>
-              <div className="legend-row"><div className="sw" style={{ background: 'var(--disc-d)' }}/><span>Dominante</span><span className="pct">28%</span></div>
-              <div className="legend-row"><div className="sw" style={{ background: 'var(--disc-i)' }}/><span>Influente</span><span className="pct">31%</span></div>
-              <div className="legend-row"><div className="sw" style={{ background: 'var(--disc-s)' }}/><span>Estável</span><span className="pct">22%</span></div>
-              <div className="legend-row"><div className="sw" style={{ background: 'var(--disc-c)' }}/><span>Conforme</span><span className="pct">19%</span></div>
+              <div className="legend-row"><div className="sw" style={{ background: 'var(--disc-d)' }}/><span>Dominante</span><span className="pct">{discDist.pct.D}%</span></div>
+              <div className="legend-row"><div className="sw" style={{ background: 'var(--disc-i)' }}/><span>Influente</span><span className="pct">{discDist.pct.I}%</span></div>
+              <div className="legend-row"><div className="sw" style={{ background: 'var(--disc-s)' }}/><span>Estável</span><span className="pct">{discDist.pct.S}%</span></div>
+              <div className="legend-row"><div className="sw" style={{ background: 'var(--disc-c)' }}/><span>Conforme</span><span className="pct">{discDist.pct.C}%</span></div>
             </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Companies & cargos */}
@@ -79,104 +129,80 @@ function AdminDashboard({ go }) {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
             <div>
               <div className="card-title">Empresas mais ativas</div>
-              <div className="card-sub" style={{ marginBottom: 0 }}>Por volume de avaliações no mês</div>
+              <div className="card-sub" style={{ marginBottom: 0 }}>Por número de usuários cadastrados</div>
             </div>
             <button className="btn btn-ghost" style={{ padding: '6px 10px', fontSize: 12 }} onClick={() => go('empresas')}>
               Ver todas <Ic.Arrow s={12}/>
             </button>
           </div>
-          {[
-            ['ABC Indústria S.A.',     'Manufatura',         184, 'Beatriz Almeida'],
-            ['Norvel Logística',       'Logística',          142, 'Carlos Souza'],
-            ['Petromine Energias',     'Energia',            128, 'Marina Tellez'],
-            ['Casa Lume Varejo',       'Varejo',              98, 'Roberto Tang'],
-            ['Olivar Alimentos',       'Alimentos',           76, 'Patricia Nunes'],
-          ].map((r, i) => (
-            <div key={i} style={{ display: 'grid', gridTemplateColumns: '32px 1fr 140px 100px 60px', gap: 12, alignItems: 'center', padding: '12px 0', borderBottom: i < 4 ? '1px solid var(--line-soft)' : 'none' }}>
-              <div style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--brown-50)', color: 'var(--brown-700)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 12 }}>
-                {r[0].slice(0,2).toUpperCase()}
+          {loading ? (
+            <div style={{ padding: '24px 0', color: 'var(--muted)', fontSize: 13 }}>Carregando…</div>
+          ) : topCompanies.length === 0 ? (
+            <div style={{ padding: '24px 0', color: 'var(--muted)', fontSize: 13 }}>Nenhuma empresa cadastrada.</div>
+          ) : topCompanies.map(function (c, i) {
+            const name = c.name || '—';
+            return (
+              <div key={c.id || i} style={{ display: 'grid', gridTemplateColumns: '32px 1fr 140px 100px 60px', gap: 12, alignItems: 'center', padding: '12px 0', borderBottom: i < topCompanies.length - 1 ? '1px solid var(--line-soft)' : 'none' }}>
+                <div style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--brown-50)', color: 'var(--brown-700)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 12 }}>
+                  {name.slice(0, 2).toUpperCase()}
+                </div>
+                <div>
+                  <div style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--ink)' }}>{name}</div>
+                  <div style={{ fontSize: 11.5, color: 'var(--muted)' }}>{c.sector || 'Setor não informado'}</div>
+                </div>
+                <div>{c.sector ? <span className="badge badge-outline">{c.sector}</span> : <span style={{ color: 'var(--muted-soft)', fontSize: 11 }}>—</span>}</div>
+                <div style={{ textAlign: 'right', fontSize: 13, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{c.userCount || 0}<span style={{ fontSize: 11, fontWeight: 500, color: 'var(--muted)' }}> usuários</span></div>
+                <button className="icon-btn"><Ic.Arrow s={16}/></button>
               </div>
-              <div>
-                <div style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--ink)' }}>{r[0]}</div>
-                <div style={{ fontSize: 11.5, color: 'var(--muted)' }}>Gestor principal: {r[3]}</div>
-              </div>
-              <div><span className="badge badge-outline">{r[1]}</span></div>
-              <div style={{ textAlign: 'right', fontSize: 13, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{r[2]}<span style={{ fontSize: 11, fontWeight: 500, color: 'var(--muted)' }}> usuários</span></div>
-              <button className="icon-btn"><Ic.Arrow s={16}/></button>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         <div className="card">
           <div className="card-title">Distribuição por cargo</div>
           <div className="card-sub">Onde estão os usuários da plataforma</div>
-          {[
-            ['Comprador Pleno',       18, 506],
-            ['Comprador Sênior',      16, 450],
-            ['Comprador Júnior',      14, 394],
-            ['Coordenador',           12, 338],
-            ['Especialista',          11, 309],
-            ['Gerente de Compras',    10, 281],
-            ['Supervisor',             8, 225],
-            ['Assistente',             7, 197],
-            ['Diretor',                4, 114],
-          ].map(([role, pct, n]) => (
-            <div key={role} style={{ padding: '8px 0' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                <span style={{ fontSize: 13, fontWeight: 500 }}>{role}</span>
-                <span style={{ fontSize: 12, fontVariantNumeric: 'tabular-nums', color: 'var(--muted)' }}>{n} · {pct}%</span>
+          {loading ? (
+            <div style={{ padding: '24px 0', color: 'var(--muted)', fontSize: 13 }}>Carregando…</div>
+          ) : roleDist.length === 0 ? (
+            <div style={{ padding: '24px 0', color: 'var(--muted)', fontSize: 13 }}>Distribuição será exibida quando houver usuários com cargo definido.</div>
+          ) : roleDist.map(function (r) {
+            return (
+              <div key={r.role} style={{ padding: '8px 0' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                  <span style={{ fontSize: 13, fontWeight: 500 }}>{r.role}</span>
+                  <span style={{ fontSize: 12, fontVariantNumeric: 'tabular-nums', color: 'var(--muted)' }}>{r.n} · {r.pct}%</span>
+                </div>
+                <div className="progress" style={{ height: 6 }}>
+                  <span style={{ width: Math.min(r.pct, 100) + '%' }} />
+                </div>
               </div>
-              <div className="progress" style={{ height: 6 }}>
-                <span style={{ width: (pct * 5) + '%' }} />
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>
   );
 }
 
-function AdminStat({ label, value, delta }) {
+function AdminStat({ label, value }) {
   return (
     <div style={{ padding: 16, borderRadius: 10, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
       <div style={{ fontSize: 10, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--brown-300)', fontWeight: 600 }}>{label}</div>
       <div style={{ fontFamily: 'Fraunces, serif', fontSize: 28, fontWeight: 500, marginTop: 6, letterSpacing: '-0.02em', color: 'var(--brown-50)' }}>{value}</div>
-      <div style={{ fontSize: 11, color: 'var(--brown-300)', marginTop: 4, fontWeight: 600 }}>{delta}</div>
     </div>
   );
 }
 
-// Simple SVG line chart for global growth
-function GrowthChart() {
-  const pts = [820, 880, 940, 1020, 1180, 1280, 1390, 1540, 1720, 1980, 2480, 2814];
-  const months = ['jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez', 'jan', 'fev', 'mar', 'abr', 'mai'];
-  const W = 620, H = 220, P = 30;
-  const max = Math.max(...pts), min = Math.min(...pts);
-  const xStep = (W - 2*P) / (pts.length - 1);
-  const yFor = v => H - P - ((v - min) / (max - min)) * (H - 2*P);
-  const path = pts.map((v, i) => (i ? 'L' : 'M') + (P + i*xStep) + ',' + yFor(v)).join(' ');
-  const area = path + ` L ${P + (pts.length-1)*xStep},${H-P} L ${P},${H-P} Z`;
+// Placeholder de gráfico de crescimento — série histórica ainda não implementada
+function GrowthChartPlaceholder() {
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={H}>
-      <defs>
-        <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="rgba(139,90,43,0.32)"/>
-          <stop offset="100%" stopColor="rgba(139,90,43,0)"/>
-        </linearGradient>
-      </defs>
-      {[0, 0.25, 0.5, 0.75, 1].map((t, i) => (
-        <line key={i} x1={P} x2={W-P} y1={P + t*(H-2*P)} y2={P + t*(H-2*P)} stroke="#f3ecdf" strokeWidth="1" />
-      ))}
-      <path d={area} fill="url(#g)" />
-      <path d={path} fill="none" stroke="var(--brown-700)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-      {pts.map((v, i) => (
-        <circle key={i} cx={P + i*xStep} cy={yFor(v)} r={i === pts.length-1 ? 5 : 3} fill="var(--brown-700)" stroke="var(--paper)" strokeWidth="2" />
-      ))}
-      {months.map((m, i) => (
-        <text key={i} x={P + i*xStep} y={H - 6} fontSize="10" textAnchor="middle" fill="var(--muted)" fontFamily="Manrope">{m}</text>
-      ))}
-    </svg>
+    <div style={{
+      padding: '48px 24px', textAlign: 'center',
+      color: 'var(--muted)', fontSize: 13,
+      border: '1px dashed var(--line)', borderRadius: 10,
+    }}>
+      Gráfico de crescimento será exibido quando houver série histórica disponível.
+    </div>
   );
 }
 
@@ -222,15 +248,25 @@ function gestorToRow(doc) {
 // ============ ADMIN — USUÁRIOS (visão geral) ============
 function AdminUsuarios({ go }) {
   var [users, setUsers]       = React.useState([]);
+  var [rawCounts, setRawCounts] = React.useState({ total: 0, aluno: 0, gestor: 0, admin: 0 });
   var [loading, setLoading]   = React.useState(true);
   var [showModal, setShowModal] = React.useState(false);
 
   React.useEffect(function() {
-    window.fbGetAllUsers(100).then(function(docs) {
+    window.fbGetAllUsers(500).then(function(docs) {
+      var counts = { total: docs.length, aluno: 0, gestor: 0, admin: 0 };
+      docs.forEach(function (d) {
+        if (counts.hasOwnProperty(d.role)) counts[d.role] += 1;
+      });
+      setRawCounts(counts);
       setUsers(docs.map(userToRow));
       setLoading(false);
     }).catch(function() { setLoading(false); });
   }, []);
+
+  function pctSub(n) {
+    return rawCounts.total ? Math.round(n / rawCounts.total * 100) + '% do total' : '—';
+  }
 
   return (
     <div className="page-enter" style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
@@ -251,10 +287,10 @@ function AdminUsuarios({ go }) {
       {showModal && <CriarUsuarioModal onClose={function(){ setShowModal(false); }} />}
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
-        <Mini2 label="Total" value="2 814" sub="todos os perfis" />
-        <Mini2 label="Alunos" value="2 246" sub="80% do total" />
-        <Mini2 label="Gestores" value="384"  sub="14% do total" />
-        <Mini2 label="Administradores" value="22" sub="acesso global" />
+        <Mini2 label="Total"           value={loading ? '—' : String(rawCounts.total)}  sub="todos os perfis" />
+        <Mini2 label="Alunos"          value={loading ? '—' : String(rawCounts.aluno)}  sub={pctSub(rawCounts.aluno)} />
+        <Mini2 label="Gestores"        value={loading ? '—' : String(rawCounts.gestor)} sub={pctSub(rawCounts.gestor)} />
+        <Mini2 label="Administradores" value={loading ? '—' : String(rawCounts.admin)}  sub="acesso global" />
       </div>
 
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
@@ -323,17 +359,8 @@ function AdminUsuarios({ go }) {
         </table>}
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12.5, color: 'var(--muted)' }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center', fontSize: 12.5, color: 'var(--muted)' }}>
         <span>Mostrando {users.length} usuários</span>
-        <div style={{ display: 'flex', gap: 6 }}>
-          <button className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: 12 }}><Ic.ArrowL s={12}/></button>
-          <button className="btn btn-primary" style={{ padding: '6px 12px', fontSize: 12 }}>1</button>
-          <button className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: 12 }}>2</button>
-          <button className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: 12 }}>3</button>
-          <button className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: 12 }}>…</button>
-          <button className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: 12 }}>282</button>
-          <button className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: 12 }}><Ic.Arrow s={12}/></button>
-        </div>
       </div>
     </div>
   );
@@ -506,63 +533,86 @@ function AdminGestores({ go }) {
 
 // ============ ADMIN — ESTATÍSTICAS ============
 function AdminEstatisticas({ go }) {
+  var [users, setUsers]         = React.useState([]);
+  var [companies, setCompanies] = React.useState([]);
+  var [loading, setLoading]     = React.useState(true);
+
+  React.useEffect(function () {
+    Promise.all([
+      window.fbGetAllUsers(500).catch(function () { return []; }),
+      window.fbGetAllCompanies().catch(function () { return []; }),
+    ]).then(function (results) {
+      setUsers(results[0] || []);
+      setCompanies(results[1] || []);
+      setLoading(false);
+    });
+  }, []);
+
+  const completed = React.useMemo(function () {
+    return users.filter(function (u) { return u.discCompleted; }).length;
+  }, [users]);
+
+  const completionRate = React.useMemo(function () {
+    return users.length ? Math.round(completed / users.length * 100) + '%' : '—';
+  }, [users, completed]);
+
+  // Setores: agregação a partir do campo sector das empresas, ponderado por userCount
+  const sectors = React.useMemo(function () {
+    const counts = {};
+    companies.forEach(function (c) {
+      const s = c.sector && c.sector.trim();
+      if (!s) return;
+      counts[s] = (counts[s] || 0) + (c.userCount || 1);
+    });
+    const total = Object.values(counts).reduce(function (a, b) { return a + b; }, 0);
+    if (!total) return [];
+    return Object.entries(counts)
+      .map(function (e) { return { name: e[0], pct: Math.round(e[1] / total * 100) }; })
+      .sort(function (a, b) { return b.pct - a.pct; });
+  }, [companies]);
+
   return (
     <div className="page-enter" style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
-        <Mini2 label="DISC concluídos" value="11 562" sub="+612 no mês" />
-        <Mini2 label="Tempo médio" value="9.4 min" sub="−8% vs mês ant." />
-        <Mini2 label="Taxa de conclusão" value="87%" sub="+3 pts no mês" />
-        <Mini2 label="NPS Voratte" value="9.1" sub="+0.2 vs trimestre" />
+        <Mini2 label="DISC concluídos"   value={loading ? '—' : String(completed)} sub={loading ? '' : 'de ' + users.length + ' usuários'} />
+        <Mini2 label="Taxa de conclusão" value={loading ? '—' : completionRate}    sub="usuários que completaram" />
+        <Mini2 label="Empresas"          value={loading ? '—' : String(companies.length)} sub="cadastradas na plataforma" />
+        <Mini2 label="Tempo médio"       value="—"                                  sub="série ainda não disponível" />
       </div>
 
       <div className="card">
         <div className="card-title">Avaliações por mês · 12 meses</div>
         <div className="card-sub">Volume de DISC concluídos na plataforma</div>
-        <GrowthChart />
+        <GrowthChartPlaceholder />
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
         <div className="card">
           <div className="card-title">Setores mais ativos</div>
-          {[
-            ['Manufatura',        24],
-            ['Logística',         18],
-            ['Energia',           14],
-            ['Varejo',            12],
-            ['Alimentos',          9],
-            ['Tecnologia',         8],
-            ['Farmacêutico',       7],
-            ['Construção',         5],
-            ['Outros',             3],
-          ].map(([s, p]) => (
-            <div key={s} style={{ padding: '10px 0' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, fontSize: 13 }}>
-                <span style={{ fontWeight: 500 }}>{s}</span>
-                <span style={{ fontVariantNumeric: 'tabular-nums', color: 'var(--muted)' }}>{p}%</span>
+          <div className="card-sub">Distribuição de usuários por setor</div>
+          {loading ? (
+            <div style={{ padding: '24px 0', color: 'var(--muted)', fontSize: 13 }}>Carregando…</div>
+          ) : sectors.length === 0 ? (
+            <div style={{ padding: '24px 0', color: 'var(--muted)', fontSize: 13 }}>Cadastre setores nas empresas para ver a distribuição.</div>
+          ) : sectors.map(function (s) {
+            return (
+              <div key={s.name} style={{ padding: '10px 0' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, fontSize: 13 }}>
+                  <span style={{ fontWeight: 500 }}>{s.name}</span>
+                  <span style={{ fontVariantNumeric: 'tabular-nums', color: 'var(--muted)' }}>{s.pct}%</span>
+                </div>
+                <div className="progress" style={{ height: 6 }}><span style={{ width: Math.min(s.pct * 4, 100) + '%' }}/></div>
               </div>
-              <div className="progress" style={{ height: 6 }}><span style={{ width: (p*4) + '%' }}/></div>
-            </div>
-          ))}
+            );
+          })}
         </div>
         <div className="card">
           <div className="card-title">Cruzamento DISC × Cargo</div>
           <div className="card-sub">Perfis dominantes nos cargos sênior</div>
-          {[
-            ['Diretor de Compras',     'D · 48%', 'I · 22%'],
-            ['Gerente de Compras',     'I · 38%', 'D · 28%'],
-            ['Coordenador',            'S · 32%', 'C · 28%'],
-            ['Comprador Sênior',       'D · 42%', 'C · 24%'],
-            ['Comprador Pleno',        'I · 36%', 'S · 24%'],
-            ['Especialista',           'C · 54%', 'S · 22%'],
-            ['Assistente',             'S · 38%', 'I · 32%'],
-          ].map(([role, p1, p2], i) => (
-            <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 100px 100px', gap: 12, padding: '12px 0', borderBottom: i < 6 ? '1px solid var(--line-soft)' : 'none', fontSize: 13 }}>
-              <span style={{ fontWeight: 500 }}>{role}</span>
-              <span style={{ color: 'var(--brown-700)', fontWeight: 600 }}>{p1}</span>
-              <span style={{ color: 'var(--muted)' }}>{p2}</span>
-            </div>
-          ))}
+          <div style={{ padding: '32px 0', textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>
+            Cruzamento detalhado será exibido quando houver volume suficiente de avaliações por cargo.
+          </div>
         </div>
       </div>
     </div>

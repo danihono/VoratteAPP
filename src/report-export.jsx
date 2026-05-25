@@ -212,11 +212,11 @@
     const cover =
       '<div class="cover">' +
         '<div>' +
-          (logoSrc ? '<img class="cover-logo" src="' + logoSrc + '" alt="Voratte"/>' : '<div class="serif" style="font-size:22px;color:' + C.brown50 + '">Voratte</div>') +
+          (logoSrc ? '<img class="cover-logo" src="' + logoSrc + '" alt="Vorätte"/>' : '<div class="serif" style="font-size:22px;color:' + C.brown50 + '">Vorätte</div>') +
           '<div class="cover-tag">DISC · Compras &amp; Negociação</div>' +
         '</div>' +
         '<div style="flex:1"></div>' +
-        '<div class="cover-eyebrow">Relatório executivo · Voratte</div>' +
+        '<div class="cover-eyebrow">Relatório executivo · Vorätte</div>' +
         '<h1 class="cover-title">Perfil de Comprador<br/><em>DISC &amp; Matriz de Kraljic</em></h1>' +
         '<div class="cover-meta">' +
           '<div><div class="cm-k">Profissional</div><div class="cm-v">' + esc(data.name) + '</div>' +
@@ -227,7 +227,7 @@
             esc(data.code) + ' · ' + esc(data.primaryLabel) + '</div>' +
             '<div class="cm-s">' + data.predominance + '% de predominância</div></div>' +
           '<div><div class="cm-k">Emitido em</div><div class="cm-v">' + esc(data.dateStr) + '</div>' +
-            '<div class="cm-s">Voratte · plataforma DISC</div></div>' +
+            '<div class="cm-s">Vorätte · plataforma DISC</div></div>' +
         '</div>' +
       '</div>';
 
@@ -322,7 +322,7 @@
       '<title>' + esc(docTitle) + '</title><style>' + reportCSS() + '</style></head><body>' +
       cover +
       '<div class="page">' + sec01 + sec02 + sec03 + sec04 + sec05 + sec06 + '</div>' +
-      '<div class="rfoot"><span>Relatório gerado em ' + esc(data.dateStr) + ' · Voratte</span>' +
+      '<div class="rfoot"><span>Relatório gerado em ' + esc(data.dateStr) + ' · Vorätte</span>' +
       '<span>' + esc(data.name) + ' · DISC ' + esc(data.code) + '</span></div>' +
       '</body></html>';
   }

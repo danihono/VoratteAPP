@@ -1,4 +1,4 @@
-// Voratte DISC Platform — main app shell with role switching + routing
+// Vorätte DISC Platform — main app shell with role switching + routing
 
 // Different sidebar navs per role
 const NAV_ALUNO = [
@@ -38,53 +38,47 @@ const NAV_ADMIN = [
 
 const PAGE_META = {
   // shared
-  perfil:        { title: 'Meu perfil',                    sub: 'Informações da sua conta Voratte' },
+  perfil:        { title: 'Meu perfil',                    sub: 'Informações da sua conta Vorätte' },
   kraljic:       { title: 'Matriz de Kraljic',             sub: 'Analise categorias e estratégias' },
   objecoes:      { title: 'Objeções por perfil',           sub: 'Como contornar cada estilo' },
   relatorio:     { title: 'Relatório DISC completo',       sub: 'Documento executivo · 24 páginas' },
 
   // aluno
   aluno: {
-    dashboard:   { title: 'Olá, Rafael',                   sub: 'Bem-vindo ao seu painel estratégico' },
+    dashboard:   { title: 'Bem-vindo',                     sub: 'Seu painel estratégico Vorätte' },
     teste:       { title: 'Teste DISC',                    sub: 'Responda às afirmações abaixo' },
     analise:     { title: 'Análise completa do seu perfil DISC', sub: 'Entenda seu comportamento e potencial' },
     cruzamento:  { title: 'Como você lida com outros perfis',    sub: 'Estratégias para cada perfil' },
     plano:       { title: 'Plano de desenvolvimento',      sub: 'Sua trilha personalizada' },
     relatorios:  { title: 'Meus relatórios',               sub: 'Seus documentos pessoais' },
   },
-  // aluno first-time
-  alunoNew: {
-    dashboard:   { title: 'Olá, Rafael',                   sub: 'Vamos começar sua jornada na Voratte' },
-  },
   gestor: {
-    dashboard:   { title: 'Olá, Beatriz',                  sub: 'Painel do time de Compras · ABC Indústria' },
-    equipe:      { title: 'Minha equipe',                  sub: '8 colaboradores · 6 avaliados' },
+    dashboard:   { title: 'Painel da equipe',              sub: 'Visão consolidada do seu time' },
+    equipe:      { title: 'Minha equipe',                  sub: '' },
     comparacoes: { title: 'Comparativo de perfis',         sub: 'Como sua equipe se distribui' },
     mapa:        { title: 'Mapa comportamental',           sub: 'DISC × cargo do seu time' },
     relatorios:  { title: 'Relatórios da equipe',          sub: 'Documentos dos seus colaboradores' },
     analise:     { title: 'Meu próprio perfil DISC',       sub: 'Sua análise individual' },
   },
   admin: {
-    dashboard:    { title: 'Visão global Voratte',         sub: 'Console de administração · v2.6' },
-    usuarios:     { title: 'Usuários',                     sub: '2 814 usuários ativos · 147 empresas' },
-    empresas:     { title: 'Empresas',                     sub: '147 empresas conectadas' },
-    gestores:     { title: 'Gestores',                     sub: '384 gestores · 16 cargos' },
+    dashboard:    { title: 'Visão global Vorätte',         sub: 'Console de administração' },
+    usuarios:     { title: 'Usuários',                     sub: '' },
+    empresas:     { title: 'Empresas',                     sub: '' },
+    gestores:     { title: 'Gestores',                     sub: '' },
     estatisticas: { title: 'Estatísticas globais',         sub: 'Indicadores de uso e comportamento' },
-    relatorios:   { title: 'Todos os relatórios',          sub: '38 904 documentos · todas as empresas' },
+    relatorios:   { title: 'Todos os relatórios',          sub: '' },
     permissoes:   { title: 'Permissões',                   sub: 'Configure o que cada papel pode fazer' },
   },
 };
 
 const ROLE_PROFILES = {
-  aluno:    { name: 'Rafael Mendes',   role: 'Comprador Sênior',     initials: 'RM' },
-  alunoNew: { name: 'Rafael Mendes',   role: 'Comprador Sênior · novo', initials: 'RM' },
-  gestor:   { name: 'Beatriz Almeida', role: 'Diretora de Compras',  initials: 'BA' },
-  admin:    { name: 'Andrea Vasques',  role: 'Admin Voratte',        initials: 'AV' },
+  aluno:    { name: '', role: 'Aluno',    initials: '·' },
+  gestor:   { name: '', role: 'Gestor',   initials: '·' },
+  admin:    { name: '', role: 'Admin Vorätte', initials: '·' },
 };
 
 const ROLE_LABELS = {
   aluno:    'Aluno',
-  alunoNew: 'Aluno · primeira vez',
   gestor:   'Gestor',
   admin:    'Admin',
 };
@@ -94,46 +88,60 @@ function App() {
   const [authLoading, setAuthLoading] = React.useState(true);
   const [currentUser, setCurrentUser] = React.useState(null);
   const [authError, setAuthError] = React.useState('');
-  const [role, setRole] = React.useState('aluno'); // 'aluno' | 'alunoNew' | 'gestor' | 'admin'
+  const [role, setRole] = React.useState('aluno'); // 'aluno' | 'gestor' | 'admin' — fonte da verdade
+  const [viewAsRole, setViewAsRole] = React.useState(null); // override apenas para admin (modo demo)
   const [route, setRoute] = React.useState('dashboard');
 
-  // Escuta mudanças de autenticação Firebase e carrega perfil do Firestore
-  React.useEffect(() => {
-    return window.auth.onAuthStateChanged(async function(firebaseUser) {
-      if (firebaseUser) {
-        try {
-          const profile = await window.fbGetUserProfile(firebaseUser.uid);
-          if (profile) {
-            setCurrentUser(profile);
-            setAuthError('');
-            const effectiveRole = profile.role === 'aluno' && !profile.discCompleted
-              ? 'alunoNew'
-              : (profile.role || 'aluno');
-            setRole(effectiveRole);
-            setLoggedIn(true);
-          } else {
-            await window.fbLogout();
-            setAuthError('Conta não configurada. Fale com o administrador.');
-          }
-        } catch (err) {
-          console.error('Erro ao carregar perfil:', err);
-          setLoggedIn(false);
-        }
+  // Carrega perfil do Firestore a partir do usuário Firebase Auth
+  const loadProfile = React.useCallback(async function (firebaseUser) {
+    if (!firebaseUser) {
+      setCurrentUser(null);
+      setLoggedIn(false);
+      return;
+    }
+    try {
+      const profile = await window.fbGetUserProfile(firebaseUser.uid);
+      if (profile) {
+        setCurrentUser(profile);
+        setAuthError('');
+        setRole(profile.role || 'aluno');
+        setLoggedIn(true);
       } else {
-        setCurrentUser(null);
-        setLoggedIn(false);
+        await window.fbLogout();
+        setAuthError('Conta não configurada. Fale com o administrador.');
       }
-      setAuthLoading(false);
-    });
+    } catch (err) {
+      console.error('Erro ao carregar perfil:', err);
+      setLoggedIn(false);
+    }
   }, []);
 
-  const switchRole = (r) => { setRole(r); setRoute('dashboard'); };
+  // Re-carrega perfil sem esperar onAuthStateChanged (útil após mudanças em users/{uid})
+  const refreshProfile = React.useCallback(function () {
+    return loadProfile(window.auth.currentUser);
+  }, [loadProfile]);
+
+  // Escuta mudanças de autenticação Firebase e carrega perfil do Firestore
+  React.useEffect(function () {
+    return window.auth.onAuthStateChanged(async function (firebaseUser) {
+      await loadProfile(firebaseUser);
+      setAuthLoading(false);
+    });
+  }, [loadProfile]);
+
+  // Admin pode trocar a visão sem alterar role real no Firestore.
+  // Selecionar o próprio role desativa o modo demo.
+  const switchRole = (r) => {
+    const isAdmin = currentUser && currentUser.role === 'admin';
+    setViewAsRole(isAdmin && r !== currentUser.role ? r : null);
+    setRoute('dashboard');
+  };
 
   // Tela de splash enquanto Firebase verifica sessão
   if (authLoading) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: 'var(--paper)', flexDirection: 'column', gap: 20 }}>
-        <img src="assets/voratte-logo.webp" alt="Voratte" style={{ width: 64, opacity: 0.7 }} />
+        <img src="assets/voratte-logo.webp" alt="Vorätte" style={{ width: 64, opacity: 0.7 }} />
         <div style={{ fontSize: 13, color: 'var(--muted)', letterSpacing: '0.06em' }}>Carregando…</div>
       </div>
     );
@@ -143,19 +151,22 @@ function App() {
     return <LoginScreen authError={authError} />;
   }
 
-  const nav = role === 'gestor' ? NAV_GESTOR : role === 'admin' ? NAV_ADMIN : NAV_ALUNO;
+  const effectiveRole = viewAsRole || role;
+  const isDemoMode = !!viewAsRole;
+
+  const nav = effectiveRole === 'gestor' ? NAV_GESTOR : effectiveRole === 'admin' ? NAV_ADMIN : NAV_ALUNO;
 
   // Sobrescreve título do dashboard com o nome real do usuário
-  const firstName = currentUser ? currentUser.name.split(' ')[0] : null;
-  const baseMeta = (PAGE_META[role] && PAGE_META[role][route]) || PAGE_META[route] || { title: 'Voratte', sub: '' };
+  const firstName = currentUser && currentUser.name ? currentUser.name.split(' ')[0] : null;
+  const baseMeta = (PAGE_META[effectiveRole] && PAGE_META[effectiveRole][route]) || PAGE_META[route] || { title: 'Vorätte', sub: '' };
   const meta = (route === 'dashboard' && firstName)
     ? { ...baseMeta, title: 'Olá, ' + firstName }
     : baseMeta;
 
   // Perfil exibido na sidebar: usa dados reais quando disponível, fallback para ROLE_PROFILES
-  const roleProfile = ROLE_PROFILES[role];
+  const roleProfile = ROLE_PROFILES[effectiveRole] || ROLE_PROFILES.aluno;
   const profile = currentUser ? {
-    name:     currentUser.name || roleProfile.name,
+    name:     currentUser.name || roleProfile.name || '—',
     role:     currentUser.jobTitle || roleProfile.role,
     initials: currentUser.name
       ? currentUser.name.split(' ').map(function(n) { return n[0]; }).join('').slice(0,2).toUpperCase()
@@ -167,7 +178,7 @@ function App() {
       {/* Sidebar */}
       <aside className="sidebar">
         <div className="sidebar-logo">
-          <img src="assets/voratte-logo.webp" alt="Voratte" />
+          <img src="assets/voratte-logo.webp" alt="Vorätte" />
           <div className="sidebar-tag">DISC<br/>Compras</div>
         </div>
 
@@ -213,6 +224,9 @@ function App() {
               <Ic.Logout s={15}/>
             </button>
           </div>
+          <div style={{ marginTop: 10, textAlign: 'center', fontSize: 10, letterSpacing: '0.06em', color: 'var(--brown-400)', opacity: 0.7 }}>
+            Desenvolvido por Daniel Honorato
+          </div>
         </div>
       </aside>
 
@@ -224,9 +238,24 @@ function App() {
             <span className="sub">{meta.sub}</span>
           </div>
           <div className="topbar-right">
+            {/* Badge avisando que o admin está navegando como outra role */}
+            {isDemoMode && (
+              <div
+                title="Você está visualizando o sistema como outra role. Dados salvos vão para sua conta admin."
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                  padding: '6px 12px', borderRadius: 999,
+                  background: 'var(--brown-100)', color: 'var(--brown-800)',
+                  border: '1px solid var(--brown-200)',
+                  fontSize: 11, fontWeight: 600, letterSpacing: '0.04em',
+                }}
+              >
+                <Ic.Sparkle s={12}/> Modo demo · dados salvam na sua conta
+              </div>
+            )}
             {/* Role switcher — apenas para administradores (ferramenta de demo) */}
             {currentUser && currentUser.role === 'admin' && (
-              <RoleSwitcher current={role} onChange={switchRole} />
+              <RoleSwitcher current={effectiveRole} onChange={switchRole} />
             )}
             <button className="icon-btn"><Ic.Bell s={18}/><span className="dot"/></button>
             <div className="top-user">
@@ -239,19 +268,19 @@ function App() {
           </div>
         </header>
 
-        <div className="page" key={role + '-' + route}>
-          {renderScreen(role, route, setRoute, currentUser)}
+        <div className="page" key={effectiveRole + '-' + route}>
+          {renderScreen(effectiveRole, route, setRoute, currentUser, refreshProfile)}
         </div>
       </main>
     </div>
   );
 }
 
-function renderScreen(role, route, go, user) {
+function renderScreen(role, route, go, user, refreshProfile) {
   if (role === 'aluno') {
     return ({
       dashboard:   <DashboardScreen   go={go} user={user} />,
-      teste:       <DiscTestScreen    go={go} user={user} />,
+      teste:       <DiscTestScreen    go={go} user={user} refreshProfile={refreshProfile} />,
       analise:     <AnaliseScreen     go={go} user={user} />,
       cruzamento:  <CruzamentoScreen  go={go} user={user} />,
       kraljic:     <KraljicScreen     go={go} user={user} />,
@@ -261,19 +290,6 @@ function renderScreen(role, route, go, user) {
       relatorio:   <RelatorioScreen   go={go} user={user} />,
       perfil:      <PerfilScreen      go={go} user={user} />,
     }[route] || <DashboardScreen go={go} user={user} />);
-  }
-  if (role === 'alunoNew') {
-    return ({
-      dashboard:   <AlunoOnboarding   go={go} user={user} />,
-      teste:       <DiscTestScreen    go={go} user={user} />,
-      analise:     <AlunoNewLocked    go={go} title="Análise indisponível" body="Responda o DISC primeiro para acessar sua análise comportamental."/>,
-      cruzamento:  <AlunoNewLocked    go={go} title="Cruzamento indisponível" body="Disponível após sua primeira avaliação DISC."/>,
-      kraljic:     <KraljicScreen     go={go} user={user} />,
-      objecoes:    <ObjecoesScreen    go={go} />,
-      plano:       <AlunoNewLocked    go={go} title="Plano de desenvolvimento" body="Vamos construir seu plano após o resultado do DISC."/>,
-      relatorios:  <AlunoNewLocked    go={go} title="Você ainda não tem relatórios" body="Seus relatórios aparecerão aqui após completar o DISC."/>,
-      perfil:      <PerfilScreen      go={go} user={user} />,
-    }[route] || <AlunoOnboarding go={go} user={user} />);
   }
   if (role === 'gestor') {
     return ({
@@ -304,27 +320,6 @@ function renderScreen(role, route, go, user) {
   }
 }
 
-// Locked state component used in aluno-novo
-function AlunoNewLocked({ go, title, body }) {
-  return (
-    <div className="page-enter" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '70vh' }}>
-      <div className="card" style={{ padding: 48, textAlign: 'center', maxWidth: 460 }}>
-        <div style={{ width: 72, height: 72, borderRadius: '50%', background: 'var(--brown-50)', color: 'var(--brown-700)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: 18 }}>
-          <Ic.Lock s={28}/>
-        </div>
-        <h2 className="serif" style={{ fontSize: 24, fontWeight: 500, letterSpacing: '-0.01em' }}>{title}</h2>
-        <p style={{ fontSize: 13.5, color: 'var(--muted)', marginTop: 10, lineHeight: 1.6 }}>{body}</p>
-        <button className="btn btn-primary" style={{ marginTop: 22 }} onClick={() => go('teste')}>
-          <Ic.Disc s={14}/> Iniciar DISC agora
-        </button>
-        <button className="btn btn-ghost" style={{ marginTop: 8 }} onClick={() => go('dashboard')}>
-          Voltar ao início
-        </button>
-      </div>
-    </div>
-  );
-}
-
 // Role switcher — DEMO control to navigate between the 3 views
 function RoleSwitcher({ current, onChange }) {
   const [open, setOpen] = React.useState(false);
@@ -353,10 +348,9 @@ function RoleSwitcher({ current, onChange }) {
               Demo · alternar visão
             </div>
             {[
-              { k: 'alunoNew', label: 'Aluno · primeira vez', desc: 'Onboarding antes do DISC' },
-              { k: 'aluno',    label: 'Aluno',                desc: 'Após responder o DISC' },
-              { k: 'gestor',   label: 'Gestor',               desc: 'Visão da equipe' },
-              { k: 'admin',    label: 'Administrador',        desc: 'Visão global Voratte' },
+              { k: 'aluno',  label: 'Aluno',         desc: 'Visão do aluno · pode fazer o DISC' },
+              { k: 'gestor', label: 'Gestor',        desc: 'Visão da equipe' },
+              { k: 'admin',  label: 'Administrador', desc: 'Visão global Vorätte' },
             ].map(r => (
               <button key={r.k}
                 onClick={() => { onChange(r.k); setOpen(false); }}

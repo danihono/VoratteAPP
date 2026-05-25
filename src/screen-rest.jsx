@@ -1,6 +1,24 @@
 // Relatórios list + Relatório (single report cover/page) + Plano + Comparações + Perfil
 
 function RelatoriosScreen({ go, user }) {
+  var [rows, setRows]       = React.useState([]);
+  var [loading, setLoading] = React.useState(true);
+
+  React.useEffect(function () {
+    if (!user || !user.id || !window.fbGetReportsByUser) { setLoading(false); return; }
+    window.fbGetReportsByUser(user.id).then(function (docs) {
+      setRows(docs || []);
+      setLoading(false);
+    }).catch(function () { setLoading(false); });
+  }, [user && user.id]);
+
+  function fmtDate(ts) {
+    if (!ts) return '—';
+    try { return ts.toDate().toLocaleDateString('pt-BR'); } catch (e) {}
+    if (typeof ts === 'string') return ts;
+    return '—';
+  }
+
   // Exporta o relatório real do usuário em PDF (busca o DISC se necessário)
   function handleExport() {
     if (window.DISC_LAST_RESULT) {
@@ -19,14 +37,6 @@ function RelatoriosScreen({ go, user }) {
     }
   }
 
-  const rows = [
-    { name: 'Relatório DISC completo', date: '25/05/2026', type: 'Completo', status: 'Pronto' },
-    { name: 'Relatório Matriz de Kraljic', date: '20/05/2026', type: 'Estratégico', status: 'Pronto' },
-    { name: 'Relatório de Objeções', date: '16/05/2026', type: 'Negociação', status: 'Pronto' },
-    { name: 'Comparativo de Perfis · Time Compras', date: '15/05/2026', type: 'Comparação', status: 'Pronto' },
-    { name: 'Plano de Desenvolvimento Pessoal', date: '10/05/2026', type: 'Desenvolvimento', status: 'Em revisão' },
-    { name: 'Avaliação DISC · 1º semestre', date: '02/04/2026', type: 'Avaliação', status: 'Arquivado' },
-  ];
   return (
     <div className="page-enter" style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
 
@@ -34,7 +44,6 @@ function RelatoriosScreen({ go, user }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <div style={{ position: 'relative', width: 280 }}>
             <input className="input" placeholder="Buscar relatórios..." style={{ paddingLeft: 38 }} />
-            <Ic.Search s={16} />
             <div style={{ position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)' }}>
               <Ic.Search s={16}/>
             </div>
@@ -47,63 +56,55 @@ function RelatoriosScreen({ go, user }) {
       </div>
 
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-        <table className="tbl">
-          <thead>
-            <tr>
-              <th style={{ paddingLeft: 24 }}>Relatório</th>
-              <th>Data</th>
-              <th>Tipo</th>
-              <th>Status</th>
-              <th style={{ textAlign: 'right', paddingRight: 24 }}>Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r, i) => (
-              <tr key={i}>
-                <td style={{ paddingLeft: 24 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <div style={{ width: 34, height: 34, borderRadius: 8, background: 'var(--brown-50)', color: 'var(--brown-700)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Ic.Pdf s={16}/>
-                    </div>
-                    <div>
-                      <div style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--ink)' }}>{r.name}</div>
-                      <div style={{ fontSize: 11.5, color: 'var(--muted)' }}>24 páginas · 4.2 MB</div>
-                    </div>
-                  </div>
-                </td>
-                <td>{r.date}</td>
-                <td><span className="badge badge-outline">{r.type}</span></td>
-                <td>
-                  <span style={{
-                    fontSize: 11.5, fontWeight: 600,
-                    color: r.status === 'Pronto' ? 'var(--brown-700)' : r.status === 'Em revisão' ? '#a87139' : 'var(--muted)',
-                  }}>
-                    ● {r.status}
-                  </span>
-                </td>
-                <td style={{ paddingRight: 24 }}>
-                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 4 }}>
-                    <button className="icon-btn" onClick={() => go('relatorio')}><Ic.Eye s={16}/></button>
-                    <button className="icon-btn" onClick={handleExport} title="Baixar PDF"><Ic.Download s={16}/></button>
-                    <button className="icon-btn"><Ic.More s={16}/></button>
-                  </div>
-                </td>
+        {loading ? (
+          <div style={{ padding: '48px 24px', textAlign: 'center', color: 'var(--muted)', fontSize: 13.5 }}>Carregando relatórios…</div>
+        ) : rows.length === 0 ? (
+          <div style={{ padding: '48px 24px', textAlign: 'center', color: 'var(--muted)', fontSize: 13.5 }}>
+            Nenhum relatório gerado ainda. Clique em <strong>Gerar novo relatório</strong> para criar o primeiro.
+          </div>
+        ) : (
+          <table className="tbl">
+            <thead>
+              <tr>
+                <th style={{ paddingLeft: 24 }}>Relatório</th>
+                <th>Data</th>
+                <th>Tipo</th>
+                <th style={{ textAlign: 'right', paddingRight: 24 }}>Ações</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {rows.map((r, i) => (
+                <tr key={r.id || i}>
+                  <td style={{ paddingLeft: 24 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <div style={{ width: 34, height: 34, borderRadius: 8, background: 'var(--brown-50)', color: 'var(--brown-700)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Ic.Pdf s={16}/>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--ink)' }}>{r.title || 'Relatório'}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td>{fmtDate(r.createdAt)}</td>
+                  <td><span className="badge badge-outline">{r.type || '—'}</span></td>
+                  <td style={{ paddingRight: 24 }}>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 4 }}>
+                      <button className="icon-btn" onClick={() => go('relatorio')}><Ic.Eye s={16}/></button>
+                      <button className="icon-btn" onClick={handleExport} title="Baixar PDF"><Ic.Download s={16}/></button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12.5, color: 'var(--muted)' }}>
-        <span>Mostrando 6 de 18 relatórios</span>
-        <div style={{ display: 'flex', gap: 6 }}>
-          <button className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: 12 }}><Ic.ArrowL s={12}/></button>
-          <button className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: 12 }}>1</button>
-          <button className="btn btn-primary" style={{ padding: '6px 12px', fontSize: 12 }}>2</button>
-          <button className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: 12 }}>3</button>
-          <button className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: 12 }}><Ic.Arrow s={12}/></button>
+      {!loading && rows.length > 0 && (
+        <div style={{ fontSize: 12.5, color: 'var(--muted)' }}>
+          Mostrando {rows.length} relatório{rows.length === 1 ? '' : 's'}
         </div>
-      </div>
+      )}
     </div>
   );
 }
@@ -183,13 +184,13 @@ function RelatorioScreen({ go, user }) {
       <div className="report-cover">
         <div className="cover-image" />
         <div className="login-brand" style={{ marginBottom: 'auto' }}>
-          <img src="assets/voratte-logo.webp" alt="Voratte" style={{ height: 24 }} />
+          <img src="assets/voratte-logo.webp" alt="Vorätte" style={{ height: 24 }} />
           <div className="login-tag">DISC<br/>Compras &amp; Negociação</div>
         </div>
 
         <div style={{ flex: 1 }} />
 
-        <div className="report-eyebrow">Relatório executivo · Voratte</div>
+        <div className="report-eyebrow">Relatório executivo · Vorätte</div>
         <h1 className="report-title">
           Perfil de Comprador<br/>
           <em>DISC &amp; Matriz de Kraljic</em>
@@ -216,7 +217,7 @@ function RelatorioScreen({ go, user }) {
           <div>
             <div style={{ fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--brown-300)', fontWeight: 600 }}>Emitido em</div>
             <div style={{ fontFamily: 'Fraunces, serif', fontSize: 22, fontWeight: 500, marginTop: 4 }}>{data.dateStr}</div>
-            <div style={{ color: 'var(--brown-300)', marginTop: 2 }}>Voratte · DISC</div>
+            <div style={{ color: 'var(--brown-300)', marginTop: 2 }}>Vorätte · DISC</div>
           </div>
         </div>
       </div>
@@ -357,7 +358,7 @@ function RelatorioScreen({ go, user }) {
       </section>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 8px', fontSize: 11.5, color: 'var(--muted)' }}>
-        <span>Relatório gerado em {data.dateStr} · Voratte</span>
+        <span>Relatório gerado em {data.dateStr} · Vorätte</span>
         <button className="btn btn-secondary" onClick={exportPDF}><Ic.Pdf s={14} /> Exportar este relatório em PDF</button>
       </div>
     </div>
@@ -414,17 +415,9 @@ function SectionLabel({ num, label }) {
 }
 
 // ============ PLANO ============
-function PlanoScreen({ go }) {
-  const items = [
-    { icon: <Ic.Chat s={20}/>, title: 'Comunicação', sub: 'Desenvolver escuta ativa e empatia', pct: 60,
-      actions: ['Praticar escuta ativa em 3 reuniões/semana', 'Pedir feedback após cada negociação', 'Ler 1 livro sobre comunicação não-violenta'] },
-    { icon: <Ic.Handshake s={20}/>, title: 'Negociação', sub: 'Aprimorar estratégias de concessão', pct: 40,
-      actions: ['Mapear BATNA antes de cada negociação', 'Documentar concessões e contrapartidas', 'Treinamento avançado de negociação ganha-ganha'] },
-    { icon: <Ic.Shield s={20}/>, title: 'Gestão de conflitos', sub: 'Trabalhar paciência e diplomacia', pct: 30,
-      actions: ['Pausar 5 segundos antes de responder em conflitos', 'Mediar 2 conflitos da equipe por mês', 'Sessões com coach focado em diplomacia'] },
-    { icon: <Ic.Sparkle s={20}/>, title: 'Liderança', sub: 'Inspirar e desenvolver sua equipe', pct: 50,
-      actions: ['Delegar uma decisão estratégica por semana', '1:1 quinzenal com cada subordinado', 'Plano de carreira para 100% da equipe'] },
-  ];
+function PlanoScreen({ go, user }) {
+  const firstName = user && user.name ? user.name.split(' ')[0] : '';
+  const items = [];
 
   return (
     <div className="page-enter" style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
@@ -433,82 +426,112 @@ function PlanoScreen({ go }) {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 24, alignItems: 'center' }}>
           <div>
             <div style={{ fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--brown-300)', fontWeight: 600 }}>
-              Trilha personalizada · 6 meses
+              Trilha personalizada
             </div>
             <h2 className="serif" style={{ fontSize: 28, fontWeight: 500, lineHeight: 1.15, letterSpacing: '-0.015em', marginTop: 8 }}>
-              Seu plano de desenvolvimento, <em style={{ color: 'var(--brown-300)' }}>Rafael</em>
+              {firstName ? <>Seu plano de desenvolvimento, <em style={{ color: 'var(--brown-300)' }}>{firstName}</em></> : 'Seu plano de desenvolvimento'}
             </h2>
             <p style={{ fontSize: 13.5, color: 'var(--brown-200)', marginTop: 8, maxWidth: 560 }}>
-              Construído a partir do seu perfil DISC e do seu contexto em Compras Sênior.
-              Foco: equilibrar firmeza com escuta para potencializar resultados em itens estratégicos.
+              Em breve seu plano será construído a partir do seu perfil DISC e do seu contexto profissional.
             </p>
-          </div>
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ fontFamily: 'Fraunces, serif', fontSize: 56, fontWeight: 500, color: 'var(--brown-50)', letterSpacing: '-0.03em', lineHeight: 1 }}>45%</div>
-            <div style={{ fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--brown-400)', fontWeight: 600, marginTop: 6 }}>Progresso geral</div>
           </div>
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-        {items.map(it => (
-          <div key={it.title} className="card">
-            <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
-              <div style={{ width: 44, height: 44, borderRadius: 10, background: 'var(--brown-50)', color: 'var(--brown-700)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                {it.icon}
-              </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                  <div className="serif" style={{ fontSize: 18, fontWeight: 600 }}>{it.title}</div>
-                  <div style={{ fontFamily: 'Fraunces, serif', fontSize: 22, fontWeight: 500, color: 'var(--brown-700)' }}>{it.pct}%</div>
-                </div>
-                <div style={{ fontSize: 12.5, color: 'var(--muted)' }}>{it.sub}</div>
-                <div className="progress" style={{ marginTop: 12 }}>
-                  <span style={{ width: it.pct + '%' }} />
-                </div>
-              </div>
-            </div>
-            <div className="divider" style={{ margin: '18px 0 14px' }} />
-            <div style={{ fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--muted)', fontWeight: 600, marginBottom: 10 }}>
-              Próximas ações
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {it.actions.map((a, i) => (
-                <label key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, color: 'var(--ink-soft)', cursor: 'pointer' }}>
-                  <input type="checkbox" defaultChecked={i === 0} style={{ accentColor: 'var(--brown-700)' }} />
-                  <span style={{ textDecoration: i === 0 ? 'line-through' : 'none', opacity: i === 0 ? 0.6 : 1 }}>{a}</span>
-                </label>
-              ))}
-            </div>
+      {items.length === 0 ? (
+        <div className="card" style={{ padding: 36, textAlign: 'center', color: 'var(--muted)', fontSize: 13.5 }}>
+          Seu plano personalizado estará disponível em breve. Conclua o teste DISC para liberar as primeiras recomendações.
+          <div style={{ marginTop: 16 }}>
+            <button className="btn btn-primary" onClick={() => go('teste')}>
+              <Ic.Disc s={14}/> Ir para o teste DISC
+            </button>
           </div>
-        ))}
-      </div>
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+          {items.map(it => (
+            <div key={it.title} className="card">
+              <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
+                <div style={{ width: 44, height: 44, borderRadius: 10, background: 'var(--brown-50)', color: 'var(--brown-700)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  {it.icon}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                    <div className="serif" style={{ fontSize: 18, fontWeight: 600 }}>{it.title}</div>
+                    <div style={{ fontFamily: 'Fraunces, serif', fontSize: 22, fontWeight: 500, color: 'var(--brown-700)' }}>{it.pct}%</div>
+                  </div>
+                  <div style={{ fontSize: 12.5, color: 'var(--muted)' }}>{it.sub}</div>
+                  <div className="progress" style={{ marginTop: 12 }}>
+                    <span style={{ width: it.pct + '%' }} />
+                  </div>
+                </div>
+              </div>
+              <div className="divider" style={{ margin: '18px 0 14px' }} />
+              <div style={{ fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--muted)', fontWeight: 600, marginBottom: 10 }}>
+                Próximas ações
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {it.actions.map((a, i) => (
+                  <label key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, color: 'var(--ink-soft)', cursor: 'pointer' }}>
+                    <input type="checkbox" defaultChecked={i === 0} style={{ accentColor: 'var(--brown-700)' }} />
+                    <span style={{ textDecoration: i === 0 ? 'line-through' : 'none', opacity: i === 0 ? 0.6 : 1 }}>{a}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
 
 // ============ COMPARAÇÕES ============
-function ComparacoesScreen({ go }) {
-  const team = [
-    { name: 'Rafael Mendes', role: 'Comprador Sênior', d: 68, i: 18, s: 8, c: 6, main: 'D' },
-    { name: 'Júlia Cordeiro', role: 'Comprador Pleno', d: 22, i: 54, s: 16, c: 8, main: 'I' },
-    { name: 'Bruno Tavares', role: 'Coordenador', d: 12, i: 14, s: 58, c: 16, main: 'S' },
-    { name: 'Helena Antunes', role: 'Especialista', d: 8, i: 12, s: 18, c: 62, main: 'C' },
-    { name: 'Marcos Vianna', role: 'Comprador Júnior', d: 34, i: 28, s: 22, c: 16, main: 'D' },
-    { name: 'Carolina Reis', role: 'Gerente de Compras', d: 28, i: 38, s: 24, c: 10, main: 'I' },
-  ];
+function ComparacoesScreen({ go, user }) {
+  var [team, setTeam]       = React.useState([]);
+  var [loading, setLoading] = React.useState(true);
+
+  React.useEffect(function () {
+    const gestorId = user && user.gestorId;
+    if (!gestorId || !window.fbGetTeamMembers) { setLoading(false); return; }
+    window.fbGetTeamMembers(gestorId).then(function (members) {
+      setTeam((members || []).filter(function (m) { return m.main; }));
+      setLoading(false);
+    }).catch(function () { setLoading(false); });
+  }, [user && user.gestorId]);
+
+  const dist = React.useMemo(function () {
+    const counts = { D: 0, I: 0, S: 0, C: 0 };
+    team.forEach(function (m) { if (counts.hasOwnProperty(m.main)) counts[m.main] += 1; });
+    const total = counts.D + counts.I + counts.S + counts.C;
+    if (!total) return null;
+    const labels = { D: 'Dominante', I: 'Influente', S: 'Estável', C: 'Conforme' };
+    const top = ['D','I','S','C'].reduce(function (a, b) { return counts[a] >= counts[b] ? a : b; });
+    const bottom = ['D','I','S','C'].reduce(function (a, b) { return counts[a] <= counts[b] ? a : b; });
+    return {
+      counts: counts, total: total, labels: labels,
+      mostCommonLabel: labels[top], mostCommonCount: counts[top],
+      rarestLabel: labels[bottom], rarestCount: counts[bottom],
+      pct: {
+        D: Math.round(counts.D/total*100), I: Math.round(counts.I/total*100),
+        S: Math.round(counts.S/total*100), C: Math.round(counts.C/total*100),
+      },
+    };
+  }, [team]);
+
   return (
     <div className="page-enter" style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
 
       <div className="card" style={{ padding: 24 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr 1fr', gap: 20 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr', gap: 20 }}>
           <div>
-            <div className="card-title" style={{ marginBottom: 2 }}>Time Compras · ABC Indústria</div>
-            <div className="card-sub" style={{ marginBottom: 0 }}>6 colaboradores avaliados · atualizado em 25/05</div>
+            <div className="card-title" style={{ marginBottom: 2 }}>Comparativo da sua equipe</div>
+            <div className="card-sub" style={{ marginBottom: 0 }}>
+              {loading ? 'Carregando…' : (team.length ? team.length + ' colaboradores avaliados' : 'Sem colaboradores avaliados ainda')}
+            </div>
           </div>
-          <Mini label="Mais comum" value="Influente" sub="2 colaboradores" />
-          <Mini label="Mais raro" value="Conforme" sub="1 colaborador" />
-          <Mini label="Compatibilidade" value="84%" sub="Alto alinhamento" />
+          <Mini label="Mais comum" value={dist ? dist.mostCommonLabel : '—'} sub={dist ? dist.mostCommonCount + ' colaborador(es)' : '—'} />
+          <Mini label="Mais raro"  value={dist ? dist.rarestLabel    : '—'} sub={dist ? dist.rarestCount    + ' colaborador(es)' : '—'} />
         </div>
       </div>
 
@@ -518,73 +541,89 @@ function ComparacoesScreen({ go }) {
             <div className="card-title" style={{ marginBottom: 2 }}>Comparativo de perfis</div>
             <div className="card-sub" style={{ marginBottom: 0 }}>Composição DISC por colaborador</div>
           </div>
-          <table className="tbl">
-            <thead>
-              <tr>
-                <th style={{ paddingLeft: 24 }}>Colaborador</th>
-                <th>Perfil</th>
-                <th>Composição DISC</th>
-                <th style={{ paddingRight: 24, textAlign: 'right' }}>Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {team.map((p, i) => (
-                <tr key={i}>
-                  <td style={{ paddingLeft: 24 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <div className="avatar" style={{ background: 'linear-gradient(135deg, var(--brown-400), var(--brown-700))' }}>
-                        {p.name.split(' ').map(n => n[0]).join('').slice(0,2)}
-                      </div>
-                      <div>
-                        <div style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--ink)' }}>{p.name}</div>
-                        <div style={{ fontSize: 11.5, color: 'var(--muted)' }}>{p.role}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td>
-                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
-                      <div className={'disc-tile disc-' + p.main.toLowerCase()} style={{ width: 30, height: 30, fontSize: 14 }}>{p.main}</div>
-                      <span style={{ fontSize: 13, fontWeight: 600 }}>{ {D:'Dominante',I:'Influente',S:'Estável',C:'Conforme'}[p.main] }</span>
-                    </div>
-                  </td>
-                  <td style={{ minWidth: 280 }}>
-                    <div style={{ display: 'flex', height: 8, borderRadius: 999, overflow: 'hidden', background: 'var(--brown-50)' }}>
-                      <span style={{ width: p.d+'%', background: 'var(--disc-d)' }} />
-                      <span style={{ width: p.i+'%', background: 'var(--disc-i)' }} />
-                      <span style={{ width: p.s+'%', background: 'var(--disc-s)' }} />
-                      <span style={{ width: p.c+'%', background: 'var(--disc-c)' }} />
-                    </div>
-                    <div style={{ display: 'flex', gap: 12, marginTop: 6, fontSize: 11, color: 'var(--muted)' }}>
-                      <span>D {p.d}</span><span>I {p.i}</span><span>S {p.s}</span><span>C {p.c}</span>
-                    </div>
-                  </td>
-                  <td style={{ paddingRight: 24 }}>
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 4 }}>
-                      <button className="icon-btn" onClick={() => go('cruzamento')}><Ic.Compare s={16}/></button>
-                      <button className="icon-btn"><Ic.More s={16}/></button>
-                    </div>
-                  </td>
+          {loading ? (
+            <div style={{ padding: '48px 24px', textAlign: 'center', color: 'var(--muted)', fontSize: 13.5 }}>Carregando equipe…</div>
+          ) : team.length === 0 ? (
+            <div style={{ padding: '48px 24px', textAlign: 'center', color: 'var(--muted)', fontSize: 13.5 }}>
+              Comparações disponíveis quando você fizer parte de uma equipe com avaliações concluídas.
+            </div>
+          ) : (
+            <table className="tbl">
+              <thead>
+                <tr>
+                  <th style={{ paddingLeft: 24 }}>Colaborador</th>
+                  <th>Perfil</th>
+                  <th>Composição DISC</th>
+                  <th style={{ paddingRight: 24, textAlign: 'right' }}>Ações</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {team.map((p, i) => (
+                  <tr key={p.id || i}>
+                    <td style={{ paddingLeft: 24 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <div className="avatar" style={{ background: 'linear-gradient(135deg, var(--brown-400), var(--brown-700))' }}>
+                          {(p.name || '—').split(' ').map(n => n[0]).join('').slice(0,2)}
+                        </div>
+                        <div>
+                          <div style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--ink)' }}>{p.name}</div>
+                          <div style={{ fontSize: 11.5, color: 'var(--muted)' }}>{p.role}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
+                        <div className={'disc-tile disc-' + p.main.toLowerCase()} style={{ width: 30, height: 30, fontSize: 14 }}>{p.main}</div>
+                        <span style={{ fontSize: 13, fontWeight: 600 }}>{ {D:'Dominante',I:'Influente',S:'Estável',C:'Conforme'}[p.main] }</span>
+                      </div>
+                    </td>
+                    <td style={{ minWidth: 280 }}>
+                      <div style={{ display: 'flex', height: 8, borderRadius: 999, overflow: 'hidden', background: 'var(--brown-50)' }}>
+                        <span style={{ width: p.d+'%', background: 'var(--disc-d)' }} />
+                        <span style={{ width: p.i+'%', background: 'var(--disc-i)' }} />
+                        <span style={{ width: p.s+'%', background: 'var(--disc-s)' }} />
+                        <span style={{ width: p.c+'%', background: 'var(--disc-c)' }} />
+                      </div>
+                      <div style={{ display: 'flex', gap: 12, marginTop: 6, fontSize: 11, color: 'var(--muted)' }}>
+                        <span>D {p.d}</span><span>I {p.i}</span><span>S {p.s}</span><span>C {p.c}</span>
+                      </div>
+                    </td>
+                    <td style={{ paddingRight: 24 }}>
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 4 }}>
+                        <button className="icon-btn" onClick={() => go('cruzamento')}><Ic.Compare s={16}/></button>
+                        <button className="icon-btn"><Ic.More s={16}/></button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
 
         <div className="card">
           <div className="card-title">Distribuição da equipe</div>
           <div className="card-sub">Perfis predominantes</div>
-          <Donut size={180} stroke={24} data={[
-            { key: 'D', value: 33, color: 'var(--disc-d)' },
-            { key: 'I', value: 33, color: 'var(--disc-i)' },
-            { key: 'S', value: 17, color: 'var(--disc-s)' },
-            { key: 'C', value: 17, color: 'var(--disc-c)' },
-          ]} center={<><div className="letter" style={{ fontSize: 28 }}>6</div><div className="label">Pessoas</div></>} />
-          <div className="legend" style={{ marginTop: 18 }}>
-            <div className="legend-row"><div className="sw" style={{ background: 'var(--disc-d)' }}/><span>Dominante</span><span className="pct">2</span></div>
-            <div className="legend-row"><div className="sw" style={{ background: 'var(--disc-i)' }}/><span>Influente</span><span className="pct">2</span></div>
-            <div className="legend-row"><div className="sw" style={{ background: 'var(--disc-s)' }}/><span>Estável</span><span className="pct">1</span></div>
-            <div className="legend-row"><div className="sw" style={{ background: 'var(--disc-c)' }}/><span>Conforme</span><span className="pct">1</span></div>
-          </div>
+          {!dist ? (
+            <div style={{ padding: '24px 0', color: 'var(--muted)', fontSize: 13 }}>
+              Sem dados suficientes.
+            </div>
+          ) : (
+            <>
+              <Donut size={180} stroke={24} data={[
+                { key: 'D', value: dist.pct.D, color: 'var(--disc-d)' },
+                { key: 'I', value: dist.pct.I, color: 'var(--disc-i)' },
+                { key: 'S', value: dist.pct.S, color: 'var(--disc-s)' },
+                { key: 'C', value: dist.pct.C, color: 'var(--disc-c)' },
+              ]} center={<><div className="letter" style={{ fontSize: 28 }}>{dist.total}</div><div className="label">{dist.total === 1 ? 'Pessoa' : 'Pessoas'}</div></>} />
+              <div className="legend" style={{ marginTop: 18 }}>
+                <div className="legend-row"><div className="sw" style={{ background: 'var(--disc-d)' }}/><span>Dominante</span><span className="pct">{dist.counts.D}</span></div>
+                <div className="legend-row"><div className="sw" style={{ background: 'var(--disc-i)' }}/><span>Influente</span><span className="pct">{dist.counts.I}</span></div>
+                <div className="legend-row"><div className="sw" style={{ background: 'var(--disc-s)' }}/><span>Estável</span><span className="pct">{dist.counts.S}</span></div>
+                <div className="legend-row"><div className="sw" style={{ background: 'var(--disc-c)' }}/><span>Conforme</span><span className="pct">{dist.counts.C}</span></div>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>
@@ -602,23 +641,48 @@ function Mini({ label, value, sub }) {
 }
 
 // ============ PERFIL ============
-function PerfilScreen({ go }) {
+const DISC_LABELS = { D: 'Dominante', I: 'Influente', S: 'Estável', C: 'Conforme' };
+
+function PerfilScreen({ go, user }) {
+  const u = user || {};
+  const name = u.name || '—';
+  const initials = u.name
+    ? u.name.split(' ').map(function (n) { return n[0]; }).join('').slice(0, 2).toUpperCase()
+    : '·';
+  const discMain = u.discMain;
+  const subtitleParts = [];
+  if (u.jobTitle)    subtitleParts.push(u.jobTitle);
+  if (u.companyName) subtitleParts.push(u.companyName);
+  const subtitle = subtitleParts.join(' · ') || 'Sem informações de cargo cadastradas';
+
+  // Tabela de dados profissionais: somente campos com valor real
+  const profileFields = [];
+  if (u.name)        profileFields.push(['Nome completo', u.name]);
+  if (u.email)       profileFields.push(['E-mail', u.email]);
+  if (u.companyName) profileFields.push(['Empresa', u.companyName]);
+  if (u.jobTitle)    profileFields.push(['Cargo', u.jobTitle]);
+
   return (
     <div className="page-enter" style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
 
       <div className="card" style={{ padding: 28 }}>
         <div style={{ display: 'flex', gap: 24, alignItems: 'center' }}>
           <div style={{ width: 88, height: 88, borderRadius: '50%', background: 'linear-gradient(135deg, var(--brown-400), var(--brown-700))', color: 'var(--brown-50)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, fontWeight: 700, letterSpacing: '0.02em' }}>
-            RM
+            {initials}
           </div>
           <div style={{ flex: 1 }}>
-            <h2 className="serif" style={{ fontSize: 28, fontWeight: 500, letterSpacing: '-0.01em' }}>Rafael Mendes</h2>
-            <div style={{ fontSize: 13, color: 'var(--muted)', marginTop: 4 }}>Comprador Sênior · ABC Indústria · há 4 anos na plataforma</div>
-            <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-              <div className="badge badge-brown">Perfil Dominante (D)</div>
-              <div className="badge badge-outline">Compras estratégicas</div>
-              <div className="badge badge-outline">Manufatura</div>
-            </div>
+            <h2 className="serif" style={{ fontSize: 28, fontWeight: 500, letterSpacing: '-0.01em' }}>{name}</h2>
+            <div style={{ fontSize: 13, color: 'var(--muted)', marginTop: 4 }}>{subtitle}</div>
+            {(discMain || u.companyName) && (
+              <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+                {discMain && (
+                  <div className="badge badge-brown">Perfil {DISC_LABELS[discMain] || discMain} ({discMain})</div>
+                )}
+                {u.companyName && (
+                  <div className="badge badge-outline">{u.companyName}</div>
+                )}
+              </div>
+            )}
           </div>
           <button className="btn btn-secondary"><Ic.Settings s={14}/> Editar perfil</button>
         </div>
@@ -628,42 +692,30 @@ function PerfilScreen({ go }) {
         <div className="card">
           <div className="card-title">Dados profissionais</div>
           <div className="card-sub">Contexto considerado nas análises</div>
-          {[
-            ['Nome completo', 'Rafael Mendes da Costa'],
-            ['E-mail', 'rafael.mendes@voratte.com'],
-            ['Empresa', 'ABC Indústria S.A.'],
-            ['Setor', 'Manufatura · Bens de capital'],
-            ['Área de atuação', 'Compras estratégicas'],
-            ['Cargo', 'Comprador Sênior'],
-            ['Nível de experiência', '7+ anos'],
-            ['Objetivo profissional', 'Coordenação de Compras em 24 meses'],
-          ].map(([k, v]) => (
-            <div key={k} style={{ display: 'grid', gridTemplateColumns: '180px 1fr', padding: '10px 0', borderBottom: '1px solid var(--line-soft)', fontSize: 13.5 }}>
-              <div style={{ color: 'var(--muted)' }}>{k}</div>
-              <div style={{ color: 'var(--ink)', fontWeight: 500 }}>{v}</div>
+          {profileFields.length === 0 ? (
+            <div style={{ padding: '20px 0', color: 'var(--muted)', fontSize: 13.5 }}>
+              Sem dados cadastrados. Use “Editar perfil” para preencher.
             </div>
-          ))}
+          ) : profileFields.map(function (f, i) {
+            return (
+              <div key={f[0]} style={{ display: 'grid', gridTemplateColumns: '180px 1fr', padding: '10px 0', borderBottom: i < profileFields.length - 1 ? '1px solid var(--line-soft)' : 'none', fontSize: 13.5 }}>
+                <div style={{ color: 'var(--muted)' }}>{f[0]}</div>
+                <div style={{ color: 'var(--ink)', fontWeight: 500 }}>{f[1]}</div>
+              </div>
+            );
+          })}
         </div>
 
         <div className="card">
           <div className="card-title">Histórico de avaliações</div>
           <div className="card-sub">Evolução do seu perfil ao longo do tempo</div>
-          {[
-            ['Maio 2026', 'D · 68%', 'Atual'],
-            ['Outubro 2025', 'D · 64%', '+4 pts em D'],
-            ['Maio 2025', 'D · 62%', '+2 pts em I'],
-            ['Outubro 2024', 'D · 58%', '+1 pt em S'],
-          ].map(([d, p, n], i) => (
-            <div key={i} style={{ display: 'grid', gridTemplateColumns: '120px 1fr auto', alignItems: 'center', padding: '14px 0', borderBottom: i < 3 ? '1px solid var(--line-soft)' : 'none', fontSize: 13.5 }}>
-              <div style={{ color: 'var(--muted)' }}>{d}</div>
-              <div style={{ fontWeight: 600, color: 'var(--ink)' }}>{p}</div>
-              <div className="badge badge-brown" style={{ fontSize: 10 }}>{n}</div>
-            </div>
-          ))}
+          <div style={{ padding: '24px 0', color: 'var(--muted)', fontSize: 13.5 }}>
+            Suas avaliações anteriores aparecerão aqui.
+          </div>
 
           <div style={{ marginTop: 18 }}>
             <button className="btn btn-primary btn-block" onClick={() => go('teste')}>
-              Refazer avaliação DISC <Ic.Arrow s={14}/>
+              {discMain ? 'Refazer avaliação DISC' : 'Fazer avaliação DISC'} <Ic.Arrow s={14}/>
             </button>
           </div>
         </div>

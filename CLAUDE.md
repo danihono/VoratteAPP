@@ -2,6 +2,18 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Brand name
+
+The official brand spelling is **Vorätte** (with umlaut on the `a`). Always use `Vorätte` in any user-visible text, comments, alt attributes, PDF/report content, and documentation.
+
+Technical identifiers must stay ASCII and are NOT renamed:
+
+- Firebase project ID: `voratte-3fc9f`
+- Asset/file paths: `assets/voratte-logo.webp`, `uploads/logo-voratte-grande.webp`
+- HTML entry filename: `Voratte DISC Platform.html`
+- DOM IDs: `voratte-print-frame`
+- Email domain: `voratte.com.br` / `voratte.com`
+
 ## Running locally
 
 No build step. Serve the directory over HTTP:
@@ -78,7 +90,7 @@ Existem 2 administradores globais permanentes (acesso total: todas as empresas, 
 | # | E-mail | Status |
 |---|--------|--------|
 | 1 | danielboy200627@gmail.com | ativo |
-| 2 | (a definir) | pendente |
+| 2 | Renato.honorato@voratte.com.br | ativo |
 
 Esses usuários devem existir no Firebase Auth **e** ter um documento em `/users/{uid}` com `role: "admin"`. As senhas ficam exclusivamente no Firebase Console — nunca em código ou neste arquivo.
 
@@ -99,7 +111,7 @@ Firestore. `disc-data.jsx` must load before `screen-disc.jsx` in the HTML.
 `RelatorioScreen` is personalized from the user + DISC + Kraljic result. PDF
 export lives in `src/report-export.jsx` (`window.buildReportData`,
 `generateReportHTML`, `exportReportPDF`) — it builds a standalone A4 HTML
-document (Voratte logo embedded as base64, system colors/fonts) and prints it
+document (Vorätte logo embedded as base64, system colors/fonts) and prints it
 through a hidden iframe (native print dialog → "Save as PDF"). No external
 library. `report-export.jsx` must load before `screen-rest.jsx`.
 

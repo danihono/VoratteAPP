@@ -24,7 +24,7 @@ export interface KraljicProfile {
   riskForVendor: string;         // risco do lado do vendedor
 }
 
-// Mapeamento DISC → Kraljic conforme regra Voratte:
+// Mapeamento DISC → Kraljic conforme regra Vorätte:
 // D = Alavancagem | I = Estratégico | S = Gargalo | C = Não-críticos
 const DIMENSION_TO_QUADRANT: Record<Dimension, KraljicQuadrant> = {
   D: "alavancagem",

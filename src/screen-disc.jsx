@@ -22,7 +22,7 @@ function discResultFromDoc(doc) {
 }
 
 // ============ TESTE DISC ============
-function DiscTestScreen({ go, user }) {
+function DiscTestScreen({ go, user, refreshProfile }) {
   const questions = window.DISC_QUESTIONS || [];
   const total = questions.length;
   const [phase, setPhase] = React.useState('intro');  // 'intro' | 'instructions' | 'test'
@@ -40,10 +40,7 @@ function DiscTestScreen({ go, user }) {
 
   // Seleciona "Mais" / "Menos" para uma dimensão na questão atual
   function pick(kind, dimension) {
-    const prevCur = answers[q.id] || {};
-    const wasComplete = !!(prevCur.most && prevCur.least);
-
-    const cur = Object.assign({}, prevCur);
+    const cur = Object.assign({}, answers[q.id] || {});
     // toggle: clicar de novo na mesma escolha desmarca
     if (cur[kind] === dimension) {
       delete cur[kind];
@@ -56,11 +53,6 @@ function DiscTestScreen({ go, user }) {
     const next = Object.assign({}, answers);
     next[q.id] = cur;
     setAnswers(next);
-
-    // Avança sozinho só quando a questão fica completa pela primeira vez
-    if (!wasComplete && cur.most && cur.least && idx < total - 1) {
-      setTimeout(function () { setIdx(function (i) { return Math.min(total - 1, i + 1); }); }, 320);
-    }
   }
 
   async function finish() {
@@ -89,6 +81,8 @@ function DiscTestScreen({ go, user }) {
       if (user && user.id && window.fbSaveDiscResult) {
         await window.fbSaveDiscResult(user.id, saved);
       }
+      // Re-carrega perfil para refletir discCompleted/discMain no Firestore
+      if (refreshProfile) await refreshProfile();
       go('analise');
     } catch (e) {
       console.error('Erro ao salvar DISC:', e);
@@ -603,7 +597,7 @@ function AnaliseScreen({ go, user }) {
           Referência
         </div>
         <h2 className="serif" style={{ fontSize: 22, fontWeight: 500, marginBottom: 4 }}>
-          Os 11 tipos de comprador reconhecidos pela Voratte
+          Os 11 tipos de comprador reconhecidos pela Vorätte
         </h2>
         <p style={{ fontSize: 12.5, color: 'var(--muted)', marginBottom: 16 }}>
           Perfis puros + combinações. O seu está destacado.

@@ -36,12 +36,12 @@ function LoginScreen({ authError }) {
       {/* Dark editorial side */}
       <div className="login-side" onKeyDown={e => e.key === 'Enter' && handleLogin(e)}>
         <div className="login-logo-stage">
-          <img className="login-logo-large" src="assets/voratte-logo.webp" alt="Voratte" />
+          <img className="login-logo-large" src="assets/voratte-png.webp" alt="Vorätte" />
         </div>
 
         <div className="login-headline">
           <div style={{ fontSize: 11, letterSpacing: '0.24em', textTransform: 'uppercase', color: 'var(--brown-300)', marginBottom: 20, fontWeight: 600 }}>
-            Plataforma executiva · v2.6
+            Plataforma executiva
           </div>
           <h2>
             Inteligência comportamental aplicada à <em>compras estratégicas.</em>
@@ -50,12 +50,6 @@ function LoginScreen({ authError }) {
             Mapeie perfis DISC, cruze com a matriz de Kraljic e gere relatórios
             executivos prontos para a sua mesa de negociação.
           </p>
-
-          <div className="login-meta">
-            <div><strong>2 814</strong>profissionais avaliados</div>
-            <div><strong>147</strong>empresas conectadas</div>
-            <div><strong>9.1</strong>NPS médio</div>
-          </div>
         </div>
       </div>
 
@@ -146,12 +140,15 @@ function LoginScreen({ authError }) {
           </form>
 
           <div className="signup-row">
-            Sua empresa ainda não usa a Voratte? <a>Solicitar demonstração</a>
+            Sua empresa ainda não usa a Vorätte? <a>Solicitar demonstração</a>
           </div>
 
           <div style={{ marginTop: 36, paddingTop: 20, borderTop: '1px solid var(--line-soft)', fontSize: 11, color: 'var(--muted-soft)', display: 'flex', justifyContent: 'space-between', gap: 12 }}>
             <span><Ic.Lock s={12}/> Conexão criptografada</span>
-            <span>© 2026 Voratte</span>
+            <span>© 2026 Vorätte</span>
+          </div>
+          <div style={{ marginTop: 10, textAlign: 'center', fontSize: 10.5, color: 'var(--muted-soft)', letterSpacing: '0.04em' }}>
+            Desenvolvido por Daniel Honorato
           </div>
         </div>
       </div>

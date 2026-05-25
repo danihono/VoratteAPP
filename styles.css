@@ -1044,3 +1044,88 @@ html[data-theme="dark"], html[data-theme="dark"] body {
 }
 .theme-preview.active .tp-check { opacity: 1; transform: scale(1); }
 [data-theme="dark"] .theme-preview.active .tp-check { background: var(--brown-300); color: var(--brown-950); }
+
+/* ============ LANGUAGE PICKER (Globe + PT/ES/EN popover) ============ */
+.lang-wrap {
+  position: relative;
+  display: inline-flex;
+}
+.lang-popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 60;
+  min-width: 180px;
+  padding: 6px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+[data-theme="dark"] .lang-popover {
+  background: #150e09;
+  border-color: #2a1d12;
+}
+.lang-chip {
+  display: grid;
+  grid-template-columns: 28px 1fr 16px;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  background: transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  border: none;
+  text-align: left;
+  color: var(--ink);
+  transition: background 140ms ease;
+}
+.lang-chip:hover { background: var(--brown-50); }
+[data-theme="dark"] .lang-chip:hover { background: rgba(224,198,168,0.08); }
+.lang-chip-code {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 22px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  border-radius: 6px;
+  background: var(--brown-50);
+  color: var(--brown-700);
+  border: 1px solid var(--line);
+}
+.lang-chip-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-soft);
+}
+.lang-chip.active {
+  background: var(--brown-50);
+}
+.lang-chip.active .lang-chip-code {
+  background: var(--brown-700);
+  color: var(--brown-50);
+  border-color: var(--brown-700);
+}
+.lang-chip.active .lang-chip-label {
+  color: var(--ink);
+  font-weight: 600;
+}
+[data-theme="dark"] .lang-chip-code {
+  background: #1f1410;
+  color: var(--brown-200);
+  border-color: #2a1d12;
+}
+[data-theme="dark"] .lang-chip.active {
+  background: rgba(224,198,168,0.10);
+}
+[data-theme="dark"] .lang-chip.active .lang-chip-code {
+  background: var(--brown-200);
+  color: var(--brown-950);
+  border-color: var(--brown-200);
+}

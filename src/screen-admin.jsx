@@ -2,6 +2,7 @@
 // O admin geral vê TUDO: todas as empresas, gestores, usuários, estatísticas globais.
 
 function AdminDashboard({ go }) {
+  useLang();
   var [users, setUsers]         = React.useState([]);
   var [companies, setCompanies] = React.useState([]);
   var [gestores, setGestores]   = React.useState([]);
@@ -75,31 +76,31 @@ function AdminDashboard({ go }) {
         <div style={{ position: 'absolute', right: -100, top: -100, width: 400, height: 400, background: 'radial-gradient(circle, rgba(164,113,72,0.3), transparent 60%)' }} />
         <div style={{ position: 'relative' }}>
           <div className="badge" style={{ background: 'rgba(255,255,255,0.08)', color: 'var(--brown-200)' }}>
-            <Ic.Shield s={12}/> Console de Administração · Vorätte
+            <Ic.Shield s={12}/> {t('admin.badge')}
           </div>
           <h2 className="serif" style={{ fontSize: 32, fontWeight: 500, letterSpacing: '-0.02em', marginTop: 14, lineHeight: 1.1 }}>
-            Visão global da plataforma
+            {t('admin.heroTitle')}
           </h2>
           <p style={{ fontSize: 13.5, color: 'var(--brown-200)', marginTop: 8, maxWidth: 520 }}>
-            Acompanhe o uso da Vorätte em todas as empresas, gestores e profissionais conectados.
+            {t('admin.heroLede')}
           </p>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginTop: 28 }}>
-            <AdminStat label="Empresas" value={loading ? '—' : String(stats.empresas)} />
-            <AdminStat label="Gestores" value={loading ? '—' : String(stats.gestores)} />
-            <AdminStat label="Usuários" value={loading ? '—' : String(stats.usuarios)} />
-            <AdminStat label="Avaliações concluídas" value={loading ? '—' : String(stats.avaliacoes)} />
+            <AdminStat label={t('admin.stat.companies')} value={loading ? '—' : String(stats.empresas)} />
+            <AdminStat label={t('admin.stat.managers')}  value={loading ? '—' : String(stats.gestores)} />
+            <AdminStat label={t('admin.stat.users')}     value={loading ? '—' : String(stats.usuarios)} />
+            <AdminStat label={t('admin.stat.completed')} value={loading ? '—' : String(stats.avaliacoes)} />
           </div>
         </div>
       </div>
 
       {/* Distribuição DISC global */}
       <div className="card">
-        <div className="card-title">Distribuição DISC global</div>
-        <div className="card-sub">Perfis predominantes · {discDist ? discDist.total + ' avaliações' : 'sem dados'}</div>
+        <div className="card-title">{t('admin.discDist.title')}</div>
+        <div className="card-sub">{discDist ? t('admin.discDist.sub', { n: discDist.total }) : t('admin.discDist.subEmpty')}</div>
         {!discDist ? (
           <div style={{ padding: '24px 0', color: 'var(--muted)', fontSize: 13 }}>
-            Distribuição será exibida quando houver avaliações concluídas.
+            {t('admin.discDist.empty')}
           </div>
         ) : (
           <div style={{ display: 'flex', gap: 18, alignItems: 'center' }}>
@@ -111,13 +112,13 @@ function AdminDashboard({ go }) {
                 { key: 'S', value: discDist.pct.S, color: 'var(--disc-s)' },
                 { key: 'C', value: discDist.pct.C, color: 'var(--disc-c)' },
               ]}
-              center={<><div className="letter" style={{ fontSize: 32 }}>{discDist.main}</div><div className="label">+ comum</div></>}
+              center={<><div className="letter" style={{ fontSize: 32 }}>{discDist.main}</div><div className="label">{t('admin.discDist.commonLabel')}</div></>}
             />
             <div className="legend" style={{ flex: 1 }}>
-              <div className="legend-row"><div className="sw" style={{ background: 'var(--disc-d)' }}/><span>Dominante</span><span className="pct">{discDist.pct.D}%</span></div>
-              <div className="legend-row"><div className="sw" style={{ background: 'var(--disc-i)' }}/><span>Influente</span><span className="pct">{discDist.pct.I}%</span></div>
-              <div className="legend-row"><div className="sw" style={{ background: 'var(--disc-s)' }}/><span>Estável</span><span className="pct">{discDist.pct.S}%</span></div>
-              <div className="legend-row"><div className="sw" style={{ background: 'var(--disc-c)' }}/><span>Conforme</span><span className="pct">{discDist.pct.C}%</span></div>
+              <div className="legend-row"><div className="sw" style={{ background: 'var(--disc-d)' }}/><span>{t('disc.D.label')}</span><span className="pct">{discDist.pct.D}%</span></div>
+              <div className="legend-row"><div className="sw" style={{ background: 'var(--disc-i)' }}/><span>{t('disc.I.label')}</span><span className="pct">{discDist.pct.I}%</span></div>
+              <div className="legend-row"><div className="sw" style={{ background: 'var(--disc-s)' }}/><span>{t('disc.S.label')}</span><span className="pct">{discDist.pct.S}%</span></div>
+              <div className="legend-row"><div className="sw" style={{ background: 'var(--disc-c)' }}/><span>{t('disc.C.label')}</span><span className="pct">{discDist.pct.C}%</span></div>
             </div>
           </div>
         )}
@@ -128,17 +129,17 @@ function AdminDashboard({ go }) {
         <div className="card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
             <div>
-              <div className="card-title">Empresas mais ativas</div>
-              <div className="card-sub" style={{ marginBottom: 0 }}>Por número de usuários cadastrados</div>
+              <div className="card-title">{t('admin.topCompanies.title')}</div>
+              <div className="card-sub" style={{ marginBottom: 0 }}>{t('admin.topCompanies.sub')}</div>
             </div>
             <button className="btn btn-ghost" style={{ padding: '6px 10px', fontSize: 12 }} onClick={() => go('empresas')}>
-              Ver todas <Ic.Arrow s={12}/>
+              {t('admin.topCompanies.viewAll')} <Ic.Arrow s={12}/>
             </button>
           </div>
           {loading ? (
-            <div style={{ padding: '24px 0', color: 'var(--muted)', fontSize: 13 }}>Carregando…</div>
+            <div style={{ padding: '24px 0', color: 'var(--muted)', fontSize: 13 }}>{t('admin.topCompanies.loading')}</div>
           ) : topCompanies.length === 0 ? (
-            <div style={{ padding: '24px 0', color: 'var(--muted)', fontSize: 13 }}>Nenhuma empresa cadastrada.</div>
+            <div style={{ padding: '24px 0', color: 'var(--muted)', fontSize: 13 }}>{t('admin.topCompanies.empty')}</div>
           ) : topCompanies.map(function (c, i) {
             const name = c.name || '—';
             return (
@@ -148,10 +149,10 @@ function AdminDashboard({ go }) {
                 </div>
                 <div>
                   <div style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--ink)' }}>{name}</div>
-                  <div style={{ fontSize: 11.5, color: 'var(--muted)' }}>{c.sector || 'Setor não informado'}</div>
+                  <div style={{ fontSize: 11.5, color: 'var(--muted)' }}>{c.sector || t('admin.topCompanies.noSector')}</div>
                 </div>
                 <div>{c.sector ? <span className="badge badge-outline">{c.sector}</span> : <span style={{ color: 'var(--muted-soft)', fontSize: 11 }}>—</span>}</div>
-                <div style={{ textAlign: 'right', fontSize: 13, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{c.userCount || 0}<span style={{ fontSize: 11, fontWeight: 500, color: 'var(--muted)' }}> usuários</span></div>
+                <div style={{ textAlign: 'right', fontSize: 13, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{c.userCount || 0}<span style={{ fontSize: 11, fontWeight: 500, color: 'var(--muted)' }}>{t('admin.topCompanies.usersSuffix')}</span></div>
                 <button className="icon-btn"><Ic.Arrow s={16}/></button>
               </div>
             );
@@ -159,12 +160,12 @@ function AdminDashboard({ go }) {
         </div>
 
         <div className="card">
-          <div className="card-title">Distribuição por cargo</div>
-          <div className="card-sub">Onde estão os usuários da plataforma</div>
+          <div className="card-title">{t('admin.roleDist.title')}</div>
+          <div className="card-sub">{t('admin.roleDist.sub')}</div>
           {loading ? (
-            <div style={{ padding: '24px 0', color: 'var(--muted)', fontSize: 13 }}>Carregando…</div>
+            <div style={{ padding: '24px 0', color: 'var(--muted)', fontSize: 13 }}>{t('admin.topCompanies.loading')}</div>
           ) : roleDist.length === 0 ? (
-            <div style={{ padding: '24px 0', color: 'var(--muted)', fontSize: 13 }}>Distribuição será exibida quando houver usuários com cargo definido.</div>
+            <div style={{ padding: '24px 0', color: 'var(--muted)', fontSize: 13 }}>{t('admin.roleDist.empty')}</div>
           ) : roleDist.map(function (r) {
             return (
               <div key={r.role} style={{ padding: '8px 0' }}>
@@ -193,31 +194,29 @@ function AdminStat({ label, value }) {
   );
 }
 
-// Gráfico de barras: avaliações DISC concluídas nos últimos 12 meses
-function MonthlyBars({ series, max }) {
-  const safeMax = max || 1;
+// Placeholder de gráfico de crescimento — série histórica ainda não implementada
+function GrowthChartPlaceholder() {
   return (
-    <div style={{ padding: '20px 4px 4px', display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: 8, alignItems: 'end', minHeight: 200 }}>
-      {series.map(function (b, i) {
-        const h = b.n === 0 ? 4 : Math.max(8, Math.round(b.n / safeMax * 150));
-        return (
-          <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-            <div style={{ fontSize: 11, color: b.n > 0 ? 'var(--ink)' : 'transparent', fontWeight: 600, fontVariantNumeric: 'tabular-nums', minHeight: 14 }}>
-              {b.n > 0 ? b.n : '·'}
-            </div>
-            <div style={{ width: '100%', height: h, background: b.n > 0 ? 'var(--brown-700)' : 'var(--brown-100)', borderRadius: 4, transition: 'height .3s' }} />
-            <div style={{ fontSize: 10.5, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{b.label}</div>
-          </div>
-        );
-      })}
+    <div style={{
+      padding: '48px 24px', textAlign: 'center',
+      color: 'var(--muted)', fontSize: 13,
+      border: '1px dashed var(--line)', borderRadius: 10,
+    }}>
+      {t('admin.stats.chartPlaceholder')}
     </div>
   );
 }
 
 // helpers de transformação Firestore → shape de exibição
 function userToRow(doc) {
-  var levelMap = { aluno: 'Aluno', gestor: 'Gestor', admin: 'Admin' };
-  var status = doc.discCompleted ? 'Ativo' : (doc.invited ? 'Convidado' : 'Pendente');
+  var levelMap = {
+    aluno:  t('admin.userLevel.aluno'),
+    gestor: t('admin.userLevel.gestor'),
+    admin:  t('admin.userLevel.admin'),
+  };
+  var status = doc.discCompleted
+    ? t('admin.userRow.status.active')
+    : (doc.invited ? t('admin.userRow.status.invited') : t('admin.userRow.status.pending'));
   return {
     name:    doc.name    || '—',
     email:   doc.email   || '—',
@@ -243,7 +242,7 @@ function companyToRow(doc) {
 }
 
 function gestorToRow(doc) {
-  var [done, total] = [doc.teamCompletedCount || 0, doc.teamSize || 0];
+  var done = doc.teamCompletedCount || 0, total = doc.teamSize || 0;
   return {
     name:      doc.name        || '—',
     email:     doc.email       || '—',
@@ -255,6 +254,7 @@ function gestorToRow(doc) {
 
 // ============ ADMIN — USUÁRIOS (visão geral) ============
 function AdminUsuarios({ go }) {
+  useLang();
   var [users, setUsers]       = React.useState([]);
   var [rawCounts, setRawCounts] = React.useState({ total: 0, aluno: 0, gestor: 0, admin: 0 });
   var [loading, setLoading]   = React.useState(true);
@@ -270,10 +270,10 @@ function AdminUsuarios({ go }) {
       setUsers(docs.map(userToRow));
       setLoading(false);
     }).catch(function() { setLoading(false); });
-  }, []);
+  }, [window.getLang()]);
 
   function pctSub(n) {
-    return rawCounts.total ? Math.round(n / rawCounts.total * 100) + '% do total' : '—';
+    return rawCounts.total ? t('admin.users.mini.pct', { pct: Math.round(n / rawCounts.total * 100) }) : '—';
   }
 
   return (
@@ -282,93 +282,103 @@ function AdminUsuarios({ go }) {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1 }}>
           <div style={{ position: 'relative', flex: 1, maxWidth: 380 }}>
-            <input className="input" placeholder="Buscar usuário, e-mail, empresa..." style={{ paddingLeft: 38 }} />
+            <input className="input" placeholder={t('admin.users.search')} style={{ paddingLeft: 38 }} />
             <div style={{ position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)' }}>
               <Ic.Search s={16}/>
             </div>
           </div>
-          <button className="btn btn-secondary"><Ic.Settings s={14}/> Filtros</button>
-          <button className="btn btn-ghost"><Ic.Download s={14}/> Exportar CSV</button>
+          <button className="btn btn-secondary"><Ic.Settings s={14}/> {t('admin.users.filters')}</button>
+          <button className="btn btn-ghost"><Ic.Download s={14}/> {t('admin.users.exportCsv')}</button>
         </div>
-        <button className="btn btn-primary" onClick={function(){ setShowModal(true); }}><Ic.Plus s={14}/> Convidar usuário</button>
+        <button className="btn btn-primary" onClick={function(){ setShowModal(true); }}><Ic.Plus s={14}/> {t('admin.users.invite')}</button>
       </div>
       {showModal && <CriarUsuarioModal onClose={function(){ setShowModal(false); }} />}
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
-        <Mini2 label="Total"           value={loading ? '—' : String(rawCounts.total)}  sub="todos os perfis" />
-        <Mini2 label="Alunos"          value={loading ? '—' : String(rawCounts.aluno)}  sub={pctSub(rawCounts.aluno)} />
-        <Mini2 label="Gestores"        value={loading ? '—' : String(rawCounts.gestor)} sub={pctSub(rawCounts.gestor)} />
-        <Mini2 label="Administradores" value={loading ? '—' : String(rawCounts.admin)}  sub="acesso global" />
+        <Mini2 label={t('admin.users.mini.total')}    value={loading ? '—' : String(rawCounts.total)}  sub={t('admin.users.mini.totalSub')} />
+        <Mini2 label={t('admin.users.mini.alunos')}   value={loading ? '—' : String(rawCounts.aluno)}  sub={pctSub(rawCounts.aluno)} />
+        <Mini2 label={t('admin.users.mini.gestores')} value={loading ? '—' : String(rawCounts.gestor)} sub={pctSub(rawCounts.gestor)} />
+        <Mini2 label={t('admin.users.mini.admins')}   value={loading ? '—' : String(rawCounts.admin)}  sub={t('admin.users.mini.adminsSub')} />
       </div>
 
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
         {loading && (
-          <div style={{ padding: 32, textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>Carregando usuários…</div>
+          <div style={{ padding: 32, textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>{t('admin.users.loading')}</div>
         )}
         {!loading && users.length === 0 && (
-          <div style={{ padding: 32, textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>Nenhum usuário encontrado no Firestore.</div>
+          <div style={{ padding: 32, textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>{t('admin.users.empty')}</div>
         )}
         {!loading && users.length > 0 && <table className="tbl">
           <thead><tr>
-            <th style={{ paddingLeft: 24 }}>Usuário</th>
-            <th>Empresa</th>
-            <th>Cargo</th>
-            <th>Nível</th>
-            <th>DISC</th>
-            <th>Última atividade</th>
-            <th>Status</th>
-            <th style={{ paddingRight: 24, textAlign: 'right' }}>Ações</th>
+            <th style={{ paddingLeft: 24 }}>{t('admin.users.col.user')}</th>
+            <th>{t('admin.users.col.company')}</th>
+            <th>{t('admin.users.col.role')}</th>
+            <th>{t('admin.users.col.level')}</th>
+            <th>{t('admin.users.col.disc')}</th>
+            <th>{t('admin.users.col.lastSeen')}</th>
+            <th>{t('admin.users.col.status')}</th>
+            <th style={{ paddingRight: 24, textAlign: 'right' }}>{t('common.actions')}</th>
           </tr></thead>
           <tbody>
-            {users.map((u, i) => (
-              <tr key={i}>
-                <td style={{ paddingLeft: 24 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <div className="avatar" style={{ width: 32, height: 32, fontSize: 11 }}>
-                      {u.name.split(' ').map(n => n[0]).join('').slice(0,2)}
+            {users.map((u, i) => {
+              const adminLabel = t('admin.userLevel.admin');
+              const gestorLabel = t('admin.userLevel.gestor');
+              const alunoLabel = t('admin.userLevel.aluno');
+              const isAdmin = u.level === adminLabel;
+              const isGestor = u.level === gestorLabel;
+              const isAluno = u.level === alunoLabel;
+              const activeStatus = t('admin.userRow.status.active');
+              const pendingStatus = t('admin.userRow.status.pending');
+              return (
+                <tr key={i}>
+                  <td style={{ paddingLeft: 24 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <div className="avatar" style={{ width: 32, height: 32, fontSize: 11 }}>
+                        {u.name.split(' ').map(n => n[0]).join('').slice(0,2)}
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--ink)' }}>{u.name}</div>
+                        <div style={{ fontSize: 11.5, color: 'var(--muted)' }}>{u.email}</div>
+                      </div>
                     </div>
-                    <div>
-                      <div style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--ink)' }}>{u.name}</div>
-                      <div style={{ fontSize: 11.5, color: 'var(--muted)' }}>{u.email}</div>
+                  </td>
+                  <td>{u.company}</td>
+                  <td>{u.role}</td>
+                  <td>
+                    <span className="badge" style={{
+                      background: isAdmin ? 'var(--ink)' : isGestor ? 'var(--brown-700)' : 'var(--brown-50)',
+                      color: isAluno ? 'var(--brown-700)' : 'var(--brown-50)',
+                    }}>{u.level}</span>
+                  </td>
+                  <td>
+                    {u.disc === '—' ? (
+                      <span style={{ color: 'var(--muted-soft)' }}>—</span>
+                    ) : (
+                      <div className={'disc-tile disc-' + u.disc.toLowerCase()} style={{ width: 26, height: 26, fontSize: 13, borderRadius: 6 }}>{u.disc}</div>
+                    )}
+                  </td>
+                  <td style={{ fontSize: 12, color: 'var(--muted)' }}>{u.active}</td>
+                  <td>
+                    <span style={{
+                      fontSize: 11.5, fontWeight: 600,
+                      color: u.status === activeStatus ? 'var(--brown-700)' : u.status === pendingStatus ? '#a87139' : 'var(--muted)',
+                    }}>● {u.status}</span>
+                  </td>
+                  <td style={{ paddingRight: 24 }}>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 4 }}>
+                      <button className="icon-btn"><Ic.Eye s={16}/></button>
+                      <button className="icon-btn"><Ic.More s={16}/></button>
                     </div>
-                  </div>
-                </td>
-                <td>{u.company}</td>
-                <td>{u.role}</td>
-                <td>
-                  <span className="badge" style={{
-                    background: u.level === 'Admin' ? 'var(--ink)' : u.level === 'Gestor' ? 'var(--brown-700)' : 'var(--brown-50)',
-                    color: u.level === 'Aluno' ? 'var(--brown-700)' : 'var(--brown-50)',
-                  }}>{u.level}</span>
-                </td>
-                <td>
-                  {u.disc === '—' ? (
-                    <span style={{ color: 'var(--muted-soft)' }}>—</span>
-                  ) : (
-                    <div className={'disc-tile disc-' + u.disc.toLowerCase()} style={{ width: 26, height: 26, fontSize: 13, borderRadius: 6 }}>{u.disc}</div>
-                  )}
-                </td>
-                <td style={{ fontSize: 12, color: 'var(--muted)' }}>{u.active}</td>
-                <td>
-                  <span style={{
-                    fontSize: 11.5, fontWeight: 600,
-                    color: u.status === 'Ativo' ? 'var(--brown-700)' : u.status === 'Pendente' ? '#a87139' : 'var(--muted)',
-                  }}>● {u.status}</span>
-                </td>
-                <td style={{ paddingRight: 24 }}>
-                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 4 }}>
-                    <button className="icon-btn"><Ic.Eye s={16}/></button>
-                    <button className="icon-btn"><Ic.More s={16}/></button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>}
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center', fontSize: 12.5, color: 'var(--muted)' }}>
-        <span>Mostrando {users.length} usuários</span>
+        <span>{t('admin.users.showing', { n: users.length })}</span>
       </div>
     </div>
   );
@@ -386,6 +396,7 @@ function Mini2({ label, value, sub }) {
 
 // ============ ADMIN — EMPRESAS ============
 function AdminEmpresas({ go }) {
+  useLang();
   var [cos, setCos] = React.useState([]);
   var [loading, setLoading] = React.useState(true);
 
@@ -400,17 +411,17 @@ function AdminEmpresas({ go }) {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', gap: 12 }}>
           <div style={{ position: 'relative', width: 280 }}>
-            <input className="input" placeholder="Buscar empresa..." style={{ paddingLeft: 38 }} />
+            <input className="input" placeholder={t('admin.empresas.search')} style={{ paddingLeft: 38 }} />
             <div style={{ position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)' }}><Ic.Search s={16}/></div>
           </div>
-          <button className="btn btn-secondary"><Ic.Settings s={14}/> Setor</button>
-          <button className="btn btn-secondary"><Ic.Settings s={14}/> Plano</button>
+          <button className="btn btn-secondary"><Ic.Settings s={14}/> {t('admin.empresas.sector')}</button>
+          <button className="btn btn-secondary"><Ic.Settings s={14}/> {t('admin.empresas.plan')}</button>
         </div>
-        <button className="btn btn-primary"><Ic.Plus s={14}/> Cadastrar empresa</button>
+        <button className="btn btn-primary"><Ic.Plus s={14}/> {t('admin.empresas.new')}</button>
       </div>
 
-      {loading && <div style={{ padding: 32, textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>Carregando empresas…</div>}
-      {!loading && cos.length === 0 && <div style={{ padding: 32, textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>Nenhuma empresa encontrada no Firestore.</div>}
+      {loading && <div style={{ padding: 32, textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>{t('admin.empresas.loading')}</div>}
+      {!loading && cos.length === 0 && <div style={{ padding: 32, textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>{t('admin.empresas.empty')}</div>}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14 }}>
         {cos.map((c, i) => (
           <div key={i} className="card" style={{ padding: 22 }}>
@@ -420,7 +431,7 @@ function AdminEmpresas({ go }) {
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)' }}>{c.name}</div>
-                <div style={{ fontSize: 11.5, color: 'var(--muted)' }}>{c.sector} · cliente desde {c.since}</div>
+                <div style={{ fontSize: 11.5, color: 'var(--muted)' }}>{t('admin.empresas.clientSince', { sector: c.sector, since: c.since })}</div>
               </div>
               <span className="badge" style={{
                 background: c.plan === 'Enterprise' ? 'var(--ink)' : c.plan === 'Business' ? 'var(--brown-700)' : 'var(--brown-50)',
@@ -431,15 +442,15 @@ function AdminEmpresas({ go }) {
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6, padding: '12px 0', borderTop: '1px solid var(--line-soft)', borderBottom: '1px solid var(--line-soft)' }}>
               <div>
-                <div style={{ fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--muted)', fontWeight: 600 }}>Usuários</div>
+                <div style={{ fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--muted)', fontWeight: 600 }}>{t('admin.empresas.users')}</div>
                 <div style={{ fontFamily: 'Fraunces, serif', fontSize: 22, fontWeight: 500 }}>{c.users}</div>
               </div>
               <div>
-                <div style={{ fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--muted)', fontWeight: 600 }}>Gestores</div>
+                <div style={{ fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--muted)', fontWeight: 600 }}>{t('admin.empresas.managers')}</div>
                 <div style={{ fontFamily: 'Fraunces, serif', fontSize: 22, fontWeight: 500 }}>{c.managers}</div>
               </div>
               <div>
-                <div style={{ fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--muted)', fontWeight: 600 }}>Concluído</div>
+                <div style={{ fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--muted)', fontWeight: 600 }}>{t('admin.empresas.completedPct')}</div>
                 <div style={{ fontFamily: 'Fraunces, serif', fontSize: 22, fontWeight: 500 }}>{c.completed}%</div>
               </div>
             </div>
@@ -451,7 +462,7 @@ function AdminEmpresas({ go }) {
             </div>
 
             <div style={{ display: 'flex', gap: 6, marginTop: 16 }}>
-              <button className="btn btn-secondary" style={{ flex: 1, padding: '8px 12px', fontSize: 12 }}><Ic.Eye s={12}/> Detalhes</button>
+              <button className="btn btn-secondary" style={{ flex: 1, padding: '8px 12px', fontSize: 12 }}><Ic.Eye s={12}/> {t('admin.empresas.details')}</button>
               <button className="btn btn-ghost" style={{ padding: '8px 10px' }}><Ic.More s={14}/></button>
             </div>
           </div>
@@ -463,6 +474,7 @@ function AdminEmpresas({ go }) {
 
 // ============ ADMIN — GESTORES ============
 function AdminGestores({ go }) {
+  useLang();
   var [ms, setMs]             = React.useState([]);
   var [loading, setLoading]   = React.useState(true);
   var [showModal, setShowModal] = React.useState(false);
@@ -477,19 +489,24 @@ function AdminGestores({ go }) {
     <div className="page-enter" style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ position: 'relative', width: 320 }}>
-          <input className="input" placeholder="Buscar gestor..." style={{ paddingLeft: 38 }} />
+          <input className="input" placeholder={t('admin.gestores.search')} style={{ paddingLeft: 38 }} />
           <div style={{ position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)' }}><Ic.Search s={16}/></div>
         </div>
-        <button className="btn btn-primary" onClick={function(){ setShowModal(true); }}><Ic.Plus s={14}/> Promover usuário a gestor</button>
+        <button className="btn btn-primary" onClick={function(){ setShowModal(true); }}><Ic.Plus s={14}/> {t('admin.gestores.promote')}</button>
       </div>
       {showModal && <CriarUsuarioModal defaultRole="gestor" onClose={function(){ setShowModal(false); }} />}
 
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-        {loading && <div style={{ padding: 32, textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>Carregando gestores…</div>}
-        {!loading && ms.length === 0 && <div style={{ padding: 32, textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>Nenhum gestor encontrado no Firestore.</div>}
+        {loading && <div style={{ padding: 32, textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>{t('admin.gestores.loading')}</div>}
+        {!loading && ms.length === 0 && <div style={{ padding: 32, textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>{t('admin.gestores.empty')}</div>}
         {!loading && ms.length > 0 && <table className="tbl">
           <thead><tr>
-            <th style={{ paddingLeft: 24 }}>Gestor</th><th>Empresa</th><th>Equipe</th><th>Cobertura DISC</th><th>Permissões</th><th style={{ paddingRight: 24, textAlign: 'right' }}>Ações</th>
+            <th style={{ paddingLeft: 24 }}>{t('admin.gestores.col.gestor')}</th>
+            <th>{t('admin.gestores.col.company')}</th>
+            <th>{t('admin.gestores.col.team')}</th>
+            <th>{t('admin.gestores.col.coverage')}</th>
+            <th>{t('admin.gestores.col.perms')}</th>
+            <th style={{ paddingRight: 24, textAlign: 'right' }}>{t('common.actions')}</th>
           </tr></thead>
           <tbody>
             {ms.map((m, i) => {
@@ -508,7 +525,7 @@ function AdminGestores({ go }) {
                     </div>
                   </td>
                   <td>{m.company}</td>
-                  <td>{m.team} colaboradores</td>
+                  <td>{t('admin.gestores.teamSuffix', { n: m.team })}</td>
                   <td style={{ minWidth: 200 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                       <div className="progress" style={{ flex: 1, height: 6 }}><span style={{ width: pct + '%' }}/></div>
@@ -517,9 +534,9 @@ function AdminGestores({ go }) {
                   </td>
                   <td>
                     <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                      <span className="badge badge-outline" style={{ fontSize: 10 }}>Ver equipe</span>
-                      <span className="badge badge-outline" style={{ fontSize: 10 }}>Relatórios</span>
-                      <span className="badge badge-outline" style={{ fontSize: 10 }}>Exportar</span>
+                      <span className="badge badge-outline" style={{ fontSize: 10 }}>{t('admin.gestores.perm.viewTeam')}</span>
+                      <span className="badge badge-outline" style={{ fontSize: 10 }}>{t('admin.gestores.perm.reports')}</span>
+                      <span className="badge badge-outline" style={{ fontSize: 10 }}>{t('admin.gestores.perm.export')}</span>
                     </div>
                   </td>
                   <td style={{ paddingRight: 24 }}>
@@ -540,23 +557,19 @@ function AdminGestores({ go }) {
 }
 
 // ============ ADMIN — ESTATÍSTICAS ============
-const MES_LABELS = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
-
 function AdminEstatisticas({ go }) {
-  var [users, setUsers]               = React.useState([]);
-  var [companies, setCompanies]       = React.useState([]);
-  var [discResults, setDiscResults]   = React.useState([]);
-  var [loading, setLoading]           = React.useState(true);
+  useLang();
+  var [users, setUsers]         = React.useState([]);
+  var [companies, setCompanies] = React.useState([]);
+  var [loading, setLoading]     = React.useState(true);
 
   React.useEffect(function () {
     Promise.all([
       window.fbGetAllUsers(500).catch(function () { return []; }),
       window.fbGetAllCompanies().catch(function () { return []; }),
-      window.fbGetAllDiscResults ? window.fbGetAllDiscResults(500).catch(function () { return []; }) : Promise.resolve([]),
     ]).then(function (results) {
       setUsers(results[0] || []);
       setCompanies(results[1] || []);
-      setDiscResults(results[2] || []);
       setLoading(false);
     });
   }, []);
@@ -568,47 +581,6 @@ function AdminEstatisticas({ go }) {
   const completionRate = React.useMemo(function () {
     return users.length ? Math.round(completed / users.length * 100) + '%' : '—';
   }, [users, completed]);
-
-  // Perfil de comprador mais frequente (substitui o antigo "Tempo médio")
-  const topBuyer = React.useMemo(function () {
-    const counts = {};
-    discResults.forEach(function (r) {
-      const c = r.code || r.main;
-      if (!c) return;
-      counts[c] = (counts[c] || 0) + 1;
-    });
-    const entries = Object.entries(counts).sort(function (a, b) { return b[1] - a[1]; });
-    if (!entries.length) return null;
-    const top = entries[0];
-    const profile = window.BUYER_PROFILES && window.BUYER_PROFILES[top[0]];
-    return { code: top[0], n: top[1], label: profile ? profile.shortLabel : top[0] };
-  }, [discResults]);
-
-  // Série mensal: últimos 12 meses, contagem de DISCs concluídos por mês
-  const monthlySeries = React.useMemo(function () {
-    const now = new Date();
-    const buckets = [];
-    const idx = {};
-    for (let i = 11; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const key = d.getFullYear() + '-' + d.getMonth();
-      buckets.push({ key: key, label: MES_LABELS[d.getMonth()], n: 0 });
-      idx[key] = buckets.length - 1;
-    }
-    discResults.forEach(function (r) {
-      if (!r.completedAt) return;
-      try {
-        const d = r.completedAt.toDate ? r.completedAt.toDate() : new Date(r.completedAt);
-        const key = d.getFullYear() + '-' + d.getMonth();
-        if (idx[key] != null) buckets[idx[key]].n += 1;
-      } catch (e) {}
-    });
-    return buckets;
-  }, [discResults]);
-
-  const maxMonthly = React.useMemo(function () {
-    return monthlySeries.reduce(function (m, b) { return Math.max(m, b.n); }, 0);
-  }, [monthlySeries]);
 
   // Setores: agregação a partir do campo sector das empresas, ponderado por userCount
   const sectors = React.useMemo(function () {
@@ -625,81 +597,31 @@ function AdminEstatisticas({ go }) {
       .sort(function (a, b) { return b.pct - a.pct; });
   }, [companies]);
 
-  // Fallback: top empresas por número de usuários cadastrados (deriva de users[].companyName)
-  const topCompaniesByUser = React.useMemo(function () {
-    if (sectors.length > 0) return [];
-    const counts = {};
-    users.forEach(function (u) {
-      const name = (u.companyName || '').trim();
-      if (!name) return;
-      counts[name] = (counts[name] || 0) + 1;
-    });
-    const entries = Object.entries(counts);
-    if (!entries.length) return [];
-    const maxN = entries.reduce(function (m, e) { return Math.max(m, e[1]); }, 1);
-    return entries
-      .map(function (e) { return { name: e[0], n: e[1], pct: Math.round(e[1] / maxN * 100) }; })
-      .sort(function (a, b) { return b.n - a.n; })
-      .slice(0, 6);
-  }, [users, sectors]);
-
-  // Cruzamento DISC × Cargo: top jobTitles com distribuição empilhada D/I/S/C
-  const discByRole = React.useMemo(function () {
-    const groups = {};
-    users.forEach(function (u) {
-      const j = u.jobTitle && u.jobTitle.trim();
-      const m = u.discMain;
-      if (!j || !m || 'DISC'.indexOf(m) < 0) return;
-      if (!groups[j]) groups[j] = { D: 0, I: 0, S: 0, C: 0, total: 0 };
-      groups[j][m] += 1;
-      groups[j].total += 1;
-    });
-    return Object.entries(groups)
-      .map(function (e) {
-        const g = e[1];
-        return {
-          role: e[0], total: g.total,
-          d: Math.round(g.D / g.total * 100),
-          i: Math.round(g.I / g.total * 100),
-          s: Math.round(g.S / g.total * 100),
-          c: Math.round(g.C / g.total * 100),
-        };
-      })
-      .sort(function (a, b) { return b.total - a.total; })
-      .slice(0, 6);
-  }, [users]);
-
   return (
     <div className="page-enter" style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
-        <Mini2 label="DISC concluídos"     value={loading ? '—' : String(completed)} sub={loading ? '' : 'de ' + users.length + ' usuários'} />
-        <Mini2 label="Taxa de conclusão"   value={loading ? '—' : completionRate}    sub="usuários que completaram" />
-        <Mini2 label="Empresas"            value={loading ? '—' : String(companies.length)} sub="cadastradas na plataforma" />
-        <Mini2 label="Perfil mais comum"   value={loading ? '—' : (topBuyer ? topBuyer.code : '—')} sub={loading ? '' : (topBuyer ? topBuyer.label + ' · ' + topBuyer.n + ' avaliações' : 'sem dados ainda')} />
+        <Mini2 label={t('admin.stats.discDone')}        value={loading ? '—' : String(completed)}        sub={loading ? '' : t('admin.stats.discDoneSub', { n: users.length })} />
+        <Mini2 label={t('admin.stats.completionRate')}  value={loading ? '—' : completionRate}           sub={t('admin.stats.completionRateSub')} />
+        <Mini2 label={t('admin.stats.companies')}       value={loading ? '—' : String(companies.length)} sub={t('admin.stats.companiesSub')} />
+        <Mini2 label={t('admin.stats.avgTime')}         value="—"                                        sub={t('admin.stats.avgTimeSub')} />
       </div>
 
       <div className="card">
-        <div className="card-title">Avaliações por mês · 12 meses</div>
-        <div className="card-sub">Volume de DISC concluídos na plataforma</div>
-        {loading ? (
-          <div style={{ padding: '32px 0', color: 'var(--muted)', fontSize: 13 }}>Carregando…</div>
-        ) : maxMonthly === 0 ? (
-          <div style={{ padding: '32px 0', color: 'var(--muted)', fontSize: 13, textAlign: 'center', border: '1px dashed var(--line)', borderRadius: 10 }}>
-            Volume mensal será exibido quando houver DISCs concluídos no período.
-          </div>
-        ) : (
-          <MonthlyBars series={monthlySeries} max={maxMonthly} />
-        )}
+        <div className="card-title">{t('admin.stats.evalsTitle')}</div>
+        <div className="card-sub">{t('admin.stats.evalsSub')}</div>
+        <GrowthChartPlaceholder />
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
         <div className="card">
-          <div className="card-title">Setores mais ativos</div>
-          <div className="card-sub">{sectors.length > 0 ? 'Distribuição de usuários por setor' : (topCompaniesByUser.length > 0 ? 'Top empresas por usuários cadastrados' : 'Distribuição de usuários')}</div>
+          <div className="card-title">{t('admin.stats.sectorsTitle')}</div>
+          <div className="card-sub">{t('admin.stats.sectorsSub')}</div>
           {loading ? (
-            <div style={{ padding: '24px 0', color: 'var(--muted)', fontSize: 13 }}>Carregando…</div>
-          ) : sectors.length > 0 ? sectors.map(function (s) {
+            <div style={{ padding: '24px 0', color: 'var(--muted)', fontSize: 13 }}>{t('admin.topCompanies.loading')}</div>
+          ) : sectors.length === 0 ? (
+            <div style={{ padding: '24px 0', color: 'var(--muted)', fontSize: 13 }}>{t('admin.stats.sectorsEmpty')}</div>
+          ) : sectors.map(function (s) {
             return (
               <div key={s.name} style={{ padding: '10px 0' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, fontSize: 13 }}>
@@ -709,49 +631,14 @@ function AdminEstatisticas({ go }) {
                 <div className="progress" style={{ height: 6 }}><span style={{ width: Math.min(s.pct * 4, 100) + '%' }}/></div>
               </div>
             );
-          }) : topCompaniesByUser.length > 0 ? topCompaniesByUser.map(function (c) {
-            return (
-              <div key={c.name} style={{ padding: '10px 0' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, fontSize: 13 }}>
-                  <span style={{ fontWeight: 500 }}>{c.name}</span>
-                  <span style={{ fontVariantNumeric: 'tabular-nums', color: 'var(--muted)' }}>{c.n} usuários</span>
-                </div>
-                <div className="progress" style={{ height: 6 }}><span style={{ width: c.pct + '%' }}/></div>
-              </div>
-            );
-          }) : (
-            <div style={{ padding: '24px 0', color: 'var(--muted)', fontSize: 13 }}>Cadastre setores nas empresas ou associe usuários a empresas para ver a distribuição.</div>
-          )}
+          })}
         </div>
         <div className="card">
-          <div className="card-title">Cruzamento DISC × Cargo</div>
-          <div className="card-sub">Perfis dominantes nos cargos com avaliações</div>
-          {loading ? (
-            <div style={{ padding: '24px 0', color: 'var(--muted)', fontSize: 13 }}>Carregando…</div>
-          ) : discByRole.length === 0 ? (
-            <div style={{ padding: '24px 0', color: 'var(--muted)', fontSize: 13 }}>Cruzamento será exibido quando houver cargos preenchidos com DISC concluído.</div>
-          ) : discByRole.map(function (r) {
-            return (
-              <div key={r.role} style={{ padding: '10px 0' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5, fontSize: 13 }}>
-                  <span style={{ fontWeight: 500 }}>{r.role}</span>
-                  <span style={{ fontSize: 11.5, color: 'var(--muted)', fontVariantNumeric: 'tabular-nums' }}>{r.total} {r.total === 1 ? 'avaliação' : 'avaliações'}</span>
-                </div>
-                <div style={{ display: 'flex', height: 8, borderRadius: 4, overflow: 'hidden', background: 'var(--brown-50)' }}>
-                  {r.d > 0 && <div style={{ width: r.d + '%', background: 'var(--disc-d)' }} title={'D ' + r.d + '%'} />}
-                  {r.i > 0 && <div style={{ width: r.i + '%', background: 'var(--disc-i)' }} title={'I ' + r.i + '%'} />}
-                  {r.s > 0 && <div style={{ width: r.s + '%', background: 'var(--disc-s)' }} title={'S ' + r.s + '%'} />}
-                  {r.c > 0 && <div style={{ width: r.c + '%', background: 'var(--disc-c)' }} title={'C ' + r.c + '%'} />}
-                </div>
-                <div style={{ display: 'flex', gap: 12, marginTop: 5, fontSize: 11, color: 'var(--muted)', fontVariantNumeric: 'tabular-nums' }}>
-                  <span><span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: 2, background: 'var(--disc-d)', marginRight: 4, verticalAlign: 'middle' }}/>D {r.d}%</span>
-                  <span><span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: 2, background: 'var(--disc-i)', marginRight: 4, verticalAlign: 'middle' }}/>I {r.i}%</span>
-                  <span><span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: 2, background: 'var(--disc-s)', marginRight: 4, verticalAlign: 'middle' }}/>S {r.s}%</span>
-                  <span><span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: 2, background: 'var(--disc-c)', marginRight: 4, verticalAlign: 'middle' }}/>C {r.c}%</span>
-                </div>
-              </div>
-            );
-          })}
+          <div className="card-title">{t('admin.stats.crossTitle')}</div>
+          <div className="card-sub">{t('admin.stats.crossSub')}</div>
+          <div style={{ padding: '32px 0', textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>
+            {t('admin.stats.crossEmpty')}
+          </div>
         </div>
       </div>
     </div>
@@ -760,45 +647,48 @@ function AdminEstatisticas({ go }) {
 
 // ============ ADMIN — PERMISSÕES ============
 function AdminPermissoes({ go }) {
+  useLang();
+  // Lista canônica de permissões por chave (ordenadas), independente do idioma
+  const PERM_KEYS = [
+    'disc', 'ownReports', 'exportPdf', 'cruzamento', 'plano',
+    'viewTeam', 'compare', 'consReports',
+    'manageUsers', 'manageComps', 'globalAcc',
+  ];
   const roles = [
     {
-      name: 'Aluno',
-      sub: 'Acesso ao próprio teste DISC e relatórios pessoais',
+      name:  t('admin.perms.role.aluno'),
+      sub:   t('admin.perms.role.alunoSub'),
       perms: {
-        'Responder DISC': true, 'Ver próprios relatórios': true, 'Exportar PDF próprio': true,
-        'Cruzamento de perfis': true, 'Plano de desenvolvimento': true,
-        'Ver equipe': false, 'Comparar colaboradores': false, 'Relatórios consolidados': false,
-        'Gerenciar usuários': false, 'Gerenciar empresas': false, 'Acesso global': false,
+        disc: true, ownReports: true, exportPdf: true, cruzamento: true, plano: true,
+        viewTeam: false, compare: false, consReports: false,
+        manageUsers: false, manageComps: false, globalAcc: false,
       },
     },
     {
-      name: 'Gestor',
-      sub: 'Acesso aos colaboradores da sua equipe',
+      name:  t('admin.perms.role.gestor'),
+      sub:   t('admin.perms.role.gestorSub'),
       perms: {
-        'Responder DISC': true, 'Ver próprios relatórios': true, 'Exportar PDF próprio': true,
-        'Cruzamento de perfis': true, 'Plano de desenvolvimento': true,
-        'Ver equipe': true, 'Comparar colaboradores': true, 'Relatórios consolidados': true,
-        'Gerenciar usuários': false, 'Gerenciar empresas': false, 'Acesso global': false,
+        disc: true, ownReports: true, exportPdf: true, cruzamento: true, plano: true,
+        viewTeam: true, compare: true, consReports: true,
+        manageUsers: false, manageComps: false, globalAcc: false,
       },
     },
     {
-      name: 'Administrador',
-      sub: 'Acesso global a usuários, empresas e configurações',
+      name:  t('admin.perms.role.admin'),
+      sub:   t('admin.perms.role.adminSub'),
       perms: {
-        'Responder DISC': true, 'Ver próprios relatórios': true, 'Exportar PDF próprio': true,
-        'Cruzamento de perfis': true, 'Plano de desenvolvimento': true,
-        'Ver equipe': true, 'Comparar colaboradores': true, 'Relatórios consolidados': true,
-        'Gerenciar usuários': true, 'Gerenciar empresas': true, 'Acesso global': true,
+        disc: true, ownReports: true, exportPdf: true, cruzamento: true, plano: true,
+        viewTeam: true, compare: true, consReports: true,
+        manageUsers: true, manageComps: true, globalAcc: true,
       },
     },
   ];
-  const allPerms = Object.keys(roles[0].perms);
 
   return (
     <div className="page-enter" style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
       <div className="card">
-        <div className="card-title">Matriz de permissões</div>
-        <div className="card-sub">Configure o que cada nível de acesso pode fazer na plataforma</div>
+        <div className="card-title">{t('admin.perms.title')}</div>
+        <div className="card-sub">{t('admin.perms.sub')}</div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr 1fr', gap: 0 }}>
           <div />
@@ -809,24 +699,24 @@ function AdminPermissoes({ go }) {
             </div>
           ))}
 
-          {allPerms.map((perm, i) => (
-            <React.Fragment key={perm}>
-              <div style={{ padding: '14px 0', borderBottom: '1px solid var(--line-soft)', fontSize: 13.5, color: 'var(--ink-soft)' }}>{perm}</div>
+          {PERM_KEYS.map((permKey) => (
+            <React.Fragment key={permKey}>
+              <div style={{ padding: '14px 0', borderBottom: '1px solid var(--line-soft)', fontSize: 13.5, color: 'var(--ink-soft)' }}>{t('admin.perms.item.' + permKey)}</div>
               {roles.map(r => (
-                <div key={r.name+perm} style={{ padding: '14px 16px', borderBottom: '1px solid var(--line-soft)', display: 'flex', alignItems: 'center' }}>
-                  {r.perms[perm] ? (
+                <div key={r.name+permKey} style={{ padding: '14px 16px', borderBottom: '1px solid var(--line-soft)', display: 'flex', alignItems: 'center' }}>
+                  {r.perms[permKey] ? (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--brown-700)', fontSize: 12, fontWeight: 600 }}>
                       <div style={{ width: 28, height: 16, borderRadius: 999, background: 'var(--brown-700)', position: 'relative' }}>
                         <div style={{ width: 12, height: 12, borderRadius: '50%', background: 'white', position: 'absolute', right: 2, top: 2 }}/>
                       </div>
-                      Permitido
+                      {t('common.yesPermitted')}
                     </div>
                   ) : (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--muted-soft)', fontSize: 12 }}>
                       <div style={{ width: 28, height: 16, borderRadius: 999, background: 'var(--brown-100)', position: 'relative' }}>
                         <div style={{ width: 12, height: 12, borderRadius: '50%', background: 'white', position: 'absolute', left: 2, top: 2 }}/>
                       </div>
-                      Bloqueado
+                      {t('common.noBlocked')}
                     </div>
                   )}
                 </div>
@@ -841,6 +731,7 @@ function AdminPermissoes({ go }) {
 
 // ============ MODAL — CRIAR USUÁRIO (somente admin) ============
 function CriarUsuarioModal({ onClose, defaultRole }) {
+  useLang();
   var [form, setForm] = React.useState({
     name: '', email: '', password: '', jobTitle: '', companyName: '',
     role: defaultRole || 'aluno',
@@ -854,7 +745,7 @@ function CriarUsuarioModal({ onClose, defaultRole }) {
   async function handleSubmit(e) {
     e.preventDefault();
     if (!form.name || !form.email || !form.password) {
-      setError('Nome, e-mail e senha são obrigatórios.');
+      setError(t('admin.modal.errors.required'));
       return;
     }
     setError(''); setLoading(true);
@@ -866,14 +757,18 @@ function CriarUsuarioModal({ onClose, defaultRole }) {
       });
       setSuccess(true);
     } catch(err) {
-      var msg = err.message || 'Erro ao criar usuário.';
-      if (msg === 'EMAIL_EXISTS') msg = 'Este e-mail já está cadastrado.';
-      if (msg.indexOf('WEAK_PASSWORD') !== -1) msg = 'A senha deve ter pelo menos 6 caracteres.';
-      setError(msg);
+      var msg = err.message || '';
+      if (msg === 'EMAIL_EXISTS') setError(t('admin.modal.errors.exists'));
+      else if (msg.indexOf('WEAK_PASSWORD') !== -1) setError(t('admin.modal.errors.weak'));
+      else setError(t('admin.modal.errors.generic'));
     } finally { setLoading(false); }
   }
 
-  var roleLabels = { aluno: 'Aluno', gestor: 'Gestor', admin: 'Admin' };
+  var roleLabels = {
+    aluno:  t('admin.userLevel.aluno'),
+    gestor: t('admin.userLevel.gestor'),
+    admin:  t('admin.userLevel.admin'),
+  };
 
   return (
     <div
@@ -891,17 +786,16 @@ function CriarUsuarioModal({ onClose, defaultRole }) {
                           alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
               <Ic.Check s={24}/>
             </div>
-            <div className="serif" style={{ fontSize: 22, marginBottom: 8 }}>Usuário criado!</div>
-            <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 24, lineHeight: 1.5 }}>
-              <strong>{form.name}</strong> foi cadastrado como <strong>{roleLabels[form.role]}</strong> e já pode fazer login.
-            </p>
-            <button className="btn btn-primary" style={{ width: '100%' }} onClick={onClose}>Fechar</button>
+            <div className="serif" style={{ fontSize: 22, marginBottom: 8 }}>{t('admin.modal.successTitle')}</div>
+            <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 24, lineHeight: 1.5 }}
+               dangerouslySetInnerHTML={{ __html: t('admin.modal.successBody', { name: form.name, role: roleLabels[form.role] }) }} />
+            <button className="btn btn-primary" style={{ width: '100%' }} onClick={onClose}>{t('common.close')}</button>
           </div>
         ) : (
           <form onSubmit={handleSubmit}>
-            <div className="serif" style={{ fontSize: 22, marginBottom: 4 }}>Criar usuário</div>
+            <div className="serif" style={{ fontSize: 22, marginBottom: 4 }}>{t('admin.modal.title')}</div>
             <div style={{ fontSize: 12.5, color: 'var(--muted)', marginBottom: 20 }}>
-              Preencha os dados para criar uma nova conta na plataforma.
+              {t('admin.modal.sub')}
             </div>
 
             {error && (
@@ -914,44 +808,44 @@ function CriarUsuarioModal({ onClose, defaultRole }) {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div className="field">
-                <label>Nome completo *</label>
+                <label>{t('admin.modal.field.name')}</label>
                 <input className="input" type="text" value={form.name}
                   onChange={function(e) { setField('name', e.target.value); }}
-                  placeholder="Ex: Ana Paula Souza" />
+                  placeholder={t('admin.modal.field.namePh')} />
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div className="field">
-                  <label>E-mail *</label>
+                  <label>{t('admin.modal.field.email')}</label>
                   <input className="input" type="email" value={form.email}
                     onChange={function(e) { setField('email', e.target.value); }}
-                    placeholder="email@empresa.com" />
+                    placeholder={t('admin.modal.field.emailPh')} />
                 </div>
                 <div className="field">
-                  <label>Senha *</label>
+                  <label>{t('admin.modal.field.password')}</label>
                   <input className="input" type="password" value={form.password}
                     onChange={function(e) { setField('password', e.target.value); }}
-                    placeholder="Mínimo 6 caracteres" />
+                    placeholder={t('admin.modal.field.passwordPh')} />
                 </div>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div className="field">
-                  <label>Cargo profissional</label>
+                  <label>{t('admin.modal.field.job')}</label>
                   <input className="input" type="text" value={form.jobTitle}
                     onChange={function(e) { setField('jobTitle', e.target.value); }}
-                    placeholder="Ex: Comprador Sênior" />
+                    placeholder={t('admin.modal.field.jobPh')} />
                 </div>
                 <div className="field">
-                  <label>Empresa</label>
+                  <label>{t('admin.modal.field.company')}</label>
                   <input className="input" type="text" value={form.companyName}
                     onChange={function(e) { setField('companyName', e.target.value); }}
-                    placeholder="Nome da empresa" />
+                    placeholder={t('admin.modal.field.companyPh')} />
                 </div>
               </div>
 
               <div className="field">
-                <label>Papel na plataforma</label>
+                <label>{t('admin.modal.field.role')}</label>
                 <div style={{ display: 'flex', gap: 8 }}>
                   {['aluno', 'gestor', 'admin'].map(function(r) {
                     return (
@@ -970,10 +864,10 @@ function CriarUsuarioModal({ onClose, defaultRole }) {
 
             <div style={{ display: 'flex', gap: 10, marginTop: 22 }}>
               <button type="button" className="btn btn-ghost" style={{ flex: 1 }} onClick={onClose}>
-                Cancelar
+                {t('common.cancel')}
               </button>
               <button type="submit" className="btn btn-primary" style={{ flex: 1 }} disabled={loading}>
-                {loading ? 'Criando…' : 'Criar usuário'}
+                {loading ? t('admin.modal.creating') : t('admin.modal.create')}
               </button>
             </div>
           </form>

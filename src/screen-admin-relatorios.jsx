@@ -31,6 +31,7 @@
 
   // ============ Listagem ============
   function AdminRelatorios({ go, user }) {
+    useLang();
     var [reports, setReports]   = React.useState([]);
     var [users, setUsers]       = React.useState([]);
     var [companies, setCompanies] = React.useState([]);
@@ -72,19 +73,19 @@
     }, [reports, search, filterType]);
 
     const typeBadge = {
-      individual:   { label: 'Individual',    color: 'var(--brown-700)' },
-      empresa:      { label: 'Empresa',       color: 'var(--brown-700)' },
-      grupo:        { label: 'Grupo · perfil', color: 'var(--brown-700)' },
-      personalizado:{ label: 'Personalizado', color: 'var(--brown-700)' },
+      individual:   { label: t('adminRel.badge.individual'),    color: 'var(--brown-700)' },
+      empresa:      { label: t('adminRel.badge.empresa'),       color: 'var(--brown-700)' },
+      grupo:        { label: t('adminRel.badge.grupo'),         color: 'var(--brown-700)' },
+      personalizado:{ label: t('adminRel.badge.personalizado'), color: 'var(--brown-700)' },
     };
 
     function handleReExport(r) {
       // Reexporta apenas relatório individual (precisa do DISC do alvo)
       if (r.type === 'individual' && r.targetId) {
         const target = users.filter(function (u) { return u.id === r.targetId; })[0];
-        if (!target) { alert('Usuário do relatório não encontrado.'); return; }
+        if (!target) { alert(t('adminRel.alert.targetNotFound')); return; }
         window.fbGetDiscResult(target.id).then(function (doc) {
-          if (!doc) { alert('Este usuário não tem DISC concluído.'); return; }
+          if (!doc) { alert(t('adminRel.alert.noDisc')); return; }
           const disc = {
             mostGraph: doc.mostGraph || { D: doc.d, I: doc.i, S: doc.s, C: doc.c },
             leastGraph: doc.leastGraph || { D: 0, I: 0, S: 0, C: 0 },
@@ -101,7 +102,7 @@
         regenerateAggregate(r.config);
         return;
       }
-      alert('Este relatório não pode ser reexportado (config ausente).');
+      alert(t('adminRel.alert.noConfig'));
     }
 
     function regenerateAggregate(config) {
@@ -124,7 +125,7 @@
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <div style={{ position: 'relative', width: 280 }}>
-              <input className="input" placeholder="Buscar título ou alvo…" style={{ paddingLeft: 38 }}
+              <input className="input" placeholder={t('adminRel.search')} style={{ paddingLeft: 38 }}
                 value={search} onChange={function (e) { setSearch(e.target.value); }} />
               <div style={{ position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)' }}>
                 <Ic.Search s={16}/>
@@ -132,41 +133,38 @@
             </div>
             <select className="input" style={{ width: 200 }} value={filterType}
               onChange={function (e) { setFilterType(e.target.value); }}>
-              <option value="all">Todos os tipos</option>
-              <option value="individual">Individual</option>
-              <option value="empresa">Empresa</option>
-              <option value="grupo">Grupo (perfil)</option>
-              <option value="personalizado">Personalizado</option>
+              <option value="all">{t('adminRel.filter.all')}</option>
+              <option value="individual">{t('adminRel.filter.individual')}</option>
+              <option value="empresa">{t('adminRel.filter.empresa')}</option>
+              <option value="grupo">{t('adminRel.filter.grupo')}</option>
+              <option value="personalizado">{t('adminRel.filter.personalizado')}</option>
             </select>
           </div>
           <button className="btn btn-primary" onClick={function () { setWizardOpen(true); }}>
-            <Ic.Plus s={14}/> Gerar novo relatório
+            <Ic.Plus s={14}/> {t('adminRel.new')}
           </button>
         </div>
 
         <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
           {loading ? (
-            <div style={{ padding: '48px 24px', textAlign: 'center', color: 'var(--muted)', fontSize: 13.5 }}>Carregando relatórios…</div>
+            <div style={{ padding: '48px 24px', textAlign: 'center', color: 'var(--muted)', fontSize: 13.5 }}>{t('adminRel.loading')}</div>
           ) : filtered.length === 0 ? (
-            <div style={{ padding: '48px 24px', textAlign: 'center', color: 'var(--muted)', fontSize: 13.5 }}>
-              {reports.length === 0
-                ? <span>Nenhum relatório gerado ainda. Clique em <strong>Gerar novo relatório</strong> para criar o primeiro.</span>
-                : <span>Nenhum relatório corresponde aos filtros aplicados.</span>}
-            </div>
+            <div style={{ padding: '48px 24px', textAlign: 'center', color: 'var(--muted)', fontSize: 13.5 }}
+                 dangerouslySetInnerHTML={{ __html: reports.length === 0 ? t('adminRel.emptyAll') : t('adminRel.emptyFiltered') }} />
           ) : (
             <table className="tbl">
               <thead>
                 <tr>
-                  <th style={{ paddingLeft: 24 }}>Relatório</th>
-                  <th>Alvo</th>
-                  <th>Tipo</th>
-                  <th>Data</th>
-                  <th style={{ textAlign: 'right', paddingRight: 24 }}>Ações</th>
+                  <th style={{ paddingLeft: 24 }}>{t('adminRel.col.report')}</th>
+                  <th>{t('adminRel.col.target')}</th>
+                  <th>{t('adminRel.col.type')}</th>
+                  <th>{t('adminRel.col.date')}</th>
+                  <th style={{ textAlign: 'right', paddingRight: 24 }}>{t('common.actions')}</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.map(function (r, i) {
-                  const t = typeBadge[r.type] || { label: r.type || '—', color: 'var(--muted)' };
+                  const badge = typeBadge[r.type] || { label: r.type || '—', color: 'var(--muted)' };
                   return (
                     <tr key={r.id || i}>
                       <td style={{ paddingLeft: 24 }}>
@@ -175,17 +173,17 @@
                             <Ic.Pdf s={16}/>
                           </div>
                           <div>
-                            <div style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--ink)' }}>{r.title || 'Relatório'}</div>
-                            {r.createdByName && <div style={{ fontSize: 11.5, color: 'var(--muted)' }}>por {r.createdByName}</div>}
+                            <div style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--ink)' }}>{r.title || t('adminRel.itemTitle')}</div>
+                            {r.createdByName && <div style={{ fontSize: 11.5, color: 'var(--muted)' }}>{t('adminRel.byPrefix', { name: r.createdByName })}</div>}
                           </div>
                         </div>
                       </td>
                       <td style={{ fontSize: 12.5 }}>{r.targetLabel || '—'}</td>
-                      <td><span className="badge badge-outline">{t.label}</span></td>
+                      <td><span className="badge badge-outline">{badge.label}</span></td>
                       <td>{fmtDate(r.createdAt)}</td>
                       <td style={{ paddingRight: 24 }}>
                         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 4 }}>
-                          <button className="icon-btn" onClick={function () { handleReExport(r); }} title="Reexportar PDF"><Ic.Download s={16}/></button>
+                          <button className="icon-btn" onClick={function () { handleReExport(r); }} title={t('adminRel.reexport')}><Ic.Download s={16}/></button>
                         </div>
                       </td>
                     </tr>
@@ -198,7 +196,7 @@
 
         {!loading && filtered.length > 0 && (
           <div style={{ fontSize: 12.5, color: 'var(--muted)' }}>
-            Mostrando {filtered.length} de {reports.length} relatório{reports.length === 1 ? '' : 's'}
+            {t(reports.length === 1 ? 'adminRel.showingOf' : 'adminRel.showingOfPlural', { n: filtered.length, total: reports.length })}
           </div>
         )}
 
@@ -218,6 +216,7 @@
 
   // ============ Wizard ============
   function AdminReportWizard({ currentUser, users, companies, discResults, onClose, onCreated }) {
+    useLang();
     var [step, setStep]     = React.useState(1);
     var [kind, setKind]     = React.useState(null);
     // target/filter state — variável conforme tipo
@@ -270,7 +269,7 @@
       if (kind === 'individual') {
         const u = users.filter(function (x) { return x.id === individualUserId; })[0];
         if (!u) return null;
-        return { kind: 'individual', label: u.name, sub: (u.jobTitle || '—') + ' · ' + (u.companyName || '—'), disc: u.discMain || '—', completed: u.discCompleted ? 'DISC concluído' : 'DISC pendente' };
+        return { kind: 'individual', label: u.name, sub: (u.jobTitle || '—') + ' · ' + (u.companyName || '—'), disc: u.discMain || '—', completed: u.discCompleted ? t('adminRel.wiz.previewDone') : t('adminRel.wiz.previewPending') };
       }
       if (kind === 'empresa') {
         if (!companyId) return null;
@@ -278,22 +277,22 @@
         const name = cmp ? cmp.name : '';
         const matchedUsers = users.filter(function (u) { return u.companyName === name || u.companyId === companyId; });
         const done = matchedUsers.filter(function (u) { return u.discCompleted; }).length;
-        return { kind: 'empresa', label: name || '—', sub: matchedUsers.length + ' usuários · ' + done + ' com DISC concluído', n: matchedUsers.length };
+        return { kind: 'empresa', label: name || '—', sub: t('adminRel.wiz.empresa.previewSub', { n: matchedUsers.length, done: done }), n: matchedUsers.length };
       }
       if (kind === 'grupo') {
         if (!buyerCode) return null;
         const matched = discResults.filter(function (r) { return (r.code || r.main) === buyerCode; });
         const profile = (window.BUYER_PROFILES || {})[buyerCode];
-        return { kind: 'grupo', label: buyerCode + ' · ' + (profile ? profile.label : ''), sub: matched.length + ' usuários com este perfil', n: matched.length };
+        return { kind: 'grupo', label: buyerCode + ' · ' + (profile ? profile.label : ''), sub: t('adminRel.wiz.grupo.previewSub', { n: matched.length }), n: matched.length };
       }
       if (kind === 'personalizado') {
         const matched = filterUsersByCriteria(users, { companyName: filterCompany, jobTitle: filterJob, discMain: filterDisc });
         const filtersLabel = [
-          filterCompany && ('Empresa: ' + filterCompany),
-          filterJob && ('Cargo: ' + filterJob),
-          filterDisc && ('DISC: ' + filterDisc),
-        ].filter(Boolean).join(' · ') || 'sem filtros';
-        return { kind: 'personalizado', label: filtersLabel, sub: matched.length + ' usuários casam com os filtros', n: matched.length };
+          filterCompany && t('adminRel.wiz.perso.companyTag', { v: filterCompany }),
+          filterJob && t('adminRel.wiz.perso.jobTag', { v: filterJob }),
+          filterDisc && t('adminRel.wiz.perso.discTag', { v: filterDisc }),
+        ].filter(Boolean).join(' · ') || t('adminRel.wiz.perso.noFilters');
+        return { kind: 'personalizado', label: filtersLabel, sub: t('adminRel.wiz.perso.previewSub', { n: matched.length }), n: matched.length };
       }
       return null;
     }, [kind, individualUserId, companyId, buyerCode, filterCompany, filterJob, filterDisc, users, companies, discResults]);
@@ -319,7 +318,7 @@
         onCreated && onCreated();
       } catch (e) {
         console.error(e);
-        setErr(e && e.message ? e.message : 'Erro ao gerar relatório.');
+        setErr(e && e.message ? e.message : t('adminRel.wiz.errGeneric'));
       } finally {
         setBusy(false);
       }
@@ -327,9 +326,9 @@
 
     async function generateIndividual() {
       const target = users.filter(function (u) { return u.id === individualUserId; })[0];
-      if (!target) throw new Error('Usuário não encontrado.');
+      if (!target) throw new Error(t('adminRel.wiz.errNoUser'));
       const doc = await window.fbGetDiscResult(target.id);
-      if (!doc) throw new Error('Este usuário ainda não concluiu o DISC.');
+      if (!doc) throw new Error(t('adminRel.wiz.errNoUserDisc'));
       const discR = {
         mostGraph: doc.mostGraph || { D: doc.d, I: doc.i, S: doc.s, C: doc.c },
         leastGraph: doc.leastGraph || { D: 0, I: 0, S: 0, C: 0 },
@@ -341,7 +340,7 @@
 
       await saveReportMeta({
         type: 'individual',
-        title: 'Relatório individual · ' + (target.name || target.email || '—'),
+        title: t('adminRel.wiz.titleIndividual', { name: target.name || target.email || '—' }),
         targetId: target.id,
         targetLabel: (target.name || '—') + ' · ' + (target.jobTitle || '—'),
         config: { kind: 'individual', individualUserId: target.id },
@@ -359,7 +358,7 @@
       };
       const data = buildAggregateReportData(config, users, discResults, companies);
       if (!data.members || data.members.length === 0) {
-        throw new Error('Nenhum usuário casa com a seleção. Ajuste os critérios.');
+        throw new Error(t('adminRel.wiz.errNoMatch'));
       }
       exportAggregateReportPDF(data);
 
@@ -392,20 +391,20 @@
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18 }}>
             <div>
-              <div className="serif" style={{ fontSize: 22, marginBottom: 2 }}>Gerar novo relatório</div>
+              <div className="serif" style={{ fontSize: 22, marginBottom: 2 }}>{t('adminRel.wiz.title')}</div>
               <div style={{ fontSize: 12.5, color: 'var(--muted)' }}>
-                Passo {step} de 2 · {kind ? labelForKind(kind) : 'escolha o tipo'}
+                {t('adminRel.wiz.stepOf', { step: step, kind: kind ? labelForKind(kind) : t('adminRel.wiz.pickKind') })}
               </div>
             </div>
-            <button className="icon-btn" onClick={onClose} title="Fechar" style={{ fontSize: 18, lineHeight: 1, color: 'var(--muted)' }}>×</button>
+            <button className="icon-btn" onClick={onClose} title={t('common.close')} style={{ fontSize: 18, lineHeight: 1, color: 'var(--muted)' }}>×</button>
           </div>
 
           {step === 1 && (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              <KindCard icon={<Ic.User s={20}/>}     title="Individual"   desc="PDF DISC + Kraljic de um único colaborador." onClick={function () { setKind('individual'); setStep(2); }} />
-              <KindCard icon={<Ic.Kraljic s={20}/>}  title="Empresa"      desc="Relatório consolidado de uma empresa inteira." onClick={function () { setKind('empresa'); setStep(2); }} />
-              <KindCard icon={<Ic.Target s={20}/>}   title="Grupo"        desc="Agrupa todos com o mesmo tipo de comprador (D, I, DI, CS…)." onClick={function () { setKind('grupo'); setStep(2); }} />
-              <KindCard icon={<Ic.Sparkle s={20}/>}  title="Personalizado" desc="Combine filtros (empresa + cargo + perfil DISC)." onClick={function () { setKind('personalizado'); setStep(2); }} />
+              <KindCard icon={<Ic.User s={20}/>}     title={t('adminRel.wiz.kind.individual')} desc={t('adminRel.wiz.kind.individualDesc')} onClick={function () { setKind('individual'); setStep(2); }} />
+              <KindCard icon={<Ic.Kraljic s={20}/>}  title={t('adminRel.wiz.kind.empresa')}    desc={t('adminRel.wiz.kind.empresaDesc')}    onClick={function () { setKind('empresa'); setStep(2); }} />
+              <KindCard icon={<Ic.Target s={20}/>}   title={t('adminRel.wiz.kind.grupo')}      desc={t('adminRel.wiz.kind.grupoDesc')}      onClick={function () { setKind('grupo'); setStep(2); }} />
+              <KindCard icon={<Ic.Sparkle s={20}/>}  title={t('adminRel.wiz.kind.perso')}      desc={t('adminRel.wiz.kind.persoDesc')}      onClick={function () { setKind('personalizado'); setStep(2); }} />
             </div>
           )}
 
@@ -413,12 +412,12 @@
             <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
               {kind === 'individual' && (
                 <div className="field">
-                  <label>Usuário</label>
-                  <input className="input" placeholder="Buscar por nome, e-mail ou cargo…"
+                  <label>{t('adminRel.wiz.user')}</label>
+                  <input className="input" placeholder={t('adminRel.wiz.userSearch')}
                     value={individualSearch} onChange={function (e) { setIndividualSearch(e.target.value); }} />
                   <div style={{ marginTop: 10, maxHeight: 260, overflowY: 'auto', border: '1px solid var(--line)', borderRadius: 10 }}>
                     {individualMatches.length === 0 && (
-                      <div style={{ padding: 16, fontSize: 12.5, color: 'var(--muted)' }}>Nenhum usuário encontrado.</div>
+                      <div style={{ padding: 16, fontSize: 12.5, color: 'var(--muted)' }}>{t('adminRel.wiz.noUser')}</div>
                     )}
                     {individualMatches.map(function (u) {
                       const sel = u.id === individualUserId;
@@ -436,7 +435,7 @@
                             <div style={{ fontSize: 11.5, color: 'var(--muted)' }}>{(u.jobTitle || '—') + ' · ' + (u.companyName || '—')}</div>
                           </div>
                           {u.discMain && <span className="badge badge-outline" style={{ fontSize: 10 }}>{u.discMain}</span>}
-                          {!u.discCompleted && <span style={{ fontSize: 10.5, color: 'var(--muted)' }}>sem DISC</span>}
+                          {!u.discCompleted && <span style={{ fontSize: 10.5, color: 'var(--muted)' }}>{t('adminRel.wiz.noDisc')}</span>}
                           {sel && <Ic.Check s={14}/>}
                         </button>
                       );
@@ -447,9 +446,9 @@
 
               {kind === 'empresa' && (
                 <div className="field">
-                  <label>Empresa</label>
+                  <label>{t('adminRel.wiz.empresaLabel')}</label>
                   <select className="input" value={companyId} onChange={function (e) { setCompanyId(e.target.value); }}>
-                    <option value="">— selecione —</option>
+                    <option value="">{t('adminRel.wiz.selectPrompt')}</option>
                     {companies.map(function (c) {
                       return <option key={c.id} value={c.id}>{c.name || c.id}</option>;
                     })}
@@ -459,9 +458,9 @@
 
               {kind === 'grupo' && (
                 <div className="field">
-                  <label>Tipo de comprador (perfil DISC)</label>
+                  <label>{t('adminRel.wiz.buyerLabel')}</label>
                   <select className="input" value={buyerCode} onChange={function (e) { setBuyerCode(e.target.value); }}>
-                    <option value="">— selecione —</option>
+                    <option value="">{t('adminRel.wiz.selectPrompt')}</option>
                     {buyerCodeList.map(function (b) {
                       return <option key={b.code} value={b.code}>{b.code + ' · ' + b.label}</option>;
                     })}
@@ -472,27 +471,27 @@
               {kind === 'personalizado' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                   <div className="field">
-                    <label>Empresa (opcional)</label>
+                    <label>{t('adminRel.wiz.companyOpt')}</label>
                     <select className="input" value={filterCompany} onChange={function (e) { setFilterCompany(e.target.value); }}>
-                      <option value="">— todas —</option>
+                      <option value="">{t('adminRel.wiz.allOpt')}</option>
                       {companyNameList.map(function (n) { return <option key={n} value={n}>{n}</option>; })}
                     </select>
                   </div>
                   <div className="field">
-                    <label>Cargo (opcional)</label>
+                    <label>{t('adminRel.wiz.jobOpt')}</label>
                     <select className="input" value={filterJob} onChange={function (e) { setFilterJob(e.target.value); }}>
-                      <option value="">— todos —</option>
+                      <option value="">{t('adminRel.wiz.allJobs')}</option>
                       {jobTitleList.map(function (j) { return <option key={j} value={j}>{j}</option>; })}
                     </select>
                   </div>
                   <div className="field">
-                    <label>Perfil DISC dominante (opcional)</label>
+                    <label>{t('adminRel.wiz.discOpt')}</label>
                     <select className="input" value={filterDisc} onChange={function (e) { setFilterDisc(e.target.value); }}>
-                      <option value="">— todos —</option>
-                      <option value="D">D · Dominante</option>
-                      <option value="I">I · Influente</option>
-                      <option value="S">S · Estável</option>
-                      <option value="C">C · Conforme</option>
+                      <option value="">{t('adminRel.wiz.allDiscs')}</option>
+                      <option value="D">D · {t('disc.D.label')}</option>
+                      <option value="I">I · {t('disc.I.label')}</option>
+                      <option value="S">S · {t('disc.S.label')}</option>
+                      <option value="C">C · {t('disc.C.label')}</option>
                     </select>
                   </div>
                 </div>
@@ -500,10 +499,10 @@
 
               {preview && (
                 <div className="card" style={{ padding: 16, background: 'var(--brown-50)', border: '1px solid var(--line)' }}>
-                  <div style={{ fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--muted)', fontWeight: 600, marginBottom: 4 }}>Pré-visualização</div>
+                  <div style={{ fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--muted)', fontWeight: 600, marginBottom: 4 }}>{t('adminRel.wiz.preview')}</div>
                   <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)' }}>{preview.label}</div>
                   <div style={{ fontSize: 12.5, color: 'var(--muted)', marginTop: 2 }}>{preview.sub}</div>
-                  {preview.disc && <div style={{ marginTop: 6 }}><span className="badge badge-outline">DISC: {preview.disc}</span> <span style={{ fontSize: 11.5, color: 'var(--muted)', marginLeft: 8 }}>{preview.completed}</span></div>}
+                  {preview.disc && <div style={{ marginTop: 6 }}><span className="badge badge-outline">{t('adminRel.wiz.previewDisc', { disc: preview.disc })}</span> <span style={{ fontSize: 11.5, color: 'var(--muted)', marginLeft: 8 }}>{preview.completed}</span></div>}
                 </div>
               )}
 
@@ -514,10 +513,10 @@
 
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, marginTop: 4 }}>
                 <button className="btn btn-ghost" onClick={function () { setStep(1); setErr(''); }}>
-                  <Ic.ArrowL s={14}/> Voltar
+                  <Ic.ArrowL s={14}/> {t('common.back')}
                 </button>
                 <button className="btn btn-primary" disabled={!canGenerate()} onClick={handleGenerate}>
-                  {busy ? 'Gerando…' : (<><Ic.Pdf s={14}/> Gerar PDF</>)}
+                  {busy ? t('adminRel.wiz.generating') : (<><Ic.Pdf s={14}/> {t('adminRel.wiz.generate')}</>)}
                 </button>
               </div>
             </div>
@@ -544,7 +543,12 @@
   }
 
   function labelForKind(k) {
-    return ({ individual: 'Individual', empresa: 'Empresa', grupo: 'Grupo', personalizado: 'Personalizado' })[k] || k;
+    return ({
+      individual:    t('adminRel.wiz.kind.individual'),
+      empresa:       t('adminRel.wiz.kind.empresa'),
+      grupo:         t('adminRel.wiz.kind.grupo'),
+      personalizado: t('adminRel.wiz.kind.perso'),
+    })[k] || k;
   }
 
   // ============ Filtro de usuários por critérios ============

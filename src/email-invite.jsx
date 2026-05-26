@@ -11,9 +11,9 @@
 (function () {
   // ====== CONFIG — preencher após criar conta em emailjs.com ======
   window.EMAILJS_CONFIG = window.EMAILJS_CONFIG || {
-    publicKey:  'COLOQUE_AQUI',
-    serviceId:  'COLOQUE_AQUI',
-    templateId: 'COLOQUE_AQUI',
+    publicKey:  'YtffgRSQk1LvWL54h',
+    serviceId:  'service_j9u34l6',
+    templateId: 'template_tr2rcts',
     loginUrl:   'https://voratte-3fc9f.web.app',
   };
 

@@ -723,6 +723,9 @@ window.I18N_EN = {
   'admin.invite.failed':         'Send failed: {reason}',
   'admin.invite.notConfigured':  'EmailJS is not configured yet. See src/email-invite.jsx for instructions.',
   'admin.invite.hint':           'The recipient will get a Vorätte-branded email with credentials and access link.',
+  'admin.resend.title':          'Resend access (password reset link)',
+  'admin.resend.sent':           '✓ Sent',
+  'admin.resend.failed':         'Failed',
 
   // === Admin — All reports ===
   'adminRel.search':              'Search title or target…',

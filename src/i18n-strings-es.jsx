@@ -723,6 +723,9 @@ window.I18N_ES = {
   'admin.invite.failed':         'Error al enviar: {reason}',
   'admin.invite.notConfigured':  'EmailJS aún no está configurado. Mira src/email-invite.jsx para instrucciones.',
   'admin.invite.hint':           'El destinatario recibirá un correo Vorätte con las credenciales y el enlace de acceso.',
+  'admin.resend.title':          'Reenviar acceso (enlace de restablecimiento de contraseña)',
+  'admin.resend.sent':           '✓ Enviado',
+  'admin.resend.failed':         'Falla',
 
   // === Admin — Todos los informes ===
   'adminRel.search':              'Buscar título o objetivo…',

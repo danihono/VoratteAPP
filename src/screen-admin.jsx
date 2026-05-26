@@ -682,6 +682,7 @@ function AdminUsuarios({ go }) {
                   <td style={{ paddingRight: 24 }}>
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 4 }}>
                       <button className="icon-btn" onClick={function(){ setVerUser(u); }} title={t('admin.ver.title')}><Ic.Eye s={16}/></button>
+                      <ReenviarConviteButton user={u} />
                       <button className="icon-btn" onClick={function(){ setEditUser(u); }} title={t('admin.editar.title')}><Ic.More s={16}/></button>
                     </div>
                   </td>
@@ -1473,6 +1474,57 @@ function JobTitleSelect({ value, onChange }) {
         return <option key={job} value={job}>{job}</option>;
       })}
     </select>
+  );
+}
+
+// Botão de "Reenviar convite" na linha de cada usuário da tabela admin.
+// A senha original não fica armazenada (só o Firebase Auth), então o reenvio dispara
+// o email NATIVO do Firebase de redefinição de senha — o usuário recebe um link para
+// definir uma nova e entrar. Também re-marca invited:true para refletir o reenvio.
+function ReenviarConviteButton({ user }) {
+  useLang();
+  var [state, setState] = React.useState('idle'); // 'idle' | 'sending' | 'sent' | 'failed'
+  var resetTimer = React.useRef(null);
+
+  React.useEffect(function () {
+    return function () { if (resetTimer.current) clearTimeout(resetTimer.current); };
+  }, []);
+
+  async function handleClick(e) {
+    e.stopPropagation();
+    if (state === 'sending' || !user || !user.email) return;
+    setState('sending');
+    try {
+      await window.fbResetPassword(user.email);
+      if (user.id && window.fbMarkInvited) {
+        window.fbMarkInvited(user.id).catch(function () { /* best-effort */ });
+      }
+      setState('sent');
+      resetTimer.current = setTimeout(function () { setState('idle'); }, 3000);
+    } catch (err) {
+      console.error('Reenvio falhou:', err);
+      setState('failed');
+      resetTimer.current = setTimeout(function () { setState('idle'); }, 3500);
+    }
+  }
+
+  var color = state === 'sent' ? 'var(--brown-700)'
+            : state === 'failed' ? '#b91c1c'
+            : undefined;
+  var title = state === 'sent'   ? t('admin.resend.sent')
+            : state === 'failed' ? t('admin.resend.failed')
+            : t('admin.resend.title');
+
+  return (
+    <button
+      className="icon-btn"
+      onClick={handleClick}
+      disabled={state === 'sending'}
+      title={title}
+      style={color ? { color: color } : undefined}
+    >
+      <Ic.Mail s={16}/>
+    </button>
   );
 }
 

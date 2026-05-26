@@ -726,6 +726,9 @@ window.I18N_PTBR = {
   'admin.invite.failed':         'Falha ao enviar: {reason}',
   'admin.invite.notConfigured':  'EmailJS ainda não foi configurado. Veja src/email-invite.jsx para instruções.',
   'admin.invite.hint':           'O destinatário receberá um email Vorätte com as credenciais e o link de acesso.',
+  'admin.resend.title':          'Reenviar acesso (link de redefinição de senha)',
+  'admin.resend.sent':           '✓ Enviado',
+  'admin.resend.failed':         'Falha',
 
   // === Admin — Todos os relatórios (listagem + wizard) ===
   'adminRel.search':              'Buscar título ou alvo…',

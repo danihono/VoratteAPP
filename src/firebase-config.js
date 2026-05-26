@@ -25,6 +25,9 @@ window.fbLogin = function(email, password) {
 };
 
 window.fbLogout = function() {
+  // Limpa caches de sessão que vivem em módulos JSX (não persistem entre páginas,
+  // mas vazariam entre dois logins na mesma aba sem refresh).
+  if (typeof window.clearGestorTeamCache === 'function') window.clearGestorTeamCache();
   return window.auth.signOut();
 };
 

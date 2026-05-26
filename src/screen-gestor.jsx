@@ -1,9 +1,16 @@
 // ====================== GESTOR ======================
 // O gestor vê APENAS os colaboradores do seu time.
 
-// Cache de sessão: evita múltiplos fetches enquanto o gestor navega entre telas
-var _gestorTeamCache = null;
-var _gestorTeamFetch = null;
+// Cache de sessão chaveado por gestorId — evita refetch enquanto o gestor navega
+// entre telas, mas não vaza entre sessões/usuários diferentes na mesma aba.
+var _gestorTeamCache = {}; // { [gestorId]: members[] }
+var _gestorTeamFetch = {}; // { [gestorId]: Promise<members[]> }
+
+// Invalida o cache no logout — força refetch quando outro usuário loga sem refresh.
+window.clearGestorTeamCache = function () {
+  _gestorTeamCache = {};
+  _gestorTeamFetch = {};
+};
 
 // Monta uma URL mailto: para abrir o cliente de e-mail padrão do gestor.
 // Suporta to (destino direto), bcc (lista de destinatários), subject e body.
@@ -43,8 +50,10 @@ async function _buildDemoSelfMember(currentUser) {
 }
 
 function useGestorTeam(gestorId, currentUser) {
-  var [team, setTeam] = React.useState(_gestorTeamCache || []);
-  var [loading, setLoading] = React.useState(!_gestorTeamCache);
+  var cached = gestorId ? _gestorTeamCache[gestorId] : null;
+  var [team, setTeam] = React.useState(cached || []);
+  var [loading, setLoading] = React.useState(!cached);
+  var [error, setError] = React.useState(null);
 
   React.useEffect(function() {
     var cancelled = false;
@@ -52,33 +61,39 @@ function useGestorTeam(gestorId, currentUser) {
       // Só injeta o demo-self quando o usuário logado é admin (sinaliza modo demo)
       // e a equipe real veio vazia.
       if (data.length > 0 || !currentUser || currentUser.role !== 'admin') {
-        if (!cancelled) { setTeam(data); setLoading(false); }
+        if (!cancelled) { setTeam(data); setLoading(false); setError(null); }
         return;
       }
       _buildDemoSelfMember(currentUser).then(function (self) {
         if (cancelled) return;
         setTeam(self ? [self] : []);
         setLoading(false);
+        setError(null);
       });
     }
 
-    if (_gestorTeamCache) { applyDemoFallback(_gestorTeamCache); return; }
     if (!gestorId) { setLoading(false); return; }
-    if (!_gestorTeamFetch) {
-      _gestorTeamFetch = window.fbGetTeamMembers(gestorId);
+    if (_gestorTeamCache[gestorId]) { applyDemoFallback(_gestorTeamCache[gestorId]); return; }
+    if (!_gestorTeamFetch[gestorId]) {
+      _gestorTeamFetch[gestorId] = window.fbGetTeamMembers(gestorId);
     }
-    _gestorTeamFetch.then(function(data) {
-      _gestorTeamCache = data;
+    _gestorTeamFetch[gestorId].then(function(data) {
+      _gestorTeamCache[gestorId] = data;
       applyDemoFallback(data);
     }).catch(function(err) {
       console.error('Erro ao carregar time:', err);
-      if (!cancelled) setLoading(false);
+      delete _gestorTeamFetch[gestorId]; // permite retry na próxima montagem
+      if (!cancelled) {
+        setTeam([]);
+        setLoading(false);
+        setError(err && err.message ? err.message : 'unknown');
+      }
     });
 
     return function () { cancelled = true; };
   }, [gestorId, currentUser && currentUser.id, currentUser && currentUser.role]);
 
-  return [team, loading];
+  return [team, loading, error];
 }
 
 function GestorDashboard({ go, user }) {
@@ -242,7 +257,7 @@ function GestorDashboard({ go, user }) {
 
 function GestorEquipe({ go, user }) {
   useLang();
-  var [team, teamLoading] = useGestorTeam(user && user.id, user);
+  var [team, teamLoading, teamError] = useGestorTeam(user && user.id, user);
   var GESTOR_TEAM = team;
   var [sel, setSel] = React.useState(null);
   var selId = sel || (GESTOR_TEAM.length ? GESTOR_TEAM[0].id : null);
@@ -269,6 +284,13 @@ function GestorEquipe({ go, user }) {
 
   if (teamLoading) {
     return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 300, color: 'var(--muted)', fontSize: 13 }}>{t('gestor.team.loading')}</div>;
+  }
+  if (teamError) {
+    return <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 300, color: 'var(--brown-700)', fontSize: 13, padding: 24, textAlign: 'center', gap: 8 }}>
+      <div style={{ fontWeight: 600 }}>Falha ao carregar a equipe.</div>
+      <div style={{ fontSize: 12, color: 'var(--muted)' }}>{teamError}</div>
+      <div style={{ fontSize: 12, color: 'var(--muted)' }}>Recarregue a página e tente novamente.</div>
+    </div>;
   }
   if (!GESTOR_TEAM.length) {
     return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 300, color: 'var(--muted)', fontSize: 13 }}>{t('gestor.team.empty')}</div>;

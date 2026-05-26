@@ -405,7 +405,7 @@ function renderScreen(role, route, go, user, refreshProfile) {
       plano:       <PlanoScreen       go={go} user={user} />,
       relatorios:  <RelatoriosScreen  go={go} user={user} />,
       relatorio:   <RelatorioScreen   go={go} user={user} />,
-      perfil:      <PerfilScreen      go={go} user={user} />,
+      perfil:      <PerfilScreen      go={go} user={user} refreshProfile={refreshProfile} />,
     }[route] || <DashboardScreen go={go} user={user} />);
   }
   if (role === 'gestor') {
@@ -419,7 +419,7 @@ function renderScreen(role, route, go, user, refreshProfile) {
       relatorios:  <GestorRelatorios   go={go} user={user} />,
       relatorio:   <RelatorioScreen    go={go} user={user} />,
       analise:     <AnaliseScreen      go={go} user={user} />,
-      perfil:      <PerfilScreen       go={go} user={user} />,
+      perfil:      <PerfilScreen       go={go} user={user} refreshProfile={refreshProfile} />,
     }[route] || <GestorDashboard go={go} user={user} />);
   }
   if (role === 'admin') {
@@ -432,7 +432,7 @@ function renderScreen(role, route, go, user, refreshProfile) {
       relatorios:   <RelatoriosScreen    go={go} user={user} />,
       relatorio:    <RelatorioScreen     go={go} user={user} />,
       permissoes:   <AdminPermissoes     go={go} />,
-      perfil:       <PerfilScreen        go={go} user={user} />,
+      perfil:       <PerfilScreen        go={go} user={user} refreshProfile={refreshProfile} />,
     }[route] || <AdminDashboard go={go} user={user} />);
   }
 }

@@ -24,6 +24,10 @@ function RelatoriosScreen({ go, user }) {
   useLang();
   var [rows, setRows]       = React.useState([]);
   var [loading, setLoading] = React.useState(true);
+  var [query, setQuery]     = React.useState('');
+  var [typeFilter, setTypeFilter] = React.useState('todos');
+  var [filterOpen, setFilterOpen] = React.useState(false);
+  var filterRef = React.useRef(null);
 
   function reloadReports() {
     if (!user || !user.id || !window.fbGetReportsByUser) { setLoading(false); return; }
@@ -36,6 +40,39 @@ function RelatoriosScreen({ go, user }) {
   React.useEffect(function () {
     reloadReports();
   }, [user && user.id]);
+
+  // Fecha o popover de filtros ao clicar fora ou apertar Esc
+  React.useEffect(function () {
+    if (!filterOpen) return;
+    function onDoc(e) { if (filterRef.current && !filterRef.current.contains(e.target)) setFilterOpen(false); }
+    function onKey(e) { if (e.key === 'Escape') setFilterOpen(false); }
+    document.addEventListener('mousedown', onDoc);
+    document.addEventListener('keydown', onKey);
+    return function () {
+      document.removeEventListener('mousedown', onDoc);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [filterOpen]);
+
+  const filtered = React.useMemo(function () {
+    var q = query.trim().toLowerCase();
+    return rows.filter(function (r) {
+      if (typeFilter !== 'todos' && r.type !== typeFilter) return false;
+      if (!q) return true;
+      var title = (r.title || '').toLowerCase();
+      var type  = (r.type  || '').toLowerCase();
+      return title.indexOf(q) !== -1 || type.indexOf(q) !== -1;
+    });
+  }, [rows, query, typeFilter]);
+
+  const filterOptions = [
+    { key: 'todos',         label: t('relatorios.filterAll') },
+    { key: 'individual',    label: t('relatorios.filterIndividual') },
+    { key: 'empresa',       label: t('relatorios.filterEmpresa') },
+    { key: 'grupo',         label: t('relatorios.filterGrupo') },
+    { key: 'personalizado', label: t('relatorios.filterPersonalizado') },
+  ];
+  const activeFilterLabel = (filterOptions.find(function (o) { return o.key === typeFilter; }) || filterOptions[0]).label;
 
   function fmtDate(ts) {
     if (!ts) return '—';
@@ -73,12 +110,65 @@ function RelatoriosScreen({ go, user }) {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <div style={{ position: 'relative', width: 280 }}>
-            <input className="input" placeholder={t('relatorios.searchPlaceholder')} style={{ paddingLeft: 38 }} />
+            <input
+              className="input"
+              placeholder={t('relatorios.searchPlaceholder')}
+              style={{ paddingLeft: 38 }}
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+            />
             <div style={{ position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)' }}>
               <Ic.Search s={16}/>
             </div>
           </div>
-          <button className="btn btn-secondary"><Ic.Settings s={14}/> {t('relatorios.filters')}</button>
+
+          <div ref={filterRef} style={{ position: 'relative' }}>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => setFilterOpen(o => !o)}
+              aria-expanded={filterOpen}
+            >
+              <Ic.Settings s={14}/> {t('relatorios.filters')}
+              {typeFilter !== 'todos' && (
+                <span className="badge badge-brown" style={{ padding: '2px 8px', fontSize: 11 }}>
+                  {activeFilterLabel}
+                </span>
+              )}
+            </button>
+            {filterOpen && (
+              <div style={{
+                position: 'absolute', left: 0, top: '110%', zIndex: 51,
+                minWidth: 220, background: 'var(--paper)',
+                border: '1px solid var(--line)',
+                borderRadius: 12, boxShadow: 'var(--shadow-lg)',
+                overflow: 'hidden',
+              }}>
+                <div style={{ padding: '10px 14px', borderBottom: '1px solid var(--line-soft)', fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--muted)', fontWeight: 600 }}>
+                  {t('relatorios.filterHeader')}
+                </div>
+                {filterOptions.map(opt => (
+                  <button
+                    key={opt.key}
+                    type="button"
+                    onClick={() => { setTypeFilter(opt.key); setFilterOpen(false); }}
+                    style={{
+                      display: 'grid', gridTemplateColumns: '1fr 18px', alignItems: 'center',
+                      width: '100%', textAlign: 'left',
+                      padding: '10px 14px',
+                      background: typeFilter === opt.key ? 'var(--brown-50)' : 'transparent',
+                      cursor: 'pointer',
+                      borderBottom: '1px solid var(--line-soft)',
+                      fontSize: 13,
+                    }}
+                  >
+                    <span style={{ color: 'var(--ink)', fontWeight: typeFilter === opt.key ? 600 : 500 }}>{opt.label}</span>
+                    {typeFilter === opt.key && <Ic.Check s={14}/>}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
         <button className="btn btn-primary" onClick={() => go('relatorio')}>
           <Ic.Plus s={14}/> {t('relatorios.new')}
@@ -91,6 +181,10 @@ function RelatoriosScreen({ go, user }) {
         ) : rows.length === 0 ? (
           <div style={{ padding: '48px 24px', textAlign: 'center', color: 'var(--muted)', fontSize: 13.5 }}
                dangerouslySetInnerHTML={{ __html: t('relatorios.empty') }} />
+        ) : filtered.length === 0 ? (
+          <div style={{ padding: '48px 24px', textAlign: 'center', color: 'var(--muted)', fontSize: 13.5 }}>
+            {t('relatorios.noResults')}
+          </div>
         ) : (
           <table className="tbl">
             <thead>
@@ -102,7 +196,7 @@ function RelatoriosScreen({ go, user }) {
               </tr>
             </thead>
             <tbody>
-              {rows.map((r, i) => (
+              {filtered.map((r, i) => (
                 <tr key={r.id || i}>
                   <td style={{ paddingLeft: 24 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -129,9 +223,9 @@ function RelatoriosScreen({ go, user }) {
         )}
       </div>
 
-      {!loading && rows.length > 0 && (
+      {!loading && filtered.length > 0 && (
         <div style={{ fontSize: 12.5, color: 'var(--muted)' }}>
-          {t(rows.length === 1 ? 'relatorios.showing' : 'relatorios.showingPlural', { count: rows.length })}
+          {t(filtered.length === 1 ? 'relatorios.showing' : 'relatorios.showingPlural', { count: filtered.length })}
         </div>
       )}
     </div>
@@ -465,10 +559,63 @@ function SectionLabel({ num, label }) {
 }
 
 // ============ PLANO ============
+
+// Eixos D/I/S/C → 4 cards do plano de desenvolvimento. Ações são fixas no v1;
+// o que personaliza o card é o score do eixo correspondente (vira a barra de progresso).
+const PLAN_AXES = [
+  { key: 'D', icon: <Ic.Target s={20}/>,    titleKey: 'plano.card.D.title', subKey: 'plano.card.D.sub', actionsKeys: ['plano.card.D.action1','plano.card.D.action2','plano.card.D.action3'] },
+  { key: 'I', icon: <Ic.Sparkle s={20}/>,   titleKey: 'plano.card.I.title', subKey: 'plano.card.I.sub', actionsKeys: ['plano.card.I.action1','plano.card.I.action2','plano.card.I.action3'] },
+  { key: 'S', icon: <Ic.Handshake s={20}/>, titleKey: 'plano.card.S.title', subKey: 'plano.card.S.sub', actionsKeys: ['plano.card.S.action1','plano.card.S.action2','plano.card.S.action3'] },
+  { key: 'C', icon: <Ic.Chart s={20}/>,     titleKey: 'plano.card.C.title', subKey: 'plano.card.C.sub', actionsKeys: ['plano.card.C.action1','plano.card.C.action2','plano.card.C.action3'] },
+];
+
+// Monta os 4 cards do plano resolvendo i18n e pct a partir do doc DISC do usuário.
+// disc pode ser o doc raw do Firestore (campos d/i/s/c) ou null.
+function buildPlanCards(disc) {
+  return PLAN_AXES.map(function (ax) {
+    var pct = disc ? Math.max(0, Math.min(100, Math.round(disc[ax.key.toLowerCase()] || 0))) : 0;
+    return {
+      key:     ax.key,
+      icon:    ax.icon,
+      title:   t(ax.titleKey),
+      sub:     t(ax.subKey),
+      actions: ax.actionsKeys.map(function (k) { return t(k); }),
+      pct:     pct,
+    };
+  });
+}
+
+window.PLAN_AXES = PLAN_AXES;
+window.buildPlanCards = buildPlanCards;
+
 function PlanoScreen({ go, user }) {
   useLang();
   const firstName = user && user.name ? user.name.split(' ')[0] : '';
-  const items = [];
+  const [disc, setDisc] = React.useState(null);
+  const [loading, setLoading] = React.useState(true);
+  // checked[axisKey] = [bool, bool, bool] — state local, não persiste entre sessões
+  const [checked, setChecked] = React.useState({ D: [false,false,false], I: [false,false,false], S: [false,false,false], C: [false,false,false] });
+
+  React.useEffect(function () {
+    if (!user || !user.id || !window.fbGetDiscResult) { setLoading(false); return; }
+    window.fbGetDiscResult(user.id).then(function (raw) {
+      setDisc(raw || null);
+      setLoading(false);
+    }).catch(function () { setLoading(false); });
+  }, [user && user.id]);
+
+  const hasDisc = !!(disc && (disc.d || disc.i || disc.s || disc.c));
+  const cards = React.useMemo(function () { return buildPlanCards(disc); }, [disc, window.getLang()]);
+
+  function toggle(axisKey, idx) {
+    setChecked(function (prev) {
+      var next = Object.assign({}, prev);
+      var arr = (prev[axisKey] || [false,false,false]).slice();
+      arr[idx] = !arr[idx];
+      next[axisKey] = arr;
+      return next;
+    });
+  }
 
   return (
     <div className="page-enter" style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
@@ -483,13 +630,17 @@ function PlanoScreen({ go, user }) {
                 dangerouslySetInnerHTML={{ __html: firstName ? t('plano.titleWith', { name: firstName }) : t('plano.titleNoName') }}
             />
             <p style={{ fontSize: 13.5, color: 'var(--brown-200)', marginTop: 8, maxWidth: 560 }}>
-              {t('plano.lede')}
+              {hasDisc ? t('plano.lede.ready') : t('plano.lede')}
             </p>
           </div>
         </div>
       </div>
 
-      {items.length === 0 ? (
+      {loading ? (
+        <div className="card" style={{ padding: 36, textAlign: 'center', color: 'var(--muted)', fontSize: 13.5 }}>
+          {t('common.loading')}
+        </div>
+      ) : !hasDisc ? (
         <div className="card" style={{ padding: 36, textAlign: 'center', color: 'var(--muted)', fontSize: 13.5 }}>
           {t('plano.emptyMsg')}
           <div style={{ marginTop: 16 }}>
@@ -500,8 +651,8 @@ function PlanoScreen({ go, user }) {
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-          {items.map(it => (
-            <div key={it.title} className="card">
+          {cards.map(it => (
+            <div key={it.key} className="card">
               <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
                 <div style={{ width: 44, height: 44, borderRadius: 10, background: 'var(--brown-50)', color: 'var(--brown-700)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   {it.icon}
@@ -522,12 +673,20 @@ function PlanoScreen({ go, user }) {
                 {t('plano.nextActions')}
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {it.actions.map((a, i) => (
-                  <label key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, color: 'var(--ink-soft)', cursor: 'pointer' }}>
-                    <input type="checkbox" defaultChecked={i === 0} style={{ accentColor: 'var(--brown-700)' }} />
-                    <span style={{ textDecoration: i === 0 ? 'line-through' : 'none', opacity: i === 0 ? 0.6 : 1 }}>{a}</span>
-                  </label>
-                ))}
+                {it.actions.map((a, i) => {
+                  var isChecked = (checked[it.key] || [])[i] || false;
+                  return (
+                    <label key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 13, color: 'var(--ink-soft)', cursor: 'pointer' }}>
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={() => toggle(it.key, i)}
+                        style={{ accentColor: 'var(--brown-700)', marginTop: 3 }}
+                      />
+                      <span style={{ textDecoration: isChecked ? 'line-through' : 'none', opacity: isChecked ? 0.6 : 1 }}>{a}</span>
+                    </label>
+                  );
+                })}
               </div>
             </div>
           ))}
@@ -693,7 +852,7 @@ function Mini({ label, value, sub }) {
 }
 
 // ============ PERFIL ============
-function PerfilScreen({ go, user }) {
+function PerfilScreen({ go, user, refreshProfile }) {
   useLang();
   const u = user || {};
   const name = u.name || '—';
@@ -702,6 +861,7 @@ function PerfilScreen({ go, user }) {
     : '·';
   const discMain = u.discMain;
   const [theme, setTheme] = window.useTheme();
+  const [editOpen, setEditOpen] = React.useState(false);
   const subtitleParts = [];
   if (u.jobTitle)    subtitleParts.push(u.jobTitle);
   if (u.companyName) subtitleParts.push(u.companyName);
@@ -738,7 +898,9 @@ function PerfilScreen({ go, user }) {
               </div>
             )}
           </div>
-          <button className="btn btn-secondary"><Ic.Settings s={14}/> {t('perfil.editBtn')}</button>
+          <button className="btn btn-secondary" onClick={() => setEditOpen(true)}>
+            <Ic.Settings s={14}/> {t('perfil.editBtn')}
+          </button>
         </div>
       </div>
 
@@ -849,6 +1011,124 @@ function PerfilScreen({ go, user }) {
             </button>
           </div>
         </div>
+      </div>
+
+      {editOpen && (
+        <EditarPerfilModal
+          user={u}
+          onClose={() => setEditOpen(false)}
+          onSaved={refreshProfile}
+        />
+      )}
+    </div>
+  );
+}
+
+// Modal de edição de perfil — atualiza name e jobTitle em /users/{uid}.
+// Email é gerenciado pelo admin (requer reauth no Firebase Auth para mudar).
+function EditarPerfilModal({ user, onClose, onSaved }) {
+  useLang();
+  const [name, setName] = React.useState(user.name || '');
+  const [jobTitle, setJobTitle] = React.useState(user.jobTitle || '');
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState('');
+
+  async function handleSubmit(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    var trimmedName = name.trim();
+    if (!trimmedName) { setError(t('perfil.edit.nameRequired')); return; }
+    setError('');
+    setLoading(true);
+    try {
+      await window.fbUpdateUserProfile(user.id, {
+        name: trimmedName,
+        jobTitle: jobTitle.trim(),
+      });
+      if (typeof onSaved === 'function') await onSaved();
+      onClose();
+    } catch (err) {
+      console.error('Erro ao atualizar perfil:', err);
+      setError(t('perfil.edit.error'));
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 1000,
+        background: 'rgba(21, 9, 10, 0.55)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: 24,
+      }}
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        className="card"
+        style={{
+          width: '100%', maxWidth: 480, padding: 28,
+          background: 'var(--paper)',
+          boxShadow: 'var(--shadow-lg)',
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
+          <div>
+            <h3 className="serif" style={{ fontSize: 22, fontWeight: 500, letterSpacing: '-0.01em' }}>{t('perfil.edit.title')}</h3>
+            <div style={{ fontSize: 13, color: 'var(--muted)', marginTop: 4, lineHeight: 1.5 }}>
+              {t('perfil.edit.lede')}
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="icon-btn"
+            aria-label={t('common.close')}
+            style={{ flexShrink: 0 }}
+          >
+            <Ic.Close s={16} />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16, marginTop: 8 }}>
+          <div className="field">
+            <label>{t('perfil.edit.nameLabel')} <span style={{ color: 'var(--disc-d)' }}>*</span></label>
+            <input
+              className="input"
+              type="text"
+              autoFocus
+              value={name}
+              onChange={e => { setName(e.target.value); setError(''); }}
+              placeholder={t('perfil.edit.namePlaceholder')}
+            />
+          </div>
+
+          <div className="field">
+            <label>{t('perfil.edit.jobLabel')}</label>
+            <input
+              className="input"
+              type="text"
+              value={jobTitle}
+              onChange={e => setJobTitle(e.target.value)}
+              placeholder={t('perfil.edit.jobPlaceholder')}
+            />
+          </div>
+
+          {error && (
+            <div style={{ padding: '10px 14px', borderRadius: 8, background: '#fef2f2', border: '1px solid #fecaca', color: '#b91c1c', fontSize: 13 }}>
+              {error}
+            </div>
+          )}
+
+          <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
+            <button type="button" className="btn btn-ghost" onClick={onClose} disabled={loading} style={{ flex: 1 }}>
+              {t('perfil.edit.cancel')}
+            </button>
+            <button type="submit" className="btn btn-primary" disabled={loading} style={{ flex: 1 }}>
+              {loading ? t('perfil.edit.saving') : t('perfil.edit.save')}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

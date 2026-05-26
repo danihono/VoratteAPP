@@ -28,6 +28,22 @@ window.fbLogout = function() {
   return window.auth.signOut();
 };
 
+// Envia email de redefinição de senha via Firebase Auth (nativo, sem EmailJS)
+window.fbResetPassword = function(email) {
+  return window.auth.sendPasswordResetEmail(email);
+};
+
+// LOCAL = sessão persiste após fechar o navegador; SESSION = só dura a aba aberta
+window.fbSetPersistence = function(remember) {
+  var P = firebase.auth.Auth.Persistence;
+  return window.auth.setPersistence(remember ? P.LOCAL : P.SESSION);
+};
+
+// Atualiza campos do próprio perfil em /users/{uid} (regras: self-update permitido)
+window.fbUpdateUserProfile = function(uid, data) {
+  return window.db.collection('users').doc(uid).update(data);
+};
+
 // ====================== FIRESTORE HELPERS ======================
 
 window.fbGetUserProfile = async function(uid) {

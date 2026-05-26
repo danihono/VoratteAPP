@@ -58,6 +58,16 @@ window.I18N_ES = {
   'login.secure':              'Conexión cifrada',
   'login.copyright':           '© 2026 Vorätte',
 
+  // === Forgot password modal ===
+  'forgot.title':              'Recuperar acceso',
+  'forgot.lede':                'Ingresa el correo de tu cuenta. Te enviaremos un enlace para restablecer la contraseña.',
+  'forgot.emailLabel':          'Correo de la cuenta',
+  'forgot.submit':              'Enviar enlace de restablecimiento',
+  'forgot.sending':             'Enviando…',
+  'forgot.sent':                '¡Listo! Enviamos un enlace a <strong>{email}</strong>. Revisa tu bandeja de entrada y la carpeta de spam.',
+  'forgot.close':               'Cerrar',
+  'forgot.errorEmptyEmail':     'Escribe un correo para continuar.',
+
   // === Topbar / lang picker / theme toggle ===
   'topbar.changeLanguage':     'Cambiar idioma',
   'topbar.themeLight':         'Modo claro',
@@ -243,6 +253,13 @@ window.I18N_ES = {
   'relatorios.showingPlural':     'Mostrando {count} informes',
   'relatorios.alert.doTestFirst': 'Haz el test DISC antes de generar el informe.',
   'relatorios.alert.cantLoad':    'No se pudo cargar el resultado DISC.',
+  'relatorios.filterHeader':      'Filtrar por tipo',
+  'relatorios.filterAll':         'Todos',
+  'relatorios.filterIndividual':  'Individual',
+  'relatorios.filterEmpresa':     'Empresa',
+  'relatorios.filterGrupo':       'Grupo',
+  'relatorios.filterPersonalizado':'Personalizado',
+  'relatorios.noResults':         'Sin resultados para los filtros actuales.',
 
   // === Informe (cover + body) ===
   'relatorio.back':             'Volver a los informes',
@@ -297,9 +314,35 @@ window.I18N_ES = {
   'plano.titleWith':            'Tu plan de desarrollo, <em>{name}</em>',
   'plano.titleNoName':          'Tu plan de desarrollo',
   'plano.lede':                 'Pronto tu plan se construirá a partir de tu perfil DISC y tu contexto profesional.',
-  'plano.emptyMsg':             'Tu plan personalizado estará disponible pronto. Completa el test DISC para desbloquear las primeras recomendaciones.',
+  'plano.emptyMsg':             'Completa el test DISC para desbloquear tus recomendaciones personalizadas.',
   'plano.goTest':               'Ir al test DISC',
   'plano.nextActions':          'Próximas acciones',
+  'plano.lede.ready':           'Cuatro frentes de desarrollo construidas a partir de tu perfil DISC. Marca lo que ya está en marcha.',
+
+  // 4 cards (ejes DISC) — pct viene del score real del usuario; acciones son fijas
+  'plano.card.D.title':         'Decisión bajo presión',
+  'plano.card.D.sub':           'Tu capacidad de decidir y dirigir',
+  'plano.card.D.action1':       'Toma una decisión difícil sin buscar consenso esta semana',
+  'plano.card.D.action2':       'Define plazos cortos y mantenlos incluso bajo ruido',
+  'plano.card.D.action3':       'Practica una negociación en la que no cedes en el precio inicial',
+
+  'plano.card.I.title':         'Influencia y comunicación',
+  'plano.card.I.sub':           'Cómo inspiras y conectas',
+  'plano.card.I.action1':       'Haz una reunión 1:1 con cada persona relevante de tu equipo esta semana',
+  'plano.card.I.action2':       'Presenta una idea compleja en 60 segundos, sin diapositivas',
+  'plano.card.I.action3':       'Pide y ofrece feedback estructurado en al menos dos intercambios',
+
+  'plano.card.S.title':         'Estabilidad y relación',
+  'plano.card.S.sub':           'La base de confianza que construyes',
+  'plano.card.S.action1':       'Mapea tus cinco relaciones profesionales críticas y el estado actual de cada una',
+  'plano.card.S.action2':       'Reserva 30 min por semana para un café con alguien de tu equipo',
+  'plano.card.S.action3':       'Reconoce públicamente la contribución de otra persona',
+
+  'plano.card.C.title':         'Análisis y disciplina',
+  'plano.card.C.sub':           'Rigor con datos y procesos',
+  'plano.card.C.action1':       'Documenta un proceso crítico que hoy vive solo en tu cabeza',
+  'plano.card.C.action2':       'Audita una decisión reciente: ¿qué dato faltó para decidir mejor?',
+  'plano.card.C.action3':       'Define un KPI medible para algo que hoy sigues por "intuición"',
 
   // === Comparaciones ===
   'comp.summary':               'Comparativo de tu equipo',
@@ -344,6 +387,19 @@ window.I18N_ES = {
   'perfil.redoTest':            'Rehacer evaluación DISC',
   'perfil.doTest':              'Hacer evaluación DISC',
   'perfil.badgeProfile':        'Perfil {label} ({code})',
+
+  // === Editar perfil modal ===
+  'perfil.edit.title':          'Editar perfil',
+  'perfil.edit.lede':           'Actualiza tu nombre y cargo. El correo lo gestiona el administrador.',
+  'perfil.edit.nameLabel':      'Nombre completo',
+  'perfil.edit.namePlaceholder':'Cómo quieres que te llamen',
+  'perfil.edit.jobLabel':       'Cargo',
+  'perfil.edit.jobPlaceholder': 'Ej.: Comprador Senior',
+  'perfil.edit.save':           'Guardar cambios',
+  'perfil.edit.saving':         'Guardando…',
+  'perfil.edit.cancel':         'Cancelar',
+  'perfil.edit.error':          'No se pudo guardar. Intenta de nuevo.',
+  'perfil.edit.nameRequired':   'El nombre es obligatorio.',
 
   // === Gestor ===
   'gestor.badge':                'Vista de Gestor',

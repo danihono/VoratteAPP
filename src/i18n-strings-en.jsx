@@ -58,6 +58,16 @@ window.I18N_EN = {
   'login.secure':              'Encrypted connection',
   'login.copyright':           '© 2026 Vorätte',
 
+  // === Forgot password modal ===
+  'forgot.title':              'Recover access',
+  'forgot.lede':                'Enter the email for your account. We will send you a link to reset your password.',
+  'forgot.emailLabel':          'Account email',
+  'forgot.submit':              'Send reset link',
+  'forgot.sending':             'Sending…',
+  'forgot.sent':                'Done. We sent a link to <strong>{email}</strong>. Check your inbox and spam folder.',
+  'forgot.close':               'Close',
+  'forgot.errorEmptyEmail':     'Type an email to continue.',
+
   // === Topbar / lang picker / theme toggle ===
   'topbar.changeLanguage':     'Change language',
   'topbar.themeLight':         'Light mode',
@@ -243,6 +253,13 @@ window.I18N_EN = {
   'relatorios.showingPlural':     'Showing {count} reports',
   'relatorios.alert.doTestFirst': 'Take the DISC test before generating the report.',
   'relatorios.alert.cantLoad':    'Could not load the DISC result.',
+  'relatorios.filterHeader':      'Filter by type',
+  'relatorios.filterAll':         'All',
+  'relatorios.filterIndividual':  'Individual',
+  'relatorios.filterEmpresa':     'Company',
+  'relatorios.filterGrupo':       'Group',
+  'relatorios.filterPersonalizado':'Custom',
+  'relatorios.noResults':         'No results for the current filters.',
 
   // === Report (cover + body) ===
   'relatorio.back':             'Back to reports',
@@ -297,9 +314,35 @@ window.I18N_EN = {
   'plano.titleWith':            'Your development plan, <em>{name}</em>',
   'plano.titleNoName':          'Your development plan',
   'plano.lede':                 'Soon your plan will be built from your DISC profile and professional context.',
-  'plano.emptyMsg':             'Your personalized plan will be available soon. Complete the DISC test to unlock the first recommendations.',
+  'plano.emptyMsg':             'Complete the DISC test to unlock your personalized recommendations.',
   'plano.goTest':               'Go to the DISC test',
   'plano.nextActions':          'Next actions',
+  'plano.lede.ready':           'Four development tracks built from your DISC profile. Check off what you have already started.',
+
+  // 4 cards (DISC axes) — pct comes from the user's real score; actions are fixed
+  'plano.card.D.title':         'Decision under pressure',
+  'plano.card.D.sub':           'Your ability to decide and steer',
+  'plano.card.D.action1':       'Make one hard call this week without seeking consensus',
+  'plano.card.D.action2':       'Set tight deadlines and hold them even under noise',
+  'plano.card.D.action3':       'Practice a negotiation where you do not move from the opening price',
+
+  'plano.card.I.title':         'Influence and communication',
+  'plano.card.I.sub':           'How you inspire and connect',
+  'plano.card.I.action1':       'Run a 1:1 with each key person on your team this week',
+  'plano.card.I.action2':       'Pitch a complex idea in 60 seconds, no slides',
+  'plano.card.I.action3':       'Ask for and give structured feedback in at least two exchanges',
+
+  'plano.card.S.title':         'Stability and relationships',
+  'plano.card.S.sub':           'The trust base you build',
+  'plano.card.S.action1':       'Map your five critical professional relationships and where each one stands',
+  'plano.card.S.action2':       'Block 30 min a week for coffee with someone on your team',
+  'plano.card.S.action3':       'Publicly recognize another person’s contribution',
+
+  'plano.card.C.title':         'Analysis and discipline',
+  'plano.card.C.sub':           'Rigor with data and process',
+  'plano.card.C.action1':       'Document a critical process that lives only in your head today',
+  'plano.card.C.action2':       'Audit a recent decision: what data was missing?',
+  'plano.card.C.action3':       'Define a measurable KPI for something you track by feel today',
 
   // === Comparisons ===
   'comp.summary':               'Your team comparison',
@@ -344,6 +387,19 @@ window.I18N_EN = {
   'perfil.redoTest':            'Retake DISC assessment',
   'perfil.doTest':              'Take DISC assessment',
   'perfil.badgeProfile':        '{label} profile ({code})',
+
+  // === Editar perfil modal ===
+  'perfil.edit.title':          'Edit profile',
+  'perfil.edit.lede':           'Update your name and job title. Email is managed by your administrator.',
+  'perfil.edit.nameLabel':      'Full name',
+  'perfil.edit.namePlaceholder':'How you want to be called',
+  'perfil.edit.jobLabel':       'Job title',
+  'perfil.edit.jobPlaceholder': 'e.g. Senior Buyer',
+  'perfil.edit.save':           'Save changes',
+  'perfil.edit.saving':         'Saving…',
+  'perfil.edit.cancel':         'Cancel',
+  'perfil.edit.error':          'Could not save. Please try again.',
+  'perfil.edit.nameRequired':   'Name is required.',
 
   // === Manager ===
   'gestor.badge':                'Manager view',

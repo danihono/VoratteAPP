@@ -13,18 +13,39 @@ function toDiscData(raw) {
 function DashboardScreen({ go, user }) {
   useLang();
   const [discData, setDiscData] = React.useState(null);
+  const [discRaw, setDiscRaw]   = React.useState(null);
   const [discLoading, setDiscLoading] = React.useState(true);
+  const [recentReports, setRecentReports] = React.useState([]);
 
   React.useEffect(function() {
     if (!user) { setDiscLoading(false); return; }
     window.fbGetDiscResult(user.id).then(function(raw) {
       const data = toDiscData(raw);
       setDiscData(data);
+      setDiscRaw(raw || null);
       // mantém window.DISC_DATA atualizado para outros scripts que possam consumi-lo
       if (data) window.DISC_DATA = data;
       setDiscLoading(false);
     }).catch(function() { setDiscLoading(false); });
   }, [user && user.id]);
+
+  // Atividade recente — últimos 3 relatórios gerados pelo aluno
+  React.useEffect(function () {
+    if (!user || !user.id || !window.fbGetReportsByUser) return;
+    window.fbGetReportsByUser(user.id).then(function (docs) {
+      setRecentReports((docs || []).slice(0, 3));
+    }).catch(function () { /* silencioso */ });
+  }, [user && user.id]);
+
+  function fmtDate(ts) {
+    if (!ts) return '—';
+    try {
+      var lang = window.getLang();
+      var loc = lang === 'es' ? 'es' : lang === 'en' ? 'en-US' : 'pt-BR';
+      return ts.toDate().toLocaleDateString(loc);
+    } catch (e) {}
+    return '—';
+  }
 
   // Reconstrói labels do donut quando o idioma muda (re-render por useLang acima)
   const discDataLocalized = React.useMemo(function () {
@@ -36,6 +57,14 @@ function DashboardScreen({ go, user }) {
 
   const dominant = discDataLocalized ? discDataLocalized.reduce(function(a, b) { return a.value > b.value ? a : b; }) : null;
   const firstName = user && user.name ? user.name.split(' ')[0] : t('comp.donutPerson');
+
+  // Card "Plano" no dashboard — usa o eixo dominante do user para sugerir 2 ações.
+  // buildPlanCards é exposto por screen-rest.jsx; depende da ordem de carregamento do HTML.
+  const planCard = React.useMemo(function () {
+    if (!dominant || !discRaw || !window.buildPlanCards) return null;
+    var all = window.buildPlanCards(discRaw);
+    return all.find(function (c) { return c.key === dominant.key; }) || all[0] || null;
+  }, [dominant, discRaw, window.getLang()]);
 
   return (
     <div className="page-enter" style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
@@ -142,7 +171,7 @@ function DashboardScreen({ go, user }) {
         </div>
       </div>
 
-      {/* Bottom row — plano + atividade recente (empty states até existirem dados reais) */}
+      {/* Bottom row — plano + atividade recente */}
       <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 24 }}>
         <div className="card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18 }}>
@@ -154,17 +183,71 @@ function DashboardScreen({ go, user }) {
               {t('dashboard.plano.viewAll')} <Ic.Arrow s={12}/>
             </button>
           </div>
-          <div style={{ padding: '24px 0', color: 'var(--muted)', fontSize: 13.5 }}>
-            {dominant ? t('dashboard.plano.emptyWith') : t('dashboard.plano.emptyWithout')}
-          </div>
+          {planCard ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                <div style={{ width: 38, height: 38, borderRadius: 10, background: 'var(--brown-50)', color: 'var(--brown-700)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  {planCard.icon}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div className="serif" style={{ fontSize: 15, fontWeight: 600 }}>{planCard.title}</div>
+                  <div style={{ fontSize: 12, color: 'var(--muted)' }}>{planCard.sub}</div>
+                </div>
+                <div style={{ fontFamily: 'Fraunces, serif', fontSize: 18, fontWeight: 500, color: 'var(--brown-700)' }}>{planCard.pct}%</div>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {planCard.actions.slice(0, 2).map((a, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 13, color: 'var(--ink-soft)' }}>
+                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--brown-400)', marginTop: 7, flexShrink: 0 }} />
+                    <span>{a}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div style={{ padding: '24px 0', color: 'var(--muted)', fontSize: 13.5 }}>
+              {dominant ? t('dashboard.plano.emptyWith') : t('dashboard.plano.emptyWithout')}
+            </div>
+          )}
         </div>
 
         <div className="card">
           <div className="card-title">{t('dashboard.activity.title')}</div>
           <div className="card-sub">{t('dashboard.activity.sub')}</div>
-          <div style={{ padding: '24px 0', color: 'var(--muted)', fontSize: 13.5 }}>
-            {t('dashboard.activity.empty')}
-          </div>
+          {recentReports.length === 0 ? (
+            <div style={{ padding: '24px 0', color: 'var(--muted)', fontSize: 13.5 }}>
+              {t('dashboard.activity.empty')}
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 14 }}>
+              {recentReports.map((r, i) => (
+                <button
+                  key={r.id || i}
+                  type="button"
+                  onClick={() => go('relatorios')}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 12,
+                    padding: '10px 12px',
+                    background: 'var(--paper-warm)',
+                    border: '1px solid var(--line-soft)',
+                    borderRadius: 10,
+                    cursor: 'pointer', textAlign: 'left',
+                  }}
+                >
+                  <div style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--brown-50)', color: 'var(--brown-700)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <Ic.Pdf s={14}/>
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {r.title || t('relatorios.itemTitle')}
+                    </div>
+                    <div style={{ fontSize: 11.5, color: 'var(--muted)' }}>{fmtDate(r.createdAt)}</div>
+                  </div>
+                  <Ic.Arrow s={14}/>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>

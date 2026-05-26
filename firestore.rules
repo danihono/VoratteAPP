@@ -31,10 +31,15 @@ service cloud.firestore {
 
     // ─── /users/{uid} ───────────────────────────────────────────────────────
     match /users/{uid} {
-      // Leitura: próprio doc, gestor do time, ou admin
+      // Leitura: próprio doc, gestor do time, ou admin.
+      // IMPORTANTE: aqui usamos `resource.data.gestorId == myUid()` direto, NÃO
+      // `isMyTeamMember(uid)` (que faz get() do mesmo doc). Firestore só aceita
+      // list queries quando a regra é pré-verificável pelos where() — get() em
+      // cima do próprio doc não casa com `where('gestorId','==',myUid())` e
+      // a query `fbGetTeamMembers` retorna permission-denied.
       allow read: if isSignedIn() && (
         myUid() == uid ||
-        isMyTeamMember(uid) ||
+        (isGestor() && resource.data.gestorId == myUid()) ||
         isAdmin()
       );
 

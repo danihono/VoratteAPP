@@ -46,7 +46,7 @@ service cloud.firestore {
         isAdmin() ||
         (myUid() == uid &&
          request.resource.data.diff(resource.data).affectedKeys()
-           .hasOnly(['name', 'jobTitle', 'discCompleted', 'discMain']))
+           .hasOnly(['name', 'jobTitle', 'discCompleted', 'discMain', 'lastSeen']))
       );
       allow create: if isAdmin();
       allow delete: if isAdmin();

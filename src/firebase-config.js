@@ -47,6 +47,16 @@ window.fbUpdateUserProfile = function(uid, data) {
   return window.db.collection('users').doc(uid).update(data);
 };
 
+// Marca o usuário como ativo gravando o timestamp do servidor em users/{uid}.lastSeen.
+// Chamado a cada login bem-sucedido — permite ao admin distinguir gestor/aluno que já
+// usou a plataforma (Ativo) de quem só foi convidado e nunca entrou (Convidado).
+window.fbTouchLastSeen = function(uid) {
+  if (!uid) return Promise.resolve();
+  return window.db.collection('users').doc(uid).update({
+    lastSeen: firebase.firestore.FieldValue.serverTimestamp(),
+  });
+};
+
 // ====================== FIRESTORE HELPERS ======================
 
 window.fbGetUserProfile = async function(uid) {

@@ -211,6 +211,11 @@ function App() {
         setAuthError('');
         setRole(profile.role || 'aluno');
         setLoggedIn(true);
+        // Marca atividade para o admin distinguir "Ativo" de "Convidado".
+        // Fire-and-forget: falha (offline/regra) não bloqueia o login.
+        window.fbTouchLastSeen(firebaseUser.uid).catch(function (e) {
+          console.warn('fbTouchLastSeen falhou:', e && e.message);
+        });
       } else {
         await window.fbLogout();
         setAuthError(t('auth.error.notConfigured'));

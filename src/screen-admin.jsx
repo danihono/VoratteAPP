@@ -453,7 +453,10 @@ function userToRow(doc) {
     gestor: t('admin.userLevel.gestor'),
     admin:  t('admin.userLevel.admin'),
   };
-  var status = doc.discCompleted
+  // Qualquer atividade real (login = lastSeen, ou DISC concluído) marca como Ativo.
+  // Sem atividade: respeita o estado do convite.
+  var hasActivity = !!doc.lastSeen || !!doc.discCompleted;
+  var status = hasActivity
     ? t('admin.userRow.status.active')
     : (doc.invited ? t('admin.userRow.status.invited') : t('admin.userRow.status.pending'));
   return {
@@ -464,7 +467,7 @@ function userToRow(doc) {
     role:    doc.jobTitle || '—',
     level:   levelMap[doc.role] || doc.role || '—',
     disc:    doc.discMain || '—',
-    active:  doc.lastSeen ? '—' : '—',   // timestamp formatado: melhoria futura
+    active:  fmtAdminDate(doc.lastSeen),
     status:  status,
     _doc:    doc,
   };
@@ -535,7 +538,7 @@ function AdminUsuarios({ go }) {
       var doc = u._doc || {};
       if (roleFilter !== 'todos' && doc.role !== roleFilter) return false;
       if (statusFilter !== 'todos') {
-        var st = doc.discCompleted ? 'done' : (doc.invited ? 'invited' : 'pending');
+        var st = (doc.lastSeen || doc.discCompleted) ? 'done' : (doc.invited ? 'invited' : 'pending');
         if (st !== statusFilter) return false;
       }
       if (!q) return true;

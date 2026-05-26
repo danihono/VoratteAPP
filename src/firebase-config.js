@@ -82,6 +82,7 @@ window.fbGetTeamMembers = async function(gestorId) {
       id:      doc.id,
       name:    user.name || '—',
       role:    user.jobTitle || '—',   // jobTitle = cargo profissional (ex: "Comprador Sênior")
+      email:   user.email || '',
       d:       disc ? (disc.d || 0) : 0,
       i:       disc ? (disc.i || 0) : 0,
       s:       disc ? (disc.s || 0) : 0,
@@ -120,6 +121,27 @@ window.fbGetReportsByUser = async function(uid) {
     .orderBy('createdAt', 'desc')
     .get();
   return snap.docs.map(function(doc) { return { id: doc.id, ...doc.data() }; });
+};
+
+// Reports onde userId pertence ao time do gestor.
+// Firestore 'in' tem limite 10 — quebra em chunks e ordena no cliente.
+window.fbGetReportsByTeam = async function(uids) {
+  if (!uids || !uids.length) return [];
+  var chunks = [];
+  for (var i = 0; i < uids.length; i += 10) chunks.push(uids.slice(i, i + 10));
+  var snaps = await Promise.all(chunks.map(function (group) {
+    return window.db.collection('reports').where('userId', 'in', group).get();
+  }));
+  var rows = [];
+  snaps.forEach(function (snap) {
+    snap.docs.forEach(function (doc) { rows.push({ id: doc.id, ...doc.data() }); });
+  });
+  rows.sort(function (a, b) {
+    var ta = a.createdAt && a.createdAt.toMillis ? a.createdAt.toMillis() : 0;
+    var tb = b.createdAt && b.createdAt.toMillis ? b.createdAt.toMillis() : 0;
+    return tb - ta;
+  });
+  return rows;
 };
 
 window.fbGetAllReports = async function(limit) {
@@ -195,6 +217,11 @@ window.fbCreateUserDoc = async function(uid, data) {
     invited:       false,
     createdAt:     firebase.firestore.FieldValue.serverTimestamp(),
   }, data));
+};
+
+// Atualiza campos de uma empresa em /companies/{id} (admin only — regras em firestore.rules)
+window.fbUpdateCompany = function(companyId, data) {
+  return window.db.collection('companies').doc(companyId).update(data);
 };
 
 // Cria documento em /companies — usado pelo modal de cadastro de empresa

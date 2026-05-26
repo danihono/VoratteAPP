@@ -5,6 +5,17 @@
 var _gestorTeamCache = null;
 var _gestorTeamFetch = null;
 
+// Monta uma URL mailto: para abrir o cliente de e-mail padrão do gestor.
+// Suporta to (destino direto), bcc (lista de destinatários), subject e body.
+function buildMailto(opts) {
+  var o = opts || {};
+  var params = [];
+  if (o.bcc)     params.push('bcc=' + encodeURIComponent(o.bcc));
+  if (o.subject) params.push('subject=' + encodeURIComponent(o.subject));
+  if (o.body)    params.push('body=' + encodeURIComponent(o.body));
+  return 'mailto:' + (o.to || '') + (params.length ? '?' + params.join('&') : '');
+}
+
 // Quando admin está em "Visão: Gestor" sem equipe vinculada, injeta o próprio admin
 // (com o DISC que ele tiver feito como aluno demo) na lista — só para visualização.
 async function _buildDemoSelfMember(currentUser) {
@@ -77,6 +88,22 @@ function GestorDashboard({ go, user }) {
   var done = GESTOR_TEAM.filter(function(p) { return p.status === 'done'; }).length;
   var pending = GESTOR_TEAM.length - done;
   var firstName = user && user.name ? user.name.split(' ')[0] : t('role.gestor');
+
+  // Pendentes com e-mail cadastrado — alvo do botão "Notificar pendentes"
+  var pendingWithEmail = GESTOR_TEAM.filter(function (m) {
+    return m.status !== 'done' && m.email;
+  });
+
+  function handleNotifyPending() {
+    if (!pendingWithEmail.length) { alert(t('gestor.notify.empty')); return; }
+    var bcc = pendingWithEmail.map(function (m) { return m.email; }).join(',');
+    var senderName = user && user.name ? user.name : t('role.gestor');
+    window.location.href = buildMailto({
+      bcc:     bcc,
+      subject: t('gestor.notify.subject'),
+      body:    t('gestor.notify.body', { name: senderName }),
+    });
+  }
 
   // Distribuição DISC real do time
   var dist = React.useMemo(function () {
@@ -180,7 +207,14 @@ function GestorDashboard({ go, user }) {
             <div className="card-title">{t('gestor.evalStatusTitle')}</div>
             <div className="card-sub" style={{ marginBottom: 0 }}>{t('gestor.evalStatusSub')}</div>
           </div>
-          <button className="btn btn-secondary"><Ic.Bell s={14}/> {t('gestor.notifyPending')}</button>
+          <button
+            className="btn btn-secondary"
+            onClick={handleNotifyPending}
+            disabled={!pendingWithEmail.length}
+            title={!pendingWithEmail.length ? t('gestor.notify.empty') : undefined}
+          >
+            <Ic.Bell s={14}/> {t('gestor.notifyPending')}
+          </button>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -213,6 +247,25 @@ function GestorEquipe({ go, user }) {
   var [sel, setSel] = React.useState(null);
   var selId = sel || (GESTOR_TEAM.length ? GESTOR_TEAM[0].id : null);
   var p = GESTOR_TEAM.find(function(x) { return x.id === selId; }) || null;
+  var senderName = user && user.name ? user.name : t('role.gestor');
+
+  function handleMessage(member) {
+    if (!member || !member.email) { alert(t('gestor.notify.empty')); return; }
+    window.location.href = buildMailto({
+      to:      member.email,
+      subject: t('gestor.detail.msgSubject', { name: senderName }),
+      body:    t('gestor.detail.msgBody', { member: member.name, name: senderName }),
+    });
+  }
+
+  function handleRemind(member) {
+    if (!member || !member.email) { alert(t('gestor.notify.empty')); return; }
+    window.location.href = buildMailto({
+      to:      member.email,
+      subject: t('gestor.detail.remindSubject'),
+      body:    t('gestor.detail.remindBody', { member: member.name, name: senderName }),
+    });
+  }
 
   if (teamLoading) {
     return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 300, color: 'var(--muted)', fontSize: 13 }}>{t('gestor.team.loading')}</div>;
@@ -280,11 +333,17 @@ function GestorEquipe({ go, user }) {
             </div>
             {p.status === 'done' ? (
               <div style={{ display: 'flex', gap: 8 }}>
-                <button className="btn btn-secondary"><Ic.Chat s={14}/> {t('gestor.detail.message')}</button>
-                <button className="btn btn-primary"><Ic.Pdf s={14}/> {t('gestor.detail.report')}</button>
+                <button className="btn btn-secondary" onClick={() => handleMessage(p)} disabled={!p.email}>
+                  <Ic.Chat s={14}/> {t('gestor.detail.message')}
+                </button>
+                <button className="btn btn-primary" onClick={() => go('relatorio')}>
+                  <Ic.Pdf s={14}/> {t('gestor.detail.report')}
+                </button>
               </div>
             ) : (
-              <button className="btn btn-primary"><Ic.Bell s={14}/> {t('gestor.detail.remind')}</button>
+              <button className="btn btn-primary" onClick={() => handleRemind(p)} disabled={!p.email}>
+                <Ic.Bell s={14}/> {t('gestor.detail.remind')}
+              </button>
             )}
           </div>
         </div>
@@ -362,7 +421,7 @@ function GestorEquipe({ go, user }) {
             <p style={{ fontSize: 13, color: 'var(--muted)', marginTop: 6, maxWidth: 380, margin: '6px auto 0' }}>
               {p.status === 'invited' ? t('gestor.detail.noDiscInvited') : t('gestor.detail.noDiscPending')}
             </p>
-            <button className="btn btn-primary" style={{ marginTop: 18 }}>
+            <button className="btn btn-primary" style={{ marginTop: 18 }} onClick={() => handleRemind(p)} disabled={!p.email}>
               <Ic.Bell s={14}/> {t('gestor.detail.remindBtn')}
             </button>
           </div>
@@ -443,20 +502,64 @@ function GestorMapa({ go, user }) {
 
 function GestorRelatorios({ go, user }) {
   useLang();
-  const rows = [];
+  var [team, teamLoading] = useGestorTeam(user && user.id, user);
+  var [rows, setRows]     = React.useState([]);
+  var [loading, setLoading] = React.useState(true);
+
+  // Mapa uid -> nome para mostrar o "dono" do relatório
+  var teamById = React.useMemo(function () {
+    var m = {};
+    team.forEach(function (p) { m[p.id] = p; });
+    return m;
+  }, [team]);
+
+  React.useEffect(function () {
+    if (teamLoading) return;
+    if (!team.length) { setRows([]); setLoading(false); return; }
+    if (!window.fbGetReportsByTeam) { setLoading(false); return; }
+    var uids = team.map(function (p) { return p.id; });
+    setLoading(true);
+    window.fbGetReportsByTeam(uids).then(function (docs) {
+      setRows(docs || []);
+      setLoading(false);
+    }).catch(function (err) {
+      console.error('Erro ao carregar relatórios do time:', err);
+      setRows([]);
+      setLoading(false);
+    });
+  }, [teamLoading, team]);
+
+  function fmtDate(ts) {
+    if (!ts) return '—';
+    try {
+      var lang = window.getLang();
+      var loc = lang === 'es' ? 'es' : lang === 'en' ? 'en-US' : 'pt-BR';
+      return ts.toDate().toLocaleDateString(loc);
+    } catch (e) {}
+    return '—';
+  }
+
+  var isLoading = teamLoading || loading;
+
   return (
     <div className="page-enter" style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div className="tabs">
           <button className="tab active">{t('gestor.relatorios.tab.team')}</button>
-          <button className="tab">{t('gestor.relatorios.tab.cons')}</button>
-          <button className="tab">{t('gestor.relatorios.tab.role')}</button>
+          <button className="tab" disabled title={t('gestor.relatorios.newSoon')}>{t('gestor.relatorios.tab.cons')}</button>
+          <button className="tab" disabled title={t('gestor.relatorios.newSoon')}>{t('gestor.relatorios.tab.role')}</button>
         </div>
-        <button className="btn btn-primary"><Ic.Plus s={14}/> {t('gestor.relatorios.new')}</button>
+        <button className="btn btn-primary" disabled title={t('gestor.relatorios.newSoon')}>
+          <Ic.Plus s={14}/> {t('gestor.relatorios.new')}
+        </button>
       </div>
 
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-        {rows.length === 0 ? (
+        {isLoading ? (
+          <div style={{ padding: '48px 24px', textAlign: 'center', color: 'var(--muted)', fontSize: 13.5 }}>
+            {t('gestor.relatorios.loading')}
+          </div>
+        ) : rows.length === 0 ? (
           <div style={{ padding: '48px 24px', textAlign: 'center', color: 'var(--muted)', fontSize: 13.5 }}>
             {t('gestor.relatorios.empty')}
           </div>
@@ -465,32 +568,37 @@ function GestorRelatorios({ go, user }) {
             <thead><tr>
               <th style={{ paddingLeft: 24 }}>{t('gestor.relatorios.col.report')}</th>
               <th>{t('gestor.relatorios.col.type')}</th>
-              <th>{t('gestor.relatorios.col.author')}</th>
+              <th>{t('gestor.relatorios.col.owner')}</th>
               <th>{t('gestor.relatorios.col.date')}</th>
               <th style={{ textAlign: 'right', paddingRight: 24 }}>{t('common.actions')}</th>
             </tr></thead>
             <tbody>
-              {rows.map((r, i) => (
-                <tr key={i}>
-                  <td style={{ paddingLeft: 24 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <div style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--brown-50)', color: 'var(--brown-700)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <Ic.Pdf s={14}/>
+              {rows.map(function (r) {
+                var owner = teamById[r.userId];
+                var ownerName = owner ? owner.name : (r.targetLabel || '—');
+                return (
+                  <tr key={r.id}>
+                    <td style={{ paddingLeft: 24 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <div style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--brown-50)', color: 'var(--brown-700)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <Ic.Pdf s={14}/>
+                        </div>
+                        <div style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--ink)' }}>{r.title || t('relatorios.itemTitle')}</div>
                       </div>
-                      <div style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--ink)' }}>{r.name}</div>
-                    </div>
-                  </td>
-                  <td><span className="badge badge-outline">{r.type}</span></td>
-                  <td>{r.author}</td>
-                  <td>{r.date}</td>
-                  <td style={{ paddingRight: 24 }}>
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 4 }}>
-                      <button className="icon-btn" onClick={() => go('relatorio')}><Ic.Eye s={16}/></button>
-                      <button className="icon-btn"><Ic.Download s={16}/></button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                    <td><span className="badge badge-outline">{r.type || '—'}</span></td>
+                    <td style={{ fontSize: 13 }}>{ownerName}</td>
+                    <td>{fmtDate(r.createdAt)}</td>
+                    <td style={{ paddingRight: 24 }}>
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 4 }}>
+                        <button className="icon-btn" onClick={() => go('relatorio')} title={t('gestor.relatorios.actionView')}>
+                          <Ic.Eye s={16}/>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         )}

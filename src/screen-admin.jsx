@@ -1,6 +1,19 @@
 // ====================== ADMIN ======================
 // O admin geral vê TUDO: todas as empresas, gestores, usuários, estatísticas globais.
 
+const JOB_TITLE_OPTIONS = [
+  'Menor Aprendiz',
+  'Assistente de Compras',
+  'Comprador Júnior',
+  'Comprador Pleno',
+  'Comprador Sênior',
+  'Especialista',
+  'Coordenador',
+  'Supervisor',
+  'Gerente',
+  'Diretor',
+];
+
 function AdminDashboard({ go }) {
   useLang();
   var [users, setUsers]         = React.useState([]);
@@ -292,7 +305,16 @@ function AdminUsuarios({ go }) {
         </div>
         <button className="btn btn-primary" onClick={function(){ setShowModal(true); }}><Ic.Plus s={14}/> {t('admin.users.invite')}</button>
       </div>
-      {showModal && <CriarUsuarioModal onClose={function(){ setShowModal(false); }} />}
+      {showModal && <CriarAlunoModal
+        onClose={function(){ setShowModal(false); }}
+        onCreated={function(){
+          window.fbGetAllUsers(500).then(function(docs){
+            var counts = { total: docs.length, aluno: 0, gestor: 0, admin: 0 };
+            docs.forEach(function(d){ if (counts.hasOwnProperty(d.role)) counts[d.role] += 1; });
+            setRawCounts(counts);
+            setUsers(docs.map(userToRow));
+          });
+        }} />}
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
         <Mini2 label={t('admin.users.mini.total')}    value={loading ? '—' : String(rawCounts.total)}  sub={t('admin.users.mini.totalSub')} />
@@ -399,13 +421,17 @@ function AdminEmpresas({ go }) {
   useLang();
   var [cos, setCos] = React.useState([]);
   var [loading, setLoading] = React.useState(true);
+  var [showModal, setShowModal] = React.useState(false);
 
-  React.useEffect(function() {
+  function reload() {
+    setLoading(true);
     window.fbGetAllCompanies().then(function(docs) {
       setCos(docs.map(companyToRow));
       setLoading(false);
     }).catch(function() { setLoading(false); });
-  }, []);
+  }
+
+  React.useEffect(function() { reload(); }, []);
   return (
     <div className="page-enter" style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -417,8 +443,11 @@ function AdminEmpresas({ go }) {
           <button className="btn btn-secondary"><Ic.Settings s={14}/> {t('admin.empresas.sector')}</button>
           <button className="btn btn-secondary"><Ic.Settings s={14}/> {t('admin.empresas.plan')}</button>
         </div>
-        <button className="btn btn-primary"><Ic.Plus s={14}/> {t('admin.empresas.new')}</button>
+        <button className="btn btn-primary" onClick={function(){ setShowModal(true); }}><Ic.Plus s={14}/> {t('admin.empresas.new')}</button>
       </div>
+      {showModal && <CriarEmpresaModal
+        onClose={function(){ setShowModal(false); }}
+        onCreated={function(){ reload(); }} />}
 
       {loading && <div style={{ padding: 32, textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>{t('admin.empresas.loading')}</div>}
       {!loading && cos.length === 0 && <div style={{ padding: 32, textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>{t('admin.empresas.empty')}</div>}
@@ -479,12 +508,15 @@ function AdminGestores({ go }) {
   var [loading, setLoading]   = React.useState(true);
   var [showModal, setShowModal] = React.useState(false);
 
-  React.useEffect(function() {
+  function reload() {
+    setLoading(true);
     window.fbGetAllGestores().then(function(docs) {
       setMs(docs.map(gestorToRow));
       setLoading(false);
     }).catch(function() { setLoading(false); });
-  }, []);
+  }
+
+  React.useEffect(function() { reload(); }, []);
   return (
     <div className="page-enter" style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -494,7 +526,9 @@ function AdminGestores({ go }) {
         </div>
         <button className="btn btn-primary" onClick={function(){ setShowModal(true); }}><Ic.Plus s={14}/> {t('admin.gestores.promote')}</button>
       </div>
-      {showModal && <CriarUsuarioModal defaultRole="gestor" onClose={function(){ setShowModal(false); }} />}
+      {showModal && <CriarGestorModal
+        onClose={function(){ setShowModal(false); }}
+        onCreated={function(){ reload(); }} />}
 
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
         {loading && <div style={{ padding: 32, textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>{t('admin.gestores.loading')}</div>}
@@ -729,12 +763,124 @@ function AdminPermissoes({ go }) {
   );
 }
 
-// ============ MODAL — CRIAR USUÁRIO (somente admin) ============
-function CriarUsuarioModal({ onClose, defaultRole }) {
+// ============ HELPERS DE MODAL ============
+function ModalFrame({ children, onClose, width }) {
+  return (
+    <div
+      style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(0,0,0,0.45)',
+               display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
+      onClick={onClose}
+    >
+      <div className="card"
+        style={{ width: '100%', maxWidth: width || 480, padding: 32, maxHeight: '90vh', overflowY: 'auto' }}
+        onClick={function(e) { e.stopPropagation(); }}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function ModalErrorBox({ message }) {
+  if (!message) return null;
+  return (
+    <div style={{ fontSize: 12.5, color: '#b91c1c', marginBottom: 14,
+                  padding: '10px 14px', background: '#fef2f2',
+                  border: '1px solid #fecaca', borderRadius: 8 }}>
+      {message}
+    </div>
+  );
+}
+
+function ModalSuccessIcon() {
+  return (
+    <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'var(--brown-50)',
+                  color: 'var(--brown-700)', display: 'inline-flex',
+                  alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+      <Ic.Check s={24}/>
+    </div>
+  );
+}
+
+function JobTitleSelect({ value, onChange }) {
+  var hasCustomValue = value && JOB_TITLE_OPTIONS.indexOf(value) === -1;
+  return (
+    <select className="input" value={value} onChange={onChange}>
+      <option value="">{t('admin.modal.field.jobSelect')}</option>
+      {hasCustomValue && <option value={value}>{value}</option>}
+      {JOB_TITLE_OPTIONS.map(function (job) {
+        return <option key={job} value={job}>{job}</option>;
+      })}
+    </select>
+  );
+}
+
+// Botão "Enviar convite por email" — usado no success state dos modais de gestor/aluno.
+// Lê window.EMAILJS_CONFIG; se não configurado, mostra mensagem de aviso em vez de erro técnico.
+function InviteEmailButton({ recipient }) {
+  useLang();
+  var [state, setState] = React.useState('idle'); // 'idle' | 'sending' | 'sent' | 'failed' | 'notConfigured'
+  var [errorMsg, setErrorMsg] = React.useState('');
+
+  async function handleSend() {
+    if (!window.isEmailJSConfigured || !window.isEmailJSConfigured()) {
+      setState('notConfigured');
+      return;
+    }
+    setState('sending'); setErrorMsg('');
+    try {
+      await window.sendInviteEmail(recipient);
+      if (recipient.uid && window.fbMarkInvited) {
+        window.fbMarkInvited(recipient.uid);
+      }
+      setState('sent');
+    } catch (err) {
+      setErrorMsg((err && err.text) || (err && err.message) || String(err));
+      setState('failed');
+    }
+  }
+
+  if (state === 'sent') {
+    return (
+      <div style={{ fontSize: 12.5, color: 'var(--brown-700)', fontWeight: 600,
+                    padding: '12px 14px', background: 'var(--brown-50)',
+                    border: '1px solid var(--brown-100)', borderRadius: 8, textAlign: 'center' }}>
+        {t('admin.invite.sent', { email: recipient.email })}
+      </div>
+    );
+  }
+
+  if (state === 'notConfigured') {
+    return (
+      <div style={{ fontSize: 12, color: '#92400e', padding: '10px 14px',
+                    background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8 }}>
+        {t('admin.invite.notConfigured')}
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <button type="button" className="btn btn-primary"
+        style={{ width: '100%' }} onClick={handleSend} disabled={state === 'sending'}>
+        <Ic.Mail s={14}/> {state === 'sending' ? t('admin.invite.sending') : t('admin.invite.button')}
+      </button>
+      <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 8, textAlign: 'center', lineHeight: 1.4 }}>
+        {t('admin.invite.hint')}
+      </div>
+      {state === 'failed' && (
+        <div style={{ fontSize: 12, color: '#b91c1c', marginTop: 8, textAlign: 'center' }}>
+          {t('admin.invite.failed', { reason: errorMsg })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ============ MODAL — CADASTRAR EMPRESA ============
+function CriarEmpresaModal({ onClose, onCreated }) {
   useLang();
   var [form, setForm] = React.useState({
-    name: '', email: '', password: '', jobTitle: '', companyName: '',
-    role: defaultRole || 'aluno',
+    name: '', sector: '', cnpj: '', phone: '', website: '', plan: 'Starter',
   });
   var [loading, setLoading] = React.useState(false);
   var [error, setError]     = React.useState('');
@@ -744,19 +890,167 @@ function CriarUsuarioModal({ onClose, defaultRole }) {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (!form.name || !form.email || !form.password) {
-      setError(t('admin.modal.errors.required'));
+    if (!form.name || !form.sector || !form.cnpj || !form.phone || !form.website) {
+      setError(t('admin.empresa.modal.errors.required'));
+      return;
+    }
+    var digits = form.cnpj.replace(/\D/g, '');
+    if (digits.length !== 14) {
+      setError(t('admin.empresa.modal.errors.cnpj'));
+      return;
+    }
+    setError(''); setLoading(true);
+    try {
+      var company = await window.fbCreateCompany({
+        name:    form.name.trim(),
+        sector:  form.sector.trim(),
+        cnpj:    form.cnpj.trim(),
+        phone:   form.phone.trim(),
+        website: form.website.trim(),
+        plan:    form.plan,
+        since:   new Date().toISOString().slice(0, 10),
+      });
+      setSuccess(true);
+      if (onCreated) onCreated(company);
+    } catch (err) {
+      setError(t('admin.empresa.modal.errors.generic'));
+    } finally { setLoading(false); }
+  }
+
+  return (
+    <ModalFrame onClose={onClose} width={520}>
+      {success ? (
+        <div style={{ textAlign: 'center' }}>
+          <ModalSuccessIcon />
+          <div className="serif" style={{ fontSize: 22, marginBottom: 8 }}>{t('admin.empresa.modal.successTitle')}</div>
+          <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 24, lineHeight: 1.5 }}
+             dangerouslySetInnerHTML={{ __html: t('admin.empresa.modal.successBody', { name: form.name }) }} />
+          <button className="btn btn-primary" style={{ width: '100%' }} onClick={onClose}>{t('common.close')}</button>
+        </div>
+      ) : (
+        <form onSubmit={handleSubmit}>
+          <div className="serif" style={{ fontSize: 22, marginBottom: 4 }}>{t('admin.empresa.modal.title')}</div>
+          <div style={{ fontSize: 12.5, color: 'var(--muted)', marginBottom: 20 }}>{t('admin.empresa.modal.sub')}</div>
+
+          <ModalErrorBox message={error} />
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div className="field">
+              <label>{t('admin.empresa.modal.field.name')}</label>
+              <input className="input" type="text" value={form.name}
+                onChange={function(e) { setField('name', e.target.value); }}
+                placeholder={t('admin.empresa.modal.field.namePh')} autoFocus />
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div className="field">
+                <label>{t('admin.empresa.modal.field.sector')}</label>
+                <input className="input" type="text" value={form.sector}
+                  onChange={function(e) { setField('sector', e.target.value); }}
+                  placeholder={t('admin.empresa.modal.field.sectorPh')} />
+              </div>
+              <div className="field">
+                <label>{t('admin.empresa.modal.field.cnpj')}</label>
+                <input className="input" type="text" value={form.cnpj}
+                  onChange={function(e) { setField('cnpj', e.target.value); }}
+                  placeholder={t('admin.empresa.modal.field.cnpjPh')} />
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div className="field">
+                <label>{t('admin.empresa.modal.field.phone')}</label>
+                <input className="input" type="tel" value={form.phone}
+                  onChange={function(e) { setField('phone', e.target.value); }}
+                  placeholder={t('admin.empresa.modal.field.phonePh')} />
+              </div>
+              <div className="field">
+                <label>{t('admin.empresa.modal.field.website')}</label>
+                <input className="input" type="text" value={form.website}
+                  onChange={function(e) { setField('website', e.target.value); }}
+                  placeholder={t('admin.empresa.modal.field.websitePh')} />
+              </div>
+            </div>
+
+            <div className="field">
+              <label>{t('admin.empresa.modal.field.plan')}</label>
+              <select className="input" value={form.plan}
+                onChange={function(e) { setField('plan', e.target.value); }}>
+                <option value="Starter">Starter</option>
+                <option value="Business">Business</option>
+                <option value="Enterprise">Enterprise</option>
+              </select>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: 10, marginTop: 22 }}>
+            <button type="button" className="btn btn-ghost" style={{ flex: 1 }} onClick={onClose}>
+              {t('common.cancel')}
+            </button>
+            <button type="submit" className="btn btn-primary" style={{ flex: 1 }} disabled={loading}>
+              {loading ? t('admin.empresa.modal.creating') : t('admin.empresa.modal.create')}
+            </button>
+          </div>
+        </form>
+      )}
+    </ModalFrame>
+  );
+}
+
+// ============ MODAL — CADASTRAR GESTOR ============
+function CriarGestorModal({ onClose, onCreated }) {
+  useLang();
+  var [companies, setCompanies] = React.useState([]);
+  var [loadingCompanies, setLoadingCompanies] = React.useState(true);
+  var [form, setForm] = React.useState({
+    name: '', email: '', password: '', jobTitle: '', companyId: '',
+  });
+  var [loading, setLoading] = React.useState(false);
+  var [error, setError]     = React.useState('');
+  var [created, setCreated] = React.useState(null);
+
+  React.useEffect(function() {
+    window.fbGetAllCompanies().then(function(docs) {
+      setCompanies(docs || []);
+      setLoadingCompanies(false);
+    }).catch(function() { setLoadingCompanies(false); });
+  }, []);
+
+  function setField(k, v) { setForm(function(f) { return Object.assign({}, f, { [k]: v }); }); }
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    if (!form.name || !form.email || !form.password || !form.companyId) {
+      setError(t('admin.gestor.modal.errors.required'));
+      return;
+    }
+    var company = companies.find(function(c) { return c.id === form.companyId; });
+    if (!company) {
+      setError(t('admin.gestor.modal.errors.required'));
       return;
     }
     setError(''); setLoading(true);
     try {
       var uid = await window.fbCreateUser(form.email, form.password);
       await window.fbCreateUserDoc(uid, {
-        name: form.name, email: form.email,
-        jobTitle: form.jobTitle, companyName: form.companyName, role: form.role,
+        name:        form.name.trim(),
+        email:       form.email.trim(),
+        role:        'gestor',
+        jobTitle:    form.jobTitle.trim(),
+        companyId:   company.id,
+        companyName: company.name,
       });
-      setSuccess(true);
-    } catch(err) {
+      window.fbIncrementCompanyCounter(company.id, 'managerCount');
+      setCreated({
+        uid:         uid,
+        name:        form.name.trim(),
+        email:       form.email.trim(),
+        password:    form.password,
+        role:        'gestor',
+        companyName: company.name,
+      });
+      if (onCreated) onCreated();
+    } catch (err) {
       var msg = err.message || '';
       if (msg === 'EMAIL_EXISTS') setError(t('admin.modal.errors.exists'));
       else if (msg.indexOf('WEAK_PASSWORD') !== -1) setError(t('admin.modal.errors.weak'));
@@ -764,116 +1058,275 @@ function CriarUsuarioModal({ onClose, defaultRole }) {
     } finally { setLoading(false); }
   }
 
-  var roleLabels = {
-    aluno:  t('admin.userLevel.aluno'),
-    gestor: t('admin.userLevel.gestor'),
-    admin:  t('admin.userLevel.admin'),
-  };
+  return (
+    <ModalFrame onClose={onClose} width={520}>
+      {created ? (
+        <div style={{ textAlign: 'center' }}>
+          <ModalSuccessIcon />
+          <div className="serif" style={{ fontSize: 22, marginBottom: 8 }}>{t('admin.gestor.modal.successTitle')}</div>
+          <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 20, lineHeight: 1.5 }}
+             dangerouslySetInnerHTML={{ __html: t('admin.gestor.modal.successBody', { name: created.name, company: created.companyName }) }} />
+          <div style={{ marginBottom: 14 }}>
+            <InviteEmailButton recipient={created} />
+          </div>
+          <button className="btn btn-ghost" style={{ width: '100%' }} onClick={onClose}>{t('common.close')}</button>
+        </div>
+      ) : (
+        <form onSubmit={handleSubmit}>
+          <div className="serif" style={{ fontSize: 22, marginBottom: 4 }}>{t('admin.gestor.modal.title')}</div>
+          <div style={{ fontSize: 12.5, color: 'var(--muted)', marginBottom: 20 }}>{t('admin.gestor.modal.sub')}</div>
+
+          <ModalErrorBox message={error} />
+
+          {!loadingCompanies && companies.length === 0 && (
+            <div style={{ fontSize: 12.5, color: '#92400e', padding: '10px 14px',
+                          background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, marginBottom: 14 }}>
+              {t('admin.gestor.modal.field.noCompanies')}
+            </div>
+          )}
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div className="field">
+              <label>{t('admin.modal.field.name')}</label>
+              <input className="input" type="text" value={form.name}
+                onChange={function(e) { setField('name', e.target.value); }}
+                placeholder={t('admin.modal.field.namePh')} autoFocus />
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div className="field">
+                <label>{t('admin.modal.field.email')}</label>
+                <input className="input" type="email" value={form.email}
+                  onChange={function(e) { setField('email', e.target.value); }}
+                  placeholder={t('admin.modal.field.emailPh')} />
+              </div>
+              <div className="field">
+                <label>{t('admin.modal.field.password')}</label>
+                <input className="input" type="password" value={form.password}
+                  onChange={function(e) { setField('password', e.target.value); }}
+                  placeholder={t('admin.modal.field.passwordPh')} />
+              </div>
+            </div>
+
+            <div className="field">
+              <label>{t('admin.modal.field.job')}</label>
+              <JobTitleSelect value={form.jobTitle}
+                onChange={function(e) { setField('jobTitle', e.target.value); }} />
+            </div>
+
+            <div className="field">
+              <label>{t('admin.gestor.modal.field.company')}</label>
+              <select className="input" value={form.companyId}
+                onChange={function(e) { setField('companyId', e.target.value); }}
+                disabled={loadingCompanies || companies.length === 0}>
+                <option value="">{t('admin.gestor.modal.field.companyPh')}</option>
+                {companies.map(function(c) {
+                  return <option key={c.id} value={c.id}>{c.name}</option>;
+                })}
+              </select>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: 10, marginTop: 22 }}>
+            <button type="button" className="btn btn-ghost" style={{ flex: 1 }} onClick={onClose}>
+              {t('common.cancel')}
+            </button>
+            <button type="submit" className="btn btn-primary" style={{ flex: 1 }}
+              disabled={loading || companies.length === 0}>
+              {loading ? t('admin.gestor.modal.creating') : t('admin.gestor.modal.create')}
+            </button>
+          </div>
+        </form>
+      )}
+    </ModalFrame>
+  );
+}
+
+// ============ MODAL — CADASTRAR ALUNO ============
+function CriarAlunoModal({ onClose, onCreated }) {
+  useLang();
+  var [companies, setCompanies] = React.useState([]);
+  var [gestores, setGestores]   = React.useState([]);
+  var [loadingCompanies, setLoadingCompanies] = React.useState(true);
+  var [loadingGestores, setLoadingGestores]   = React.useState(false);
+  var [form, setForm] = React.useState({
+    name: '', email: '', password: '', jobTitle: '', companyId: '', gestorId: '',
+  });
+  var [loading, setLoading] = React.useState(false);
+  var [error, setError]     = React.useState('');
+  var [created, setCreated] = React.useState(null);
+
+  React.useEffect(function() {
+    window.fbGetAllCompanies().then(function(docs) {
+      setCompanies(docs || []);
+      setLoadingCompanies(false);
+    }).catch(function() { setLoadingCompanies(false); });
+  }, []);
+
+  // Recarrega gestores sempre que mudar a empresa selecionada
+  React.useEffect(function() {
+    if (!form.companyId) {
+      setGestores([]);
+      return;
+    }
+    setLoadingGestores(true);
+    setForm(function(f) { return Object.assign({}, f, { gestorId: '' }); });
+    window.fbGetGestoresByCompany(form.companyId).then(function(docs) {
+      setGestores(docs || []);
+      setLoadingGestores(false);
+    }).catch(function() { setLoadingGestores(false); });
+  }, [form.companyId]);
+
+  function setField(k, v) { setForm(function(f) { return Object.assign({}, f, { [k]: v }); }); }
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    if (!form.name || !form.email || !form.password || !form.companyId || !form.gestorId) {
+      setError(t('admin.aluno.modal.errors.required'));
+      return;
+    }
+    var company = companies.find(function(c) { return c.id === form.companyId; });
+    var gestor  = gestores.find(function(g) { return g.id === form.gestorId; });
+    if (!company || !gestor) {
+      setError(t('admin.aluno.modal.errors.required'));
+      return;
+    }
+    setError(''); setLoading(true);
+    try {
+      var uid = await window.fbCreateUser(form.email, form.password);
+      await window.fbCreateUserDoc(uid, {
+        name:        form.name.trim(),
+        email:       form.email.trim(),
+        role:        'aluno',
+        jobTitle:    form.jobTitle.trim(),
+        companyId:   company.id,
+        companyName: company.name,
+        gestorId:    gestor.id,
+        gestorName:  gestor.name,
+      });
+      window.fbIncrementCompanyCounter(company.id, 'userCount');
+      setCreated({
+        uid:         uid,
+        name:        form.name.trim(),
+        email:       form.email.trim(),
+        password:    form.password,
+        role:        'aluno',
+        companyName: company.name,
+        gestorName:  gestor.name,
+      });
+      if (onCreated) onCreated();
+    } catch (err) {
+      var msg = err.message || '';
+      if (msg === 'EMAIL_EXISTS') setError(t('admin.modal.errors.exists'));
+      else if (msg.indexOf('WEAK_PASSWORD') !== -1) setError(t('admin.modal.errors.weak'));
+      else setError(t('admin.modal.errors.generic'));
+    } finally { setLoading(false); }
+  }
+
+  var emptyCompanies = !loadingCompanies && companies.length === 0;
+  var emptyGestores  = !!form.companyId && !loadingGestores && gestores.length === 0;
 
   return (
-    <div
-      style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(0,0,0,0.45)',
-               display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
-      onClick={onClose}
-    >
-      <div className="card" style={{ width: '100%', maxWidth: 480, padding: 32 }}
-           onClick={function(e) { e.stopPropagation(); }}>
-
-        {success ? (
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'var(--brown-50)',
-                          color: 'var(--brown-700)', display: 'inline-flex',
-                          alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
-              <Ic.Check s={24}/>
-            </div>
-            <div className="serif" style={{ fontSize: 22, marginBottom: 8 }}>{t('admin.modal.successTitle')}</div>
-            <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 24, lineHeight: 1.5 }}
-               dangerouslySetInnerHTML={{ __html: t('admin.modal.successBody', { name: form.name, role: roleLabels[form.role] }) }} />
-            <button className="btn btn-primary" style={{ width: '100%' }} onClick={onClose}>{t('common.close')}</button>
+    <ModalFrame onClose={onClose} width={520}>
+      {created ? (
+        <div style={{ textAlign: 'center' }}>
+          <ModalSuccessIcon />
+          <div className="serif" style={{ fontSize: 22, marginBottom: 8 }}>{t('admin.aluno.modal.successTitle')}</div>
+          <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 20, lineHeight: 1.5 }}
+             dangerouslySetInnerHTML={{ __html: t('admin.aluno.modal.successBody', { name: created.name, company: created.companyName, gestor: created.gestorName }) }} />
+          <div style={{ marginBottom: 14 }}>
+            <InviteEmailButton recipient={created} />
           </div>
-        ) : (
-          <form onSubmit={handleSubmit}>
-            <div className="serif" style={{ fontSize: 22, marginBottom: 4 }}>{t('admin.modal.title')}</div>
-            <div style={{ fontSize: 12.5, color: 'var(--muted)', marginBottom: 20 }}>
-              {t('admin.modal.sub')}
+          <button className="btn btn-ghost" style={{ width: '100%' }} onClick={onClose}>{t('common.close')}</button>
+        </div>
+      ) : (
+        <form onSubmit={handleSubmit}>
+          <div className="serif" style={{ fontSize: 22, marginBottom: 4 }}>{t('admin.aluno.modal.title')}</div>
+          <div style={{ fontSize: 12.5, color: 'var(--muted)', marginBottom: 20 }}>{t('admin.aluno.modal.sub')}</div>
+
+          <ModalErrorBox message={error} />
+
+          {emptyCompanies && (
+            <div style={{ fontSize: 12.5, color: '#92400e', padding: '10px 14px',
+                          background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 8, marginBottom: 14 }}>
+              {t('admin.gestor.modal.field.noCompanies')}
+            </div>
+          )}
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div className="field">
+              <label>{t('admin.modal.field.name')}</label>
+              <input className="input" type="text" value={form.name}
+                onChange={function(e) { setField('name', e.target.value); }}
+                placeholder={t('admin.modal.field.namePh')} autoFocus />
             </div>
 
-            {error && (
-              <div style={{ fontSize: 12.5, color: '#b91c1c', marginBottom: 14,
-                            padding: '10px 14px', background: '#fef2f2',
-                            border: '1px solid #fecaca', borderRadius: 8 }}>
-                {error}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div className="field">
+                <label>{t('admin.modal.field.email')}</label>
+                <input className="input" type="email" value={form.email}
+                  onChange={function(e) { setField('email', e.target.value); }}
+                  placeholder={t('admin.modal.field.emailPh')} />
+              </div>
+              <div className="field">
+                <label>{t('admin.modal.field.password')}</label>
+                <input className="input" type="password" value={form.password}
+                  onChange={function(e) { setField('password', e.target.value); }}
+                  placeholder={t('admin.modal.field.passwordPh')} />
+              </div>
+            </div>
+
+            <div className="field">
+              <label>{t('admin.modal.field.job')}</label>
+              <JobTitleSelect value={form.jobTitle}
+                onChange={function(e) { setField('jobTitle', e.target.value); }} />
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div className="field">
+                <label>{t('admin.gestor.modal.field.company')}</label>
+                <select className="input" value={form.companyId}
+                  onChange={function(e) { setField('companyId', e.target.value); }}
+                  disabled={loadingCompanies || emptyCompanies}>
+                  <option value="">{t('admin.gestor.modal.field.companyPh')}</option>
+                  {companies.map(function(c) {
+                    return <option key={c.id} value={c.id}>{c.name}</option>;
+                  })}
+                </select>
+              </div>
+              <div className="field">
+                <label>{t('admin.aluno.modal.field.gestor')}</label>
+                <select className="input" value={form.gestorId}
+                  onChange={function(e) { setField('gestorId', e.target.value); }}
+                  disabled={!form.companyId || loadingGestores || emptyGestores}>
+                  <option value="">{t('admin.aluno.modal.field.gestorPh')}</option>
+                  {gestores.map(function(g) {
+                    return <option key={g.id} value={g.id}>{g.name}</option>;
+                  })}
+                </select>
+              </div>
+            </div>
+
+            {emptyGestores && (
+              <div style={{ fontSize: 12, color: '#92400e', padding: '8px 12px',
+                            background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 6 }}>
+                {t('admin.aluno.modal.field.noGestor')}
               </div>
             )}
+          </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <div className="field">
-                <label>{t('admin.modal.field.name')}</label>
-                <input className="input" type="text" value={form.name}
-                  onChange={function(e) { setField('name', e.target.value); }}
-                  placeholder={t('admin.modal.field.namePh')} />
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                <div className="field">
-                  <label>{t('admin.modal.field.email')}</label>
-                  <input className="input" type="email" value={form.email}
-                    onChange={function(e) { setField('email', e.target.value); }}
-                    placeholder={t('admin.modal.field.emailPh')} />
-                </div>
-                <div className="field">
-                  <label>{t('admin.modal.field.password')}</label>
-                  <input className="input" type="password" value={form.password}
-                    onChange={function(e) { setField('password', e.target.value); }}
-                    placeholder={t('admin.modal.field.passwordPh')} />
-                </div>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                <div className="field">
-                  <label>{t('admin.modal.field.job')}</label>
-                  <input className="input" type="text" value={form.jobTitle}
-                    onChange={function(e) { setField('jobTitle', e.target.value); }}
-                    placeholder={t('admin.modal.field.jobPh')} />
-                </div>
-                <div className="field">
-                  <label>{t('admin.modal.field.company')}</label>
-                  <input className="input" type="text" value={form.companyName}
-                    onChange={function(e) { setField('companyName', e.target.value); }}
-                    placeholder={t('admin.modal.field.companyPh')} />
-                </div>
-              </div>
-
-              <div className="field">
-                <label>{t('admin.modal.field.role')}</label>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  {['aluno', 'gestor', 'admin'].map(function(r) {
-                    return (
-                      <button key={r} type="button"
-                        onClick={function() { setField('role', r); }}
-                        className={'btn ' + (form.role === r ? 'btn-primary' : 'btn-secondary')}
-                        style={{ flex: 1, padding: '8px 12px', fontSize: 12 }}
-                      >
-                        {roleLabels[r]}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', gap: 10, marginTop: 22 }}>
-              <button type="button" className="btn btn-ghost" style={{ flex: 1 }} onClick={onClose}>
-                {t('common.cancel')}
-              </button>
-              <button type="submit" className="btn btn-primary" style={{ flex: 1 }} disabled={loading}>
-                {loading ? t('admin.modal.creating') : t('admin.modal.create')}
-              </button>
-            </div>
-          </form>
-        )}
-      </div>
-    </div>
+          <div style={{ display: 'flex', gap: 10, marginTop: 22 }}>
+            <button type="button" className="btn btn-ghost" style={{ flex: 1 }} onClick={onClose}>
+              {t('common.cancel')}
+            </button>
+            <button type="submit" className="btn btn-primary" style={{ flex: 1 }}
+              disabled={loading || emptyCompanies || emptyGestores}>
+              {loading ? t('admin.aluno.modal.creating') : t('admin.aluno.modal.create')}
+            </button>
+          </div>
+        </form>
+      )}
+    </ModalFrame>
   );
 }
 

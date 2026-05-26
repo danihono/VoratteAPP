@@ -180,3 +180,43 @@ window.fbCreateUserDoc = async function(uid, data) {
     createdAt:     firebase.firestore.FieldValue.serverTimestamp(),
   }, data));
 };
+
+// Cria documento em /companies — usado pelo modal de cadastro de empresa
+window.fbCreateCompany = async function(data) {
+  var payload = Object.assign({
+    userCount: 0,
+    managerCount: 0,
+    completedPct: 0,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+  }, data);
+  var ref = await window.db.collection('companies').add(payload);
+  return Object.assign({ id: ref.id }, payload);
+};
+
+// Gestores filtrados por empresa — alimenta o dropdown do CriarAlunoModal
+window.fbGetGestoresByCompany = async function(companyId) {
+  if (!companyId) return [];
+  var snap = await window.db.collection('users')
+    .where('role', '==', 'gestor')
+    .where('companyId', '==', companyId)
+    .get();
+  return snap.docs.map(function(doc) { return Object.assign({ id: doc.id }, doc.data()); });
+};
+
+// Incrementa userCount / managerCount da empresa quando vincula gestor/aluno
+window.fbIncrementCompanyCounter = async function(companyId, field) {
+  if (!companyId || !field) return;
+  try {
+    await window.db.collection('companies').doc(companyId).update({
+      [field]: firebase.firestore.FieldValue.increment(1)
+    });
+  } catch (e) { /* contador é "best effort" — não bloqueia o cadastro */ }
+};
+
+// Marca um usuário como convidado (após enviar email de convite)
+window.fbMarkInvited = async function(uid) {
+  if (!uid) return;
+  try {
+    await window.db.collection('users').doc(uid).update({ invited: true });
+  } catch (e) { /* não bloqueia o fluxo se falhar */ }
+};

@@ -14,6 +14,9 @@
   <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
   <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
 
+  <!-- EmailJS — envio de convite para gestores/alunos (configurar em src/email-invite.jsx) -->
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+
   <!-- Firebase Compat SDK — deve ser carregado ANTES dos scripts Babel -->
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
@@ -30,6 +33,7 @@
   <script type="text/babel" src="src/disc-data.jsx"></script>
   <script type="text/babel" src="src/kraljic-data.jsx"></script>
   <script type="text/babel" src="src/report-export.jsx"></script>
+  <script type="text/babel" src="src/email-invite.jsx"></script>
   <script type="text/babel" src="src/screen-login.jsx"></script>
   <script type="text/babel" src="src/screen-dashboard.jsx"></script>
   <script type="text/babel" src="src/screen-disc.jsx"></script>

@@ -137,15 +137,6 @@ function LoginScreen({ authError }) {
               {loading ? t('login.submitting') : <><span>{t('login.submit')}</span> <Ic.Arrow s={16} /></>}
             </button>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, color: 'var(--muted)', fontSize: 12 }}>
-              <div style={{ flex: 1, height: 1, background: 'var(--line)' }} />
-              {t('login.divider')}
-              <div style={{ flex: 1, height: 1, background: 'var(--line)' }} />
-            </div>
-
-            <button type="button" className="btn btn-secondary btn-block" style={{ padding: '12px 20px' }}>
-              <Ic.Shield s={16} /> {t('login.sso')}
-            </button>
           </form>
 
           <div className="signup-row">

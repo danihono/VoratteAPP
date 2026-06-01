@@ -15,6 +15,19 @@
   const DISC_LABEL = { D: 'Dominante', I: 'Influente', S: 'Estável', C: 'Conforme' };
   const MES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
 
+  // Overrides de APRESENTAÇÃO (ótica do comprador). disc-data.jsx / kraljic-data.jsx
+  // seguem CONGELADOS — isto é camada de PDF, não dado.
+  // ⚠️ DÍVIDA: as chaves de KAVOID_OVERRIDE precisam bater LETRA A LETRA com
+  // whatToAvoid em kraljic-data.jsx (espelho do override da tela). Se editar lá, atualize aqui.
+  const KAVOID_OVERRIDE = {
+    estrategico: {
+      'Não envolver liderança nas reuniões': 'Deixar a liderança do fornecedor fora das reuniões',
+      'Vender só pelo preço': 'Reduzir a parceria estratégica a uma disputa de preço',
+    },
+    nao_criticos: { 'Burocratizar o processo dele': 'Burocratizar o seu processo de compra' },
+  };
+  // ("Seu estilo" §06 agora vem de window.voratteEstiloComprador — src/disc-estilo.jsx)
+
   function esc(s) {
     return String(s == null ? '' : s)
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -118,9 +131,8 @@
     cells.forEach(function (c) {
       const mine = kr.dominantQuadrant === c.id;
       html += '<div class="kq' + (mine ? ' kq-mine' : '') + '">' +
-        '<div class="kq-tile" style="background:' + DISC_COLOR[c.dim] + '">' + c.dim + '</div>' +
         '<div class="kq-name">' + c.name + '</div>' +
-        '<div class="kq-dim">DISC ' + c.dim + (mine ? ' · você' : '') + '</div>' +
+        '<div class="kq-dim">' + (mine ? 'Sua posição' : 'Posição do fornecedor') + '</div>' +
         '</div>';
     });
     html += '<div class="kdot" style="left:' + x + '%;top:' + (100 - y) + '%"></div>';
@@ -290,38 +302,79 @@
         '</div>' +
       '</div>';
 
-    // 05 — Saída completa Kraljic
+    // 05 — Leitura completa do quadrante (ótica comprador)
+    const naoAceitar05 = (kr.whatToAvoid || []).map(function (it) {
+      return (KAVOID_OVERRIDE[kr.dominantQuadrant] && KAVOID_OVERRIDE[kr.dominantQuadrant][it]) || it;
+    });
     const sec05 =
       '<div class="section">' + sectionLabel('05', 'Leitura completa do quadrante') +
         '<h2 class="rtitle">Comprador <em>' + esc(kr.label) + '</em></h2>' +
         '<div class="grid2" style="margin-bottom:12px">' +
-          '<div><div class="card-h">O que você quer do fornecedor</div>' + listHTML(kr.whatHeWants) + '</div>' +
-          '<div><div class="card-h">O que evitar com você</div>' + listHTML(kr.whatToAvoid, true) + '</div>' +
+          '<div><div class="card-h">O que você deve buscar neste fornecedor</div>' + listHTML(kr.whatHeWants) + '</div>' +
+          '<div><div class="card-h">Táticas do vendedor a não aceitar</div>' + listHTML(naoAceitar05, true) + '</div>' +
         '</div>' +
         '<div class="grid2">' +
-          '<div class="card"><div class="card-k">Poder de negociação</div><div class="card-t">' + esc(kr.negotiationLeverage) + '</div></div>' +
-          '<div class="card"><div class="card-k">Foco da proposta</div><div class="card-t">' + esc(kr.proposalFocus) + '</div></div>' +
-          '<div class="card"><div class="card-k">Estilo de contrato</div><div class="card-t">' + esc(kr.contractStyle) + '</div></div>' +
-          '<div class="card"><div class="card-k">Risco para o vendedor</div><div class="card-t">' + esc(kr.riskForVendor) + '</div></div>' +
+          '<div class="card"><div class="card-k">Seu poder de negociação</div><div class="card-t">' + esc(kr.negotiationLeverage) + '</div></div>' +
+          '<div class="card"><div class="card-k">Onde focar a proposta</div><div class="card-t">' + esc(kr.proposalFocus) + '</div></div>' +
+          '<div class="card"><div class="card-k">Como estruturar o contrato</div><div class="card-t">' + esc(kr.contractStyle) + '</div></div>' +
+          '<div class="card"><div class="card-k">Sua alavanca: o ponto de pressão do vendedor</div><div class="card-t">' + esc(kr.riskForVendor) + '</div></div>' +
         '</div>' +
       '</div>';
 
-    // 06 — Como te abordar
+    // 06 — Seu estilo de negociação (helper compartilhado window.voratteEstiloComprador)
+    const estilo = (window.voratteEstiloComprador && window.voratteEstiloComprador(data.primary)) || { tom: '', ritmo: '', objecao: '' };
     const sec06 =
-      '<div class="section">' + sectionLabel('06', 'Recomendações de abordagem') +
-        '<h2 class="rtitle">Como uma negociação flui melhor com você</h2>' +
-        '<div style="margin-bottom:12px"><div class="card-h">Abordagem recomendada</div>' + listHTML(p.salesApproach) + '</div>' +
+      '<div class="section">' + sectionLabel('06', 'Seu estilo de negociação') +
+        '<h2 class="rtitle">Como você negocia</h2>' +
+        '<p class="rlead">Autoconhecimento para reconhecer seus próprios gatilhos na mesa de negociação.</p>' +
         '<div class="grid3">' +
-          '<div class="card"><div class="card-k">Tom ideal</div><div class="card-t">' + esc(p.pitchTone) + '</div></div>' +
-          '<div class="card"><div class="card-k">Fechamento</div><div class="card-t">' + esc(p.closingStrategy) + '</div></div>' +
-          '<div class="card"><div class="card-k">Objeções</div><div class="card-t">' + esc(p.objectionHandling) + '</div></div>' +
+          '<div class="card"><div class="card-k">O tom que funciona com você</div><div class="card-t">' + esc(estilo.tom) + '</div></div>' +
+          '<div class="card"><div class="card-k">Seu ritmo de decisão</div><div class="card-t">' + esc(estilo.ritmo) + '</div></div>' +
+          '<div class="card"><div class="card-k">Como você reage a objeções</div><div class="card-t">' + esc(estilo.objecao) + '</div></div>' +
         '</div>' +
       '</div>';
+
+    // 07 — Playbook de negociação (motor; por perfil do VENDEDOR)
+    let sec07 = '';
+    const MK = window.MOTOR_KRALJIC, MR = window.MOTOR_RESPOSTAS, MOBJ = window.MOTOR_OBJECOES_BY_ID, MD = window.MOTOR_DISC;
+    if (MK && MR && MOBJ && MK[kr.dominantQuadrant]) {
+      const quad = MK[kr.dominantQuadrant];
+      const perfis = ['D', 'I', 'S', 'C'];
+      const nomeP = function (x) { return (MD && MD[x] && MD[x].nome) || x; };
+      const cap = function (s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : ''; };
+      const conduz = perfis.map(function (x) {
+        return '<div class="card" style="border-left:3px solid ' + DISC_COLOR[x] + '">' +
+          '<div class="card-k">Com um vendedor ' + x + ' · ' + esc(nomeP(x)) + '</div>' +
+          '<div class="card-t">' + esc(cap(quad.usoDISC[x])) + '</div></div>';
+      }).join('');
+      const objIds = ['OBJ_01', 'OBJ_03'];
+      const objBlocks = objIds.map(function (oid) {
+        const o = MOBJ[oid]; const resp = MR[oid] || {};
+        const cards = perfis.map(function (x) {
+          return '<div class="card"><div class="card-k" style="color:' + DISC_COLOR[x] + '">Vendedor ' + x + ' · ' + esc(nomeP(x)) + '</div>' +
+            '<div class="card-t">' + esc(resp[x] || '') + '</div></div>';
+        }).join('');
+        return '<div style="margin-top:14px;page-break-inside:avoid">' +
+          '<div class="card-h">Objeção: &ldquo;' + esc(o.texto) + '&rdquo;</div>' +
+          '<p class="rlead" style="margin-bottom:10px"><strong>Diagnóstico:</strong> ' + esc(o.diagnostico) +
+          ' <strong>· Próxima ação:</strong> ' + esc(o.proximaAcao) + '</p>' +
+          '<div class="grid2">' + cards + '</div>' +
+        '</div>';
+      }).join('');
+      sec07 =
+        '<div class="section">' + sectionLabel('07', 'Playbook de negociação') +
+          '<h2 class="rtitle">Como conduzir conforme o vendedor</h2>' +
+          '<p class="rlead">A recomendação muda com o perfil de quem está do outro lado. No seu quadrante (<strong>' + esc(quad.label) + '</strong>), conduza assim:</p>' +
+          '<div class="grid2">' + conduz + '</div>' +
+          '<div class="card-h" style="margin-top:18px">Objeções comuns e sua resposta — por perfil do vendedor</div>' +
+          objBlocks +
+        '</div>';
+    }
 
     return '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"/>' +
       '<title>' + esc(docTitle) + '</title><style>' + reportCSS() + '</style></head><body>' +
       cover +
-      '<div class="page">' + sec01 + sec02 + sec03 + sec04 + sec05 + sec06 + '</div>' +
+      '<div class="page">' + sec01 + sec02 + sec03 + sec04 + sec05 + sec06 + sec07 + '</div>' +
       '<div class="rfoot"><span>Relatório gerado em ' + esc(data.dateStr) + ' · Vorätte</span>' +
       '<span>' + esc(data.name) + ' · DISC ' + esc(data.code) + '</span></div>' +
       '</body></html>';

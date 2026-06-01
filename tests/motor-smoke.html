@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Motor Vorätte — smoke tests</title>
+  <!-- Mesma versão de Babel do app principal -->
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js"></script>
+  <style>
+    body { font-family: ui-monospace, Menlo, Consolas, monospace; background: #15090a; color: #e9ddcf; margin: 0; padding: 24px; }
+    h1 { font-size: 16px; font-weight: 600; margin: 0 0 4px; }
+    .sub { font-size: 12px; color: #9c8a78; margin-bottom: 16px; }
+    #banner { font-size: 18px; font-weight: 700; padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; }
+    .ok { background: #16361f; color: #7ee2a3; }
+    .bad { background: #3a1414; color: #f2a3a3; }
+    .pending { background: #2a2018; color: #d9c4a8; }
+    pre { font-size: 12px; line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
+    .p { color: #7ee2a3; }
+    .f { color: #ff8a8a; font-weight: 700; }
+    .grp { color: #c9b48f; margin-top: 12px; font-weight: 700; }
+    .det { color: #9c8a78; }
+  </style>
+</head>
+<body>
+  <h1>Motor de Negociação Vorätte — smoke tests (isolado)</h1>
+  <div class="sub">Carrega apenas src/motor-data.jsx + src/motor-engine.jsx. Sirva por HTTP (file:// bloqueia o Babel).</div>
+  <div id="banner" class="pending">Executando…</div>
+  <pre id="out"></pre>
+
+  <!-- Base + engine (mesma ordem do app: dados antes do engine) -->
+  <script type="text/babel" src="../src/motor-data.jsx"></script>
+  <script type="text/babel" src="../src/motor-engine.jsx"></script>
+
+  <!-- Runner -->
+  <script type="text/babel">
+    (function () {
+      var out = document.getElementById('out');
+      var banner = document.getElementById('banner');
+      var pass = 0, fail = 0;
+      var lines = [];
+
+      function line(html) { lines.push(html); }
+      function grupo(nome) { line('<span class="grp">— ' + nome + '</span>'); }
+      function assert(label, cond, detail) {
+        if (cond) { pass++; line('<span class="p">PASS</span> ' + label); }
+        else { fail++; line('<span class="f">FAIL</span> ' + label + (detail ? '<br>     <span class="det">' + detail + '</span>' : '')); }
+      }
+      function assertEq(label, actual, expected) {
+        var ok = actual === expected;
+        assert(label, ok, ok ? '' : 'esperado: ' + JSON.stringify(expected) + '<br>     obtido:   ' + JSON.stringify(actual));
+      }
+      function isNonEmptyStr(v) { return typeof v === 'string' && v.trim().length > 0; }
+      function camposCheios(r) {
+        return isNonEmptyStr(r.diagnostico) && isNonEmptyStr(r.risco) && isNonEmptyStr(r.estrategia) &&
+               isNonEmptyStr(r.frase) && isNonEmptyStr(r.proximaAcao) && isNonEmptyStr(r.origem) && isNonEmptyStr(r.confianca);
+      }
+
+      var MOTOR_CASOS = window.MOTOR_CASOS;
+      var MOTOR_OBJECOES = window.MOTOR_OBJECOES;
+      var MOTOR_OBJECOES_BY_ID = window.MOTOR_OBJECOES_BY_ID;
+      var MOTOR_RESPOSTAS = window.MOTOR_RESPOSTAS;
+      var MOTOR_KRALJIC = window.MOTOR_KRALJIC;
+      var MOTOR_OBJETIVOS = window.MOTOR_OBJETIVOS;
+      var resolver = window.resolverNegociacao;
+      var inferir = window.inferirPerfilDISC;
+      var QUADS = ['alavancagem', 'estrategico', 'gargalo', 'nao_criticos'];
+
+      try {
+        // ===== A. Integridade dos dados =====
+        grupo('A. Integridade dos dados');
+        assert('motor-data carregou (window.MOTOR_CASOS)', !!MOTOR_CASOS && !!resolver, 'data ou engine não expostos no window');
+        assertEq('21 objeções', MOTOR_OBJECOES.length, 21);
+        var ids = {}, idsOk = true, idFmtOk = true;
+        MOTOR_OBJECOES.forEach(function (o) {
+          if (!/^OBJ_\d\d$/.test(o.id)) idFmtOk = false;
+          if (ids[o.id]) idsOk = false;
+          ids[o.id] = true;
+        });
+        assert('IDs de objeção no formato OBJ_dd', idFmtOk);
+        assert('IDs de objeção únicos', idsOk);
+        var respKeys = Object.keys(MOTOR_RESPOSTAS);
+        assertEq('84 respostas: 21 chaves de objeção', respKeys.length, 21);
+        var resp84Ok = true;
+        respKeys.forEach(function (k) {
+          ['D', 'I', 'S', 'C'].forEach(function (p) {
+            if (!isNonEmptyStr(MOTOR_RESPOSTAS[k][p])) resp84Ok = false;
+          });
+        });
+        assert('todas as 84 respostas (21×4) são não-vazias', resp84Ok);
+        assertEq('20 casos de decisão', MOTOR_CASOS.length, 20);
+        var perfilCount = { D: 0, I: 0, S: 0, C: 0 };
+        MOTOR_CASOS.forEach(function (c) { perfilCount[c.perfil]++; });
+        assert('5 casos por perfil (D/I/S/C)', perfilCount.D === 5 && perfilCount.I === 5 && perfilCount.S === 5 && perfilCount.C === 5,
+          JSON.stringify(perfilCount));
+        var refsOk = true;
+        MOTOR_CASOS.forEach(function (c) {
+          if (QUADS.indexOf(c.quadrante) === -1) refsOk = false;
+          if (!MOTOR_OBJECOES_BY_ID[c.objecaoId]) refsOk = false;
+          if (!MOTOR_OBJETIVOS.slugs[c.objetivo]) refsOk = false;
+        });
+        assert('todos os casos referenciam quadrante/objeção/objetivo válidos', refsOk);
+        var krOk = QUADS.every(function (q) {
+          var k = MOTOR_KRALJIC[q];
+          return k && k.usoDISC && k.usoDISC.D && k.usoDISC.I && k.usoDISC.S && k.usoDISC.C;
+        });
+        assert('Kraljic: 4 quadrantes com Uso do DISC completo', krOk);
+        var slugKeys = Object.keys(MOTOR_OBJETIVOS.slugs);
+        assertEq('20 slugs de objetivo', slugKeys.length, 20);
+        var famOk = slugKeys.every(function (s) { return isNonEmptyStr(MOTOR_OBJETIVOS.familias[s]); });
+        assert('todo slug tem família', famOk);
+
+        // ===== B. Cobertura de caso exato (headline) =====
+        grupo('B. Cobertura de caso exato — 20/20 casos (headline)');
+        MOTOR_CASOS.forEach(function (c) {
+          var r = resolver({ perfilDISC: c.perfil, objecaoId: c.objecaoId, quadranteKraljic: c.quadrante, objetivoComprador: c.objetivo });
+          var ok = r.origem === 'caso-exato' &&
+            r.diagnostico === c.diagnostico && r.risco === c.risco && r.estrategia === c.estrategia &&
+            r.frase === c.frase && r.proximaAcao === c.proximaAcao;
+          assert(c.id + ' → caso-exato e 5 campos fiéis', ok,
+            ok ? '' : 'origem=' + r.origem + ' casoId=' + r.casoId);
+        });
+
+        // ===== C. Composição (tuplas off-grid) =====
+        grupo('C. Composição determinística (off-grid → composto)');
+        var offgrid = [
+          { perfilDISC: 'S', objecaoId: 'OBJ_01', quadranteKraljic: 'nao_criticos', objetivoComprador: 'viabilizar_compra_baixo_esforco' },
+          { perfilDISC: 'C', objecaoId: 'OBJ_06', quadranteKraljic: 'gargalo', objetivoComprador: 'reduzir_risco_suprimento' },
+          { perfilDISC: 'I', objecaoId: 'OBJ_14', quadranteKraljic: 'alavancagem', objetivoComprador: 'capturar_saving' },
+          { perfilDISC: 'D', objecaoId: 'OBJ_05', quadranteKraljic: 'alavancagem', objetivoComprador: 'capturar_saving' },
+          { perfilDISC: 'S', objecaoId: 'OBJ_21', quadranteKraljic: 'estrategico', objetivoComprador: 'preservar_parceria' },
+          { perfilDISC: 'C', objecaoId: 'OBJ_02', quadranteKraljic: 'estrategico', objetivoComprador: 'validar_diferenciacao' }
+        ];
+        offgrid.forEach(function (inp) {
+          var r = resolver(inp);
+          var tag = inp.perfilDISC + '/' + inp.objecaoId;
+          assert(tag + ' → composto', r.origem === 'composto', 'origem=' + r.origem);
+          assert(tag + ' → 5 campos não-vazios', camposCheios(r));
+          assertEq(tag + ' → frase = resposta-perfil (§18)', r.frase, MOTOR_RESPOSTAS[inp.objecaoId][inp.perfilDISC]);
+          assertEq(tag + ' → diagnóstico = objeção (§18)', r.diagnostico, MOTOR_OBJECOES_BY_ID[inp.objecaoId].diagnostico);
+          assertEq(tag + ' → próxima ação = objeção (§18)', r.proximaAcao, MOTOR_OBJECOES_BY_ID[inp.objecaoId].proximaAcao);
+        });
+
+        // ===== D. Caso parcial =====
+        grupo('D. Caso parcial (mesmo perfil+objeção, quadrante/objetivo diferentes)');
+        var rp = resolver({ perfilDISC: 'D', objecaoId: 'OBJ_01', quadranteKraljic: 'estrategico', objetivoComprador: 'validar_valor_real' });
+        assert('D/OBJ_01 fora da tupla exata → caso-base', rp.origem === 'caso-base', 'origem=' + rp.origem);
+        assertEq('caso-base usa CASE_D_01', rp.casoId, 'CASE_D_01');
+        assert('caso-base com 5 campos não-vazios', camposCheios(rp));
+
+        // ===== E. Inferência de perfil (§9.1) =====
+        grupo('E. Inferência de perfil por sinais (§9.1)');
+        var e1 = inferir(['Pediu benchmark']);
+        assertEq('1 sinal C → dominante C', e1.dominante, 'C');
+        assertEq('1 sinal → confiança Baixa', e1.confianca, 'Baixa');
+        var e3 = inferir(['benchmark', 'metodologia', 'planilha']);
+        assertEq('3 sinais C → dominante C', e3.dominante, 'C');
+        assertEq('3 sinais → confiança Média', e3.confianca, 'Média');
+        var e4 = inferir(['Pediu benchmark', 'Questionou metodologia', 'Solicitou planilha', 'Pediu base de cálculo']);
+        assertEq('4 sinais (§9.2) → dominante C', e4.dominante, 'C');
+        assertEq('4 sinais → confiança Alta', e4.confianca, 'Alta');
+        var somaDist = e4.distribuicao.D + e4.distribuicao.I + e4.distribuicao.S + e4.distribuicao.C;
+        assertEq('distribuição soma 100', somaDist, 100);
+        var threw = false, e0 = null;
+        try { e0 = inferir([]); } catch (err) { threw = true; }
+        assert('entrada vazia não lança', !threw);
+        if (e0) { assertEq('entrada vazia → dominante null', e0.dominante, null); assertEq('entrada vazia → Baixa', e0.confianca, 'Baixa'); }
+
+        // ===== F. Robustez + ética + determinismo =====
+        grupo('F. Robustez, ética e determinismo');
+        var todasSaidas = MOTOR_CASOS.map(function (c) {
+          return resolver({ perfilDISC: c.perfil, objecaoId: c.objecaoId, quadranteKraljic: c.quadrante, objetivoComprador: c.objetivo });
+        }).concat(offgrid.map(resolver)).concat([rp]);
+        var todasCheias = todasSaidas.every(camposCheios);
+        assert('nenhuma saída (caso/composto/parcial) tem campo vazio', todasCheias);
+
+        var invalidos = [{}, { perfilDISC: 'X' }, { perfilDISC: 'D', objecaoId: 'OBJ_999' }, { objecaoId: 'OBJ_01' }];
+        var erroThrew = false;
+        var todosErro = true;
+        invalidos.forEach(function (inp) {
+          var r;
+          try { r = resolver(inp); } catch (err) { erroThrew = true; return; }
+          if (r.origem !== 'erro') todosErro = false;
+          if (!isNonEmptyStr(r.diagnostico) || !isNonEmptyStr(r.risco) || !isNonEmptyStr(r.estrategia) || !isNonEmptyStr(r.frase) || !isNonEmptyStr(r.proximaAcao)) todosErro = false;
+        });
+        assert('entradas inválidas não lançam', !erroThrew);
+        assert('entradas inválidas → origem "erro" com campos preenchidos', todosErro);
+
+        var det1 = resolver(offgrid[0]);
+        var det2 = resolver(offgrid[0]);
+        assertEq('composição determinística (mesma entrada → saída idêntica)', JSON.stringify(det1), JSON.stringify(det2));
+
+        // ===== G. Normalização de entrada + inferência integrada =====
+        grupo('G. Normalização de entrada e integração');
+        var rTexto = resolver({ perfilDISC: 'd', objecaoId: 'Já estamos no limite de preço', quadranteKraljic: 'Alavancagem', objetivoComprador: 'Capturar saving' });
+        assertEq('texto da objeção + label do quadrante + objetivo verboso → CASE_D_01', rTexto.casoId, 'CASE_D_01');
+        assertEq('… resolve como caso-exato', rTexto.origem, 'caso-exato');
+        var rInf = resolver({ sinais: ['Pediu benchmark', 'Questionou metodologia', 'Solicitou planilha', 'Pediu base de cálculo'], objecaoId: 'OBJ_07', quadranteKraljic: 'alavancagem', objetivoComprador: 'validar_competitividade' });
+        assertEq('perfil inferido por sinais (C) + tupla → CASE_C_01', rInf.casoId, 'CASE_C_01');
+
+      } catch (fatal) {
+        fail++;
+        line('<span class="f">FAIL</span> ERRO FATAL no runner: ' + (fatal && fatal.message ? fatal.message : fatal));
+        line('<span class="det">' + (fatal && fatal.stack ? String(fatal.stack).replace(/</g, '&lt;') : '') + '</span>');
+      }
+
+      var total = pass + fail;
+      out.innerHTML = lines.join('\n');
+      if (fail === 0) {
+        banner.className = 'ok';
+        banner.textContent = 'ALL PASS (' + pass + '/' + total + ')';
+        document.title = 'ALL PASS (' + pass + '/' + total + ')';
+      } else {
+        banner.className = 'bad';
+        banner.textContent = 'FAILED: ' + fail + ' de ' + total + ' (passaram ' + pass + ')';
+        document.title = 'FAILED: ' + fail + '/' + total;
+      }
+    })();
+  </script>
+</body>
+</html>

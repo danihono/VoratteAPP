@@ -451,7 +451,8 @@ function RelatorioScreen({ go, user }) {
           <div>
             <div className="serif" style={{ fontSize: 17, fontWeight: 600, marginBottom: 10 }}>{t('relatorio.avoidTitle')}</div>
             {kr.whatToAvoid.map(function (s) {
-              return <div className="list-row" key={s}><div className="bullet" style={{ background: 'var(--disc-d)' }} /><span>{s}</span></div>;
+              const txt = (window.voratteKavoid && window.voratteKavoid(s)) || s;
+              return <div className="list-row" key={s}><div className="bullet" style={{ background: 'var(--disc-d)' }} /><span>{txt}</span></div>;
             })}
           </div>
         </div>
@@ -472,32 +473,25 @@ function RelatorioScreen({ go, user }) {
         </div>
       </section>
 
-      {/* SECTION 5 — recomendações de abordagem */}
+      {/* SECTION 5 — seu estilo de negociação (ótica comprador, via helper) */}
       <section className="card" style={{ padding: 36 }}>
         <SectionLabel num="05" label={t('relatorio.sec05')} />
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          {profile.salesApproach.map(function (r, i) {
-            return (
-              <div key={i} style={{ display: 'flex', gap: 14, padding: '12px 0', borderBottom: i < profile.salesApproach.length - 1 ? '1px solid var(--line-soft)' : 'none' }}>
-                <div className={'disc-tile disc-' + data.primary.toLowerCase()} style={{ width: 28, height: 28, fontSize: 13, borderRadius: 8 }}>{i + 1}</div>
-                <span style={{ fontSize: 14, color: 'var(--ink-soft)', flex: 1, alignSelf: 'center' }}>{r}</span>
-              </div>
-            );
-          })}
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginTop: 18 }}>
-          {[
-            [t('relatorio.toneIdeal'), profile.pitchTone],
-            [t('relatorio.closing'),   profile.closingStrategy],
-            [t('relatorio.objections'),profile.objectionHandling],
-          ].map(function (row) {
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+          {(function () {
+            const e = (window.voratteEstiloComprador && window.voratteEstiloComprador(data.primary)) || { tom: '', ritmo: '', objecao: '' };
+            return [
+              [t('relatorio.toneIdeal'), e.tom],
+              [t('relatorio.closing'),   e.ritmo],
+              [t('relatorio.objections'),e.objecao],
+            ].map(function (row) {
             return (
               <div key={row[0]} style={{ padding: 14, background: 'var(--paper-warm)', borderRadius: 10, border: '1px solid var(--line)' }}>
                 <div style={{ fontSize: 10.5, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--muted)', fontWeight: 700, marginBottom: 4 }}>{row[0]}</div>
                 <div style={{ fontSize: 12.5, color: 'var(--ink-soft)', lineHeight: 1.5 }}>{row[1]}</div>
               </div>
             );
-          })}
+          });
+          })()}
         </div>
       </section>
 

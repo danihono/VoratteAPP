@@ -508,10 +508,10 @@ function RelKraljicMatrix({ kr }) {
   const x = kr.axis.riscoSuprimento;
   const y = kr.axis.impactoFinanceiro;
   const cells = [
-    { id: 'alavancagem',  dim: 'D', nameKey: 'relatorio.cellAlavancagem' },
-    { id: 'estrategico',  dim: 'I', nameKey: 'relatorio.cellEstrategico' },
-    { id: 'nao_criticos', dim: 'C', nameKey: 'relatorio.cellNaoCriticos' },
-    { id: 'gargalo',      dim: 'S', nameKey: 'relatorio.cellGargalo' },
+    { id: 'alavancagem',  icon: <Ic.Chart s={15} />,   nameKey: 'relatorio.cellAlavancagem' },
+    { id: 'estrategico',  icon: <Ic.Diamond s={15} />, nameKey: 'relatorio.cellEstrategico' },
+    { id: 'nao_criticos', icon: <Ic.Cart s={15} />,    nameKey: 'relatorio.cellNaoCriticos' },
+    { id: 'gargalo',      icon: <Ic.Link s={15} />,    nameKey: 'relatorio.cellGargalo' },
   ];
   return (
     <div>
@@ -525,8 +525,9 @@ function RelKraljicMatrix({ kr }) {
               background: mine ? 'var(--brown-50)' : 'var(--paper)',
               padding: 10, display: 'flex', flexDirection: 'column', gap: 3,
             }}>
-              <div className={'disc-tile disc-' + c.dim.toLowerCase()} style={{ width: 26, height: 26, fontSize: 13 }}>{c.dim}</div>
+              <div style={{ width: 26, height: 26, borderRadius: 6, background: 'var(--paper-warm)', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--brown-600)' }}>{c.icon}</div>
               <div style={{ fontSize: 12, fontWeight: 600 }}>{t(c.nameKey)}</div>
+              {mine && <div style={{ fontSize: 9.5, fontWeight: 700, color: 'var(--brown-700)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Sua posição</div>}
             </div>
           );
         })}

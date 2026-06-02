@@ -17,21 +17,8 @@ function kDiscResultFromDoc(doc) {
 // alavancagem=D · estrategico=I · gargalo=S · nao_criticos=C
 const KQUAD_DIM = { alavancagem: 'D', estrategico: 'I', gargalo: 'S', nao_criticos: 'C' };
 
-// Override de APRESENTAÇÃO (ótica do comprador) para itens de whatToAvoid que são
-// conduta/abordagem do vendedor e não invertem só com rótulo. kraljic-data.jsx
-// segue congelado — isto é camada de tela, não dado.
-// ⚠️ DÍVIDA: as CHAVES abaixo precisam bater LETRA A LETRA com whatToAvoid em
-// kraljic-data.jsx. Se editar aquelas strings lá, atualize aqui — senão o
-// override silenciosamente para de aplicar e o texto seller-framed volta.
-const KAVOID_OVERRIDE = {
-  estrategico: {
-    'Não envolver liderança nas reuniões': 'Deixar a liderança do fornecedor fora das reuniões',
-    'Vender só pelo preço': 'Reduzir a parceria estratégica a uma disputa de preço',
-  },
-  nao_criticos: {
-    'Burocratizar o processo dele': 'Burocratizar o seu processo de compra',
-  },
-};
+// Override KAVOID (whatToAvoid → ótica-comprador) é fonte única em
+// src/disc-estilo.jsx → window.voratteKavoid(item). kraljic-data.jsx congelado.
 
 function KraljicScreen({ go, user }) {
   const [result, setResult] = React.useState(window.DISC_LAST_RESULT || null);
@@ -212,8 +199,7 @@ function KraljicScreen({ go, user }) {
         const discVend = (window.MOTOR_DISC && window.MOTOR_DISC[vendedor]) || { nome: vendedor };
         const usoRaw = (mk.usoDISC && mk.usoDISC[vendedor]) || '';
         const usoFmt = usoRaw ? usoRaw.charAt(0).toUpperCase() + usoRaw.slice(1) : '';
-        const ovr = KAVOID_OVERRIDE[act.id] || {};
-        const naoAceitar = (act.kp.whatToAvoid || []).map(function (it) { return ovr[it] || it; });
+        const naoAceitar = (act.kp.whatToAvoid || []).map(function (it) { return (window.voratteKavoid && window.voratteKavoid(it)) || it; });
         const secLabel = { fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--muted)', fontWeight: 700, margin: '22px 0 12px' };
         function cardRow(rows) {
           return (

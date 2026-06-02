@@ -476,6 +476,8 @@ function RelatorioScreen({ go, user }) {
       {/* SECTION 5 — seu estilo de negociação (ótica comprador, via helper) */}
       <section className="card" style={{ padding: 36 }}>
         <SectionLabel num="05" label={t('relatorio.sec05')} />
+        <h2 className="serif" style={{ fontSize: 22, fontWeight: 500, marginBottom: 4 }}>Como você negocia</h2>
+        <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 16 }}>Autoconhecimento para reconhecer seus próprios gatilhos na mesa de negociação.</p>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
           {(function () {
             const e = (window.voratteEstiloComprador && window.voratteEstiloComprador(data.primary)) || { tom: '', ritmo: '', objecao: '' };

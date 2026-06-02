@@ -142,7 +142,7 @@ window.I18N_EN = {
   'page.objecoes.title':       'Objections by profile',
   'page.objecoes.sub':         'How to handle each style',
   'page.relatorio.title':      'Full DISC report',
-  'page.relatorio.sub':        'Executive document · 24 pages',
+  'page.relatorio.sub':        'Executive document · print-ready',
   // Learner
   'page.aluno.dashboard.title':    'Welcome',
   'page.aluno.dashboard.sub':      'Your Vorätte strategic dashboard',

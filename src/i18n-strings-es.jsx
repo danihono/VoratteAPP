@@ -142,7 +142,7 @@ window.I18N_ES = {
   'page.objecoes.title':       'Objeciones por perfil',
   'page.objecoes.sub':         'Cómo manejar cada estilo',
   'page.relatorio.title':      'Informe DISC completo',
-  'page.relatorio.sub':        'Documento ejecutivo · 24 páginas',
+  'page.relatorio.sub':        'Documento ejecutivo · listo para imprimir',
   // Alumno
   'page.aluno.dashboard.title':    'Bienvenido',
   'page.aluno.dashboard.sub':      'Tu panel estratégico Vorätte',

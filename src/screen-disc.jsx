@@ -569,25 +569,26 @@ function AnaliseScreen({ go, user }) {
         <Pillar title="O que move a compra" items={profile.motivators} />
         <Pillar title="O que trava a decisão" items={profile.fears} tone="warn" />
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-        <Pillar title="Como abordar esse comprador" items={profile.salesApproach} />
-        <div className="card">
-          <div className="card-title">Estratégia de venda</div>
-          <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 14 }}>
-            {[
-              ['Tom do pitch', profile.pitchTone],
-              ['Como fechar', profile.closingStrategy],
-              ['Tratar objeções', profile.objectionHandling],
+      <div className="card">
+        <div className="card-title">Seu estilo de negociação</div>
+        <div className="card-sub">Autoconhecimento — seus próprios gatilhos na mesa de negociação</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+          {(function () {
+            const e = (window.voratteEstiloComprador && window.voratteEstiloComprador(profile.primary)) || { tom: '', ritmo: '', objecao: '' };
+            return [
+              ['O tom que funciona com você', e.tom],
+              ['Seu ritmo de decisão', e.ritmo],
+              ['Como você reage a objeções', e.objecao],
               ['Estilo de decisão', profile.decisionStyle],
             ].map(function (row) {
               return (
-                <div key={row[0]}>
+                <div key={row[0]} style={{ padding: 14, background: 'var(--paper-warm)', borderRadius: 10, border: '1px solid var(--line)' }}>
                   <div style={{ fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--muted)', fontWeight: 600, marginBottom: 3 }}>{row[0]}</div>
                   <div style={{ fontSize: 13.5, color: 'var(--ink-soft)', lineHeight: 1.5 }}>{row[1]}</div>
                 </div>
               );
-            })}
-          </div>
+            });
+          })()}
         </div>
       </div>
 
@@ -608,7 +609,7 @@ function AnaliseScreen({ go, user }) {
             <tr>
               <th style={{ width: 70 }}>Código</th>
               <th>Tipo de comprador</th>
-              <th>Como vender</th>
+              <th>Como esse perfil negocia</th>
             </tr>
           </thead>
           <tbody>
@@ -665,7 +666,7 @@ function CruzamentoScreen({ go }) {
   const data = {
     D: {
       identify: ['Direto', 'Competitivo', 'Focado em resultados', 'Impaciente', 'Gosta de desafios', 'Decisivo'],
-      comm: ['Seja direto e objetivo', 'Foque em resultados e números', 'Apresente soluções rápidas', 'Evite rodeios e detalhes em excesso', 'Mostre como sua solução economiza tempo'],
+      comm: ['Seja direto e objetivo', 'Foque em resultado, ROI e prazo', 'Apresente opções claras e exija contrapartidas', 'Mostre consequências objetivas', 'Evite rodeios e não entre em disputa de ego'],
       objs: [
         ['"Quero o resultado disso"', 'Apresente dados e ROI'],
         ['"Quanto isso vai economizar?"', 'Seja objetivo e vá direto ao ponto'],
@@ -674,7 +675,7 @@ function CruzamentoScreen({ go }) {
     },
     I: {
       identify: ['Comunicativo', 'Entusiasta', 'Influente', 'Otimista', 'Busca reconhecimento', 'Sociável'],
-      comm: ['Crie ambiente cordial e leve', 'Use histórias e casos de sucesso', 'Reconheça contribuições publicamente', 'Demonstre entusiasmo genuíno', 'Conecte a solução a pessoas, não só a números'],
+      comm: ['Reconheça a parceria e mantenha tom positivo', 'Use prova social e cases para ancorar', 'Traga estrutura à conversa fluida', 'Formalize por escrito os compromissos', 'Traduza o entusiasmo em próximos passos objetivos'],
       objs: [
         ['"Quem mais já comprou?"', 'Traga referências e casos visíveis'],
         ['"Como vão me ver com isso?"', 'Mostre o impacto reputacional positivo'],
@@ -683,7 +684,7 @@ function CruzamentoScreen({ go }) {
     },
     S: {
       identify: ['Paciente', 'Estável', 'Bom ouvinte', 'Avesso a mudanças bruscas', 'Cooperativo', 'Leal'],
-      comm: ['Construa confiança antes de pedir decisões', 'Explique mudanças com calma e previsibilidade', 'Demonstre estabilidade do fornecedor', 'Evite pressão por urgência artificial', 'Confirme cada passo do acordo'],
+      comm: ['Crie um ambiente seguro e previsível', 'Explique cada passo com calma', 'Dê previsibilidade e reduza a incerteza', 'Evite pressão por urgência artificial', 'Confirme cada etapa do acordo'],
       objs: [
         ['"E se algo der errado?"', 'Mostre histórico e garantias'],
         ['"Precisamos pensar com calma"', 'Ofereça prazo para análise'],
@@ -692,7 +693,7 @@ function CruzamentoScreen({ go }) {
     },
     C: {
       identify: ['Analítico', 'Detalhista', 'Cauteloso', 'Orientado por dados', 'Crítico', 'Perfeccionista'],
-      comm: ['Traga dados, comparativos e evidências', 'Documente cada cláusula com clareza', 'Respeite o tempo de análise', 'Evite afirmações sem prova', 'Use linguagem técnica e precisa'],
+      comm: ['Traga dados, TCO e benchmark', 'Documente premissas e critérios', 'Respeite o tempo de análise', 'Antecipe objeções técnicas com evidência', 'Use linguagem técnica e precisa'],
       objs: [
         ['"Preciso pensar melhor"', 'Mostre benefícios racionais e dados'],
         ['"Quero ver mais opções"', 'Dê alternativas e benchmarks'],
@@ -759,8 +760,8 @@ function CruzamentoScreen({ go }) {
           })}
         </div>
         <div className="card">
-          <div className="card-title">Como se comunicar</div>
-          <div className="card-sub">Adaptação de linguagem e ritmo</div>
+          <div className="card-title">Como conduzir com esse perfil</div>
+          <div className="card-sub">Sua condução de comprador, conforme o perfil</div>
           {d.comm.map(function (it, i) {
             return (
               <div className="list-row" key={i}>

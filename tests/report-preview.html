@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <title>Preview · Relatório PDF (motor)</title>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js"></script>
+  <style> body { margin: 0; background: #c9bfae; } iframe { display: block; margin: 0 auto; background: #fff; } </style>
+</head>
+<body>
+  <iframe id="rpt" style="width:794px;border:none;" height="2400"></iframe>
+  <script type="text/babel" src="../src/disc-data.jsx"></script>
+  <script type="text/babel" src="../src/disc-estilo.jsx"></script>
+  <script type="text/babel" src="../src/kraljic-data.jsx"></script>
+  <script type="text/babel" src="../src/motor-data.jsx"></script>
+  <script type="text/babel" src="../src/report-export.jsx"></script>
+  <script type="text/babel">
+    window.DISC_LAST_RESULT = {
+      code: 'D',
+      mostGraph: { D: 9, I: 5, S: 4, C: 3 },
+      leastGraph: { D: 1, I: 3, S: 5, C: 8 },
+      changeGraph: { D: 8, I: 2, S: -1, C: -5 },
+      profile: window.BUYER_PROFILES['D'],
+    };
+    var data = window.buildReportData(
+      { name: 'Daniel Honorato', jobTitle: 'Comprador Sênior', companyName: 'Vorätte', email: 'daniel@voratte.com.br' },
+      window.DISC_LAST_RESULT
+    );
+    var html = window.generateReportHTML(data, null);
+    var f = document.getElementById('rpt');
+    f.srcdoc = html;
+    f.onload = function () {
+      try { f.style.height = (f.contentWindow.document.body.scrollHeight + 40) + 'px'; } catch (e) {}
+    };
+  </script>
+</body>
+</html>

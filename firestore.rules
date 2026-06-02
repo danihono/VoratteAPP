@@ -31,15 +31,28 @@ service cloud.firestore {
 
     // ─── /users/{uid} ───────────────────────────────────────────────────────
     match /users/{uid} {
-      // Leitura: próprio doc, gestor do time, ou admin
+      // Leitura: próprio doc, gestor do time, ou admin.
+      // IMPORTANTE: aqui usamos `resource.data.gestorId == myUid()` direto, NÃO
+      // `isMyTeamMember(uid)` (que faz get() do mesmo doc). Firestore só aceita
+      // list queries quando a regra é pré-verificável pelos where() — get() em
+      // cima do próprio doc não casa com `where('gestorId','==',myUid())` e
+      // a query `fbGetTeamMembers` retorna permission-denied.
       allow read: if isSignedIn() && (
         myUid() == uid ||
-        isMyTeamMember(uid) ||
+        (isGestor() && resource.data.gestorId == myUid()) ||
         isAdmin()
       );
 
-      // Escrita: próprio perfil (dados básicos) ou admin
-      allow update: if isSignedIn() && (myUid() == uid || isAdmin());
+      // Escrita: admin pode tudo; o próprio user pode editar APENAS campos seguros.
+      // Bloqueia escalada de privilégio (role) e mudanças que afetam isolamento
+      // por empresa/time (companyId, gestorId, invited, email, companyName, etc).
+      // affectedKeys() = chaves que mudaram entre resource e request.resource.
+      allow update: if isSignedIn() && (
+        isAdmin() ||
+        (myUid() == uid &&
+         request.resource.data.diff(resource.data).affectedKeys()
+           .hasOnly(['name', 'jobTitle', 'discCompleted', 'discMain', 'lastSeen']))
+      );
       allow create: if isAdmin();
       allow delete: if isAdmin();
     }
@@ -76,9 +89,22 @@ service cloud.firestore {
         isAdmin()
       );
 
-      // Criação: próprio usuário (userId deve ser o seu uid)
-      allow create: if isSignedIn() && request.resource.data.userId == myUid();
-      allow update, delete: if isAdmin();
+      // Criação: admin pode tudo (wizard grava sem userId fixo); dono comum
+      // precisa indicar o próprio uid em userId.
+      allow create: if isSignedIn() && (
+        isAdmin() ||
+        request.resource.data.userId == myUid()
+      );
+
+      // Atualização: dono do relatório (necessário para reexportar self_{uid}
+      // sobrescrevendo o mesmo doc) ou admin. Sem este allow, reexportações
+      // do aluno eram silenciosamente bloqueadas pela rule anterior.
+      allow update: if isSignedIn() && (
+        isAdmin() ||
+        resource.data.userId == myUid()
+      );
+
+      allow delete: if isAdmin();
     }
   }
 }

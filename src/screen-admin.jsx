@@ -14,6 +14,244 @@ const JOB_TITLE_OPTIONS = [
   'Diretor',
 ];
 
+// Formato de data curto reutilizado nos modais e na tabela CSV. Aceita Firestore Timestamp,
+// Date ou string já formatada — retorna '—' quando o valor é null/undefined.
+function fmtAdminDate(ts) {
+  if (!ts) return '—';
+  try {
+    var lang = window.getLang();
+    var loc = lang === 'es' ? 'es' : lang === 'en' ? 'en-US' : 'pt-BR';
+    if (typeof ts.toDate === 'function') return ts.toDate().toLocaleDateString(loc);
+    if (ts instanceof Date) return ts.toLocaleDateString(loc);
+  } catch (e) {}
+  if (typeof ts === 'string') return ts;
+  return '—';
+}
+
+// Gera um CSV com BOM UTF-8 (Excel pt-BR abre sem mojibake) e dispara download no navegador.
+// columns = [{ key: 'name', label: 'Nome', format?: (row) => string }]
+function downloadCsv(filename, rows, columns) {
+  function escape(value) {
+    var s = value == null ? '' : String(value);
+    if (s.indexOf('"') !== -1 || s.indexOf(',') !== -1 || s.indexOf('\n') !== -1 || s.indexOf(';') !== -1) {
+      return '"' + s.replace(/"/g, '""') + '"';
+    }
+    return s;
+  }
+  var header = columns.map(function (c) { return escape(c.label); }).join(';');
+  var lines  = rows.map(function (r) {
+    return columns.map(function (c) {
+      var v = c.format ? c.format(r) : (r[c.key] == null ? '' : r[c.key]);
+      return escape(v);
+    }).join(';');
+  });
+  var csv = '﻿' + header + '\n' + lines.join('\n');
+  var blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  var url  = URL.createObjectURL(blob);
+  var a    = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(function () { URL.revokeObjectURL(url); }, 0);
+}
+
+// Gráfico de crescimento — barras dos últimos 6 meses contando users.createdAt.
+// SVG inline pra não trazer biblioteca; estilo discreto, alinhado ao design.
+function GrowthChart({ users }) {
+  useLang();
+  // Buckets dos últimos 6 meses (inclui o atual). Chave 'YYYY-M'.
+  const buckets = React.useMemo(function () {
+    var now = new Date();
+    var slots = [];
+    for (var i = 5; i >= 0; i--) {
+      var d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      slots.push({
+        key:   d.getFullYear() + '-' + d.getMonth(),
+        label: d.toLocaleDateString(
+          window.getLang() === 'es' ? 'es' : window.getLang() === 'en' ? 'en-US' : 'pt-BR',
+          { month: 'short' }
+        ),
+        count: 0,
+      });
+    }
+    var index = {};
+    slots.forEach(function (s) { index[s.key] = s; });
+    users.forEach(function (u) {
+      var ts = u.createdAt;
+      if (!ts || typeof ts.toDate !== 'function') return;
+      var d = ts.toDate();
+      var k = d.getFullYear() + '-' + d.getMonth();
+      if (index[k]) index[k].count += 1;
+    });
+    return slots;
+  }, [users, window.getLang()]);
+
+  var total = buckets.reduce(function (sum, b) { return sum + b.count; }, 0);
+  if (!total) {
+    return (
+      <div style={{
+        padding: '48px 24px', textAlign: 'center',
+        color: 'var(--muted)', fontSize: 13,
+        border: '1px dashed var(--line)', borderRadius: 10,
+      }}>
+        {t('admin.stats.growthEmpty')}
+      </div>
+    );
+  }
+
+  var maxV = Math.max.apply(null, buckets.map(function (b) { return b.count; })) || 1;
+  var width = 540, height = 180, padX = 28, padTop = 18, padBottom = 28;
+  var slotW = (width - padX * 2) / buckets.length;
+  var barW  = slotW * 0.5;
+
+  return (
+    <div style={{ padding: '12px 0' }}>
+      <svg viewBox={`0 0 ${width} ${height}`} width="100%" style={{ maxWidth: width, display: 'block' }}>
+        {/* eixo Y suave em 3 linhas */}
+        {[0, 0.5, 1].map(function (frac) {
+          var y = padTop + (height - padTop - padBottom) * (1 - frac);
+          return (
+            <line key={frac} x1={padX} x2={width - padX} y1={y} y2={y} stroke="var(--line-soft)" strokeDasharray={frac === 0 ? '0' : '3 4'} />
+          );
+        })}
+        {buckets.map(function (b, i) {
+          var h = (height - padTop - padBottom) * (b.count / maxV);
+          var x = padX + i * slotW + (slotW - barW) / 2;
+          var y = (height - padBottom) - h;
+          return (
+            <g key={b.key}>
+              {b.count > 0 && (
+                <rect x={x} y={y} width={barW} height={h} rx={3} fill="var(--brown-700)" />
+              )}
+              <text x={padX + i * slotW + slotW / 2} y={height - padBottom + 18} fontSize="10.5" textAnchor="middle" fill="var(--muted)">
+                {b.label}
+              </text>
+              <text x={padX + i * slotW + slotW / 2} y={y - 6} fontSize="11" fontWeight="600" textAnchor="middle" fill="var(--ink)">
+                {b.count > 0 ? b.count : ''}
+              </text>
+            </g>
+          );
+        })}
+      </svg>
+      <div style={{ fontSize: 11, color: 'var(--muted)', textAlign: 'right', marginTop: 4 }}>{t('admin.stats.growthYAxis')}</div>
+    </div>
+  );
+}
+
+// Popover de filtro genérico — fecha ao clicar fora ou apertar Esc.
+// options = [{ key, label }], onChange recebe a key escolhida.
+function AdminFilterPopover({ label, value, options, onChange }) {
+  useLang();
+  var [open, setOpen] = React.useState(false);
+  var ref = React.useRef(null);
+  React.useEffect(function () {
+    if (!open) return;
+    function onDoc(e) { if (ref.current && !ref.current.contains(e.target)) setOpen(false); }
+    function onKey(e) { if (e.key === 'Escape') setOpen(false); }
+    document.addEventListener('mousedown', onDoc);
+    document.addEventListener('keydown', onKey);
+    return function () {
+      document.removeEventListener('mousedown', onDoc);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+  var active = options.find(function (o) { return o.key === value; }) || options[0];
+  var isAll  = !value || value === 'todos' || value === 'all';
+  return (
+    <div ref={ref} style={{ position: 'relative' }}>
+      <button type="button" className="btn btn-secondary" onClick={function () { setOpen(function (o) { return !o; }); }}>
+        <Ic.Settings s={14}/> {label}
+        {!isAll && (
+          <span className="badge badge-brown" style={{ padding: '2px 8px', fontSize: 11 }}>{active.label}</span>
+        )}
+      </button>
+      {open && (
+        <div style={{
+          position: 'absolute', left: 0, top: '110%', zIndex: 51,
+          minWidth: 220, background: 'var(--paper)',
+          border: '1px solid var(--line)',
+          borderRadius: 12, boxShadow: 'var(--shadow-lg)',
+          overflow: 'hidden',
+        }}>
+          {options.map(function (opt) {
+            return (
+              <button
+                key={opt.key}
+                type="button"
+                onClick={function () { onChange(opt.key); setOpen(false); }}
+                style={{
+                  display: 'grid', gridTemplateColumns: '1fr 18px', alignItems: 'center',
+                  width: '100%', textAlign: 'left',
+                  padding: '10px 14px',
+                  background: value === opt.key ? 'var(--brown-50)' : 'transparent',
+                  cursor: 'pointer',
+                  borderBottom: '1px solid var(--line-soft)',
+                  fontSize: 13,
+                }}
+              >
+                <span style={{ color: 'var(--ink)', fontWeight: value === opt.key ? 600 : 500 }}>{opt.label}</span>
+                {value === opt.key && <Ic.Check s={14}/>}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Modal genérico para Ver/Editar do admin — backdrop click-to-close + X + header.
+function AdminModalShell({ title, lede, onClose, children, footer, width }) {
+  useLang();
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 1000,
+        background: 'rgba(21, 9, 10, 0.55)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: 24,
+      }}
+    >
+      <div
+        onClick={function (e) { e.stopPropagation(); }}
+        className="card"
+        style={{
+          width: '100%', maxWidth: width || 520, padding: 28,
+          background: 'var(--paper)', boxShadow: 'var(--shadow-lg)',
+          maxHeight: '90vh', overflowY: 'auto',
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
+          <div>
+            <h3 className="serif" style={{ fontSize: 22, fontWeight: 500, letterSpacing: '-0.01em' }}>{title}</h3>
+            {lede && (
+              <div style={{ fontSize: 13, color: 'var(--muted)', marginTop: 4, lineHeight: 1.5 }}>{lede}</div>
+            )}
+          </div>
+          <button type="button" onClick={onClose} className="icon-btn" aria-label={t('common.close')} style={{ flexShrink: 0 }}>
+            <Ic.Close s={16} />
+          </button>
+        </div>
+        <div>{children}</div>
+        {footer && <div style={{ marginTop: 18 }}>{footer}</div>}
+      </div>
+    </div>
+  );
+}
+
+// Linha chave/valor usada nos modais "Ver detalhes" (read-only).
+function AdminDetailRow({ label, value }) {
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: '160px 1fr', padding: '10px 0', borderBottom: '1px solid var(--line-soft)', fontSize: 13.5 }}>
+      <div style={{ color: 'var(--muted)' }}>{label}</div>
+      <div style={{ color: 'var(--ink)', fontWeight: 500, wordBreak: 'break-word' }}>{value == null || value === '' ? '—' : value}</div>
+    </div>
+  );
+}
+
 function AdminDashboard({ go }) {
   useLang();
   var [users, setUsers]         = React.useState([]);
@@ -207,43 +445,37 @@ function AdminStat({ label, value }) {
   );
 }
 
-// Placeholder de gráfico de crescimento — série histórica ainda não implementada
-function GrowthChartPlaceholder() {
-  return (
-    <div style={{
-      padding: '48px 24px', textAlign: 'center',
-      color: 'var(--muted)', fontSize: 13,
-      border: '1px dashed var(--line)', borderRadius: 10,
-    }}>
-      {t('admin.stats.chartPlaceholder')}
-    </div>
-  );
-}
 
-// helpers de transformação Firestore → shape de exibição
+// helpers de transformação Firestore → shape de exibição (preservam id e doc raw para modais)
 function userToRow(doc) {
   var levelMap = {
     aluno:  t('admin.userLevel.aluno'),
     gestor: t('admin.userLevel.gestor'),
     admin:  t('admin.userLevel.admin'),
   };
-  var status = doc.discCompleted
+  // Qualquer atividade real (login = lastSeen, ou DISC concluído) marca como Ativo.
+  // Sem atividade: respeita o estado do convite.
+  var hasActivity = !!doc.lastSeen || !!doc.discCompleted;
+  var status = hasActivity
     ? t('admin.userRow.status.active')
     : (doc.invited ? t('admin.userRow.status.invited') : t('admin.userRow.status.pending'));
   return {
+    id:      doc.id,
     name:    doc.name    || '—',
     email:   doc.email   || '—',
     company: doc.companyName || doc.companyId || '—',
     role:    doc.jobTitle || '—',
     level:   levelMap[doc.role] || doc.role || '—',
     disc:    doc.discMain || '—',
-    active:  doc.lastSeen ? '—' : '—',   // timestamp formatado: melhoria futura
+    active:  fmtAdminDate(doc.lastSeen),
     status:  status,
+    _doc:    doc,
   };
 }
 
 function companyToRow(doc) {
   return {
+    id:        doc.id,
     name:      doc.name      || '—',
     sector:    doc.sector    || '—',
     users:     doc.userCount    || 0,
@@ -251,17 +483,20 @@ function companyToRow(doc) {
     completed: doc.completedPct || 0,
     plan:      doc.plan || 'Starter',
     since:     doc.since || '—',
+    _doc:      doc,
   };
 }
 
 function gestorToRow(doc) {
   var done = doc.teamCompletedCount || 0, total = doc.teamSize || 0;
   return {
+    id:        doc.id,
     name:      doc.name        || '—',
     email:     doc.email       || '—',
     company:   doc.companyName || doc.companyId || '—',
     team:      total,
     completed: total ? done + '/' + total : '—',
+    _doc:      doc,
   };
 }
 
@@ -272,9 +507,15 @@ function AdminUsuarios({ go }) {
   var [rawCounts, setRawCounts] = React.useState({ total: 0, aluno: 0, gestor: 0, admin: 0 });
   var [loading, setLoading]   = React.useState(true);
   var [showModal, setShowModal] = React.useState(false);
+  var [query, setQuery]       = React.useState('');
+  var [roleFilter, setRoleFilter]     = React.useState('todos');
+  var [statusFilter, setStatusFilter] = React.useState('todos');
+  var [verUser, setVerUser]     = React.useState(null);
+  var [editUser, setEditUser]   = React.useState(null);
 
-  React.useEffect(function() {
-    window.fbGetAllUsers(500).then(function(docs) {
+  function reload() {
+    setLoading(true);
+    return window.fbGetAllUsers(500).then(function(docs) {
       var counts = { total: docs.length, aluno: 0, gestor: 0, admin: 0 };
       docs.forEach(function (d) {
         if (counts.hasOwnProperty(d.role)) counts[d.role] += 1;
@@ -283,11 +524,56 @@ function AdminUsuarios({ go }) {
       setUsers(docs.map(userToRow));
       setLoading(false);
     }).catch(function() { setLoading(false); });
-  }, [window.getLang()]);
+  }
+
+  React.useEffect(function() { reload(); }, [window.getLang()]);
 
   function pctSub(n) {
     return rawCounts.total ? t('admin.users.mini.pct', { pct: Math.round(n / rawCounts.total * 100) }) : '—';
   }
+
+  const filtered = React.useMemo(function () {
+    var q = query.trim().toLowerCase();
+    return users.filter(function (u) {
+      var doc = u._doc || {};
+      if (roleFilter !== 'todos' && doc.role !== roleFilter) return false;
+      if (statusFilter !== 'todos') {
+        var st = (doc.lastSeen || doc.discCompleted) ? 'done' : (doc.invited ? 'invited' : 'pending');
+        if (st !== statusFilter) return false;
+      }
+      if (!q) return true;
+      var name = (u.name || '').toLowerCase();
+      var email = (u.email || '').toLowerCase();
+      var company = (u.company || '').toLowerCase();
+      return name.indexOf(q) !== -1 || email.indexOf(q) !== -1 || company.indexOf(q) !== -1;
+    });
+  }, [users, query, roleFilter, statusFilter]);
+
+  function handleExportCsv() {
+    downloadCsv('voratte-usuarios.csv', filtered, [
+      { key: 'name',    label: t('admin.field.name') },
+      { key: 'email',   label: t('admin.field.email') },
+      { key: 'company', label: t('admin.field.company') },
+      { key: 'role',    label: t('admin.field.jobTitle') },
+      { key: 'level',   label: t('admin.field.role') },
+      { key: 'disc',    label: t('admin.field.discMain') },
+      { key: 'status',  label: t('admin.users.col.status') },
+      { label: t('admin.field.createdAt'), format: function (r) { return fmtAdminDate(r._doc && r._doc.createdAt); } },
+    ]);
+  }
+
+  const roleOptions = [
+    { key: 'todos',  label: t('admin.filter.all') },
+    { key: 'aluno',  label: t('admin.userLevel.aluno') },
+    { key: 'gestor', label: t('admin.userLevel.gestor') },
+    { key: 'admin',  label: t('admin.userLevel.admin') },
+  ];
+  const statusOptions = [
+    { key: 'todos',   label: t('admin.filter.all') },
+    { key: 'done',    label: t('admin.userRow.status.active') },
+    { key: 'pending', label: t('admin.userRow.status.pending') },
+    { key: 'invited', label: t('admin.userRow.status.invited') },
+  ];
 
   return (
     <div className="page-enter" style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
@@ -295,26 +581,30 @@ function AdminUsuarios({ go }) {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1 }}>
           <div style={{ position: 'relative', flex: 1, maxWidth: 380 }}>
-            <input className="input" placeholder={t('admin.users.search')} style={{ paddingLeft: 38 }} />
+            <input
+              className="input"
+              placeholder={t('admin.users.search')}
+              style={{ paddingLeft: 38 }}
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+            />
             <div style={{ position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)' }}>
               <Ic.Search s={16}/>
             </div>
           </div>
-          <button className="btn btn-secondary"><Ic.Settings s={14}/> {t('admin.users.filters')}</button>
-          <button className="btn btn-ghost"><Ic.Download s={14}/> {t('admin.users.exportCsv')}</button>
+          <AdminFilterPopover label={t('admin.filter.role')}   value={roleFilter}   options={roleOptions}   onChange={setRoleFilter} />
+          <AdminFilterPopover label={t('admin.filter.status')} value={statusFilter} options={statusOptions} onChange={setStatusFilter} />
+          <button className="btn btn-ghost" onClick={handleExportCsv} disabled={!filtered.length}>
+            <Ic.Download s={14}/> {t('admin.users.exportCsv')}
+          </button>
         </div>
         <button className="btn btn-primary" onClick={function(){ setShowModal(true); }}><Ic.Plus s={14}/> {t('admin.users.invite')}</button>
       </div>
       {showModal && <CriarAlunoModal
         onClose={function(){ setShowModal(false); }}
-        onCreated={function(){
-          window.fbGetAllUsers(500).then(function(docs){
-            var counts = { total: docs.length, aluno: 0, gestor: 0, admin: 0 };
-            docs.forEach(function(d){ if (counts.hasOwnProperty(d.role)) counts[d.role] += 1; });
-            setRawCounts(counts);
-            setUsers(docs.map(userToRow));
-          });
-        }} />}
+        onCreated={function(){ reload(); }} />}
+      {verUser && <VerUsuarioModal user={verUser} onClose={function(){ setVerUser(null); }} />}
+      {editUser && <EditarUsuarioModal user={editUser} onClose={function(){ setEditUser(null); }} onSaved={reload} />}
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
         <Mini2 label={t('admin.users.mini.total')}    value={loading ? '—' : String(rawCounts.total)}  sub={t('admin.users.mini.totalSub')} />
@@ -330,7 +620,10 @@ function AdminUsuarios({ go }) {
         {!loading && users.length === 0 && (
           <div style={{ padding: 32, textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>{t('admin.users.empty')}</div>
         )}
-        {!loading && users.length > 0 && <table className="tbl">
+        {!loading && users.length > 0 && filtered.length === 0 && (
+          <div style={{ padding: 32, textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>{t('admin.filter.noResults')}</div>
+        )}
+        {!loading && filtered.length > 0 && <table className="tbl">
           <thead><tr>
             <th style={{ paddingLeft: 24 }}>{t('admin.users.col.user')}</th>
             <th>{t('admin.users.col.company')}</th>
@@ -342,7 +635,7 @@ function AdminUsuarios({ go }) {
             <th style={{ paddingRight: 24, textAlign: 'right' }}>{t('common.actions')}</th>
           </tr></thead>
           <tbody>
-            {users.map((u, i) => {
+            {filtered.map((u, i) => {
               const adminLabel = t('admin.userLevel.admin');
               const gestorLabel = t('admin.userLevel.gestor');
               const alunoLabel = t('admin.userLevel.aluno');
@@ -352,7 +645,7 @@ function AdminUsuarios({ go }) {
               const activeStatus = t('admin.userRow.status.active');
               const pendingStatus = t('admin.userRow.status.pending');
               return (
-                <tr key={i}>
+                <tr key={u.id || i}>
                   <td style={{ paddingLeft: 24 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                       <div className="avatar" style={{ width: 32, height: 32, fontSize: 11 }}>
@@ -388,8 +681,9 @@ function AdminUsuarios({ go }) {
                   </td>
                   <td style={{ paddingRight: 24 }}>
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 4 }}>
-                      <button className="icon-btn"><Ic.Eye s={16}/></button>
-                      <button className="icon-btn"><Ic.More s={16}/></button>
+                      <button className="icon-btn" onClick={function(){ setVerUser(u); }} title={t('admin.ver.title')}><Ic.Eye s={16}/></button>
+                      <ReenviarConviteButton user={u} />
+                      <button className="icon-btn" onClick={function(){ setEditUser(u); }} title={t('admin.editar.title')}><Ic.More s={16}/></button>
                     </div>
                   </td>
                 </tr>
@@ -400,9 +694,91 @@ function AdminUsuarios({ go }) {
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center', fontSize: 12.5, color: 'var(--muted)' }}>
-        <span>{t('admin.users.showing', { n: users.length })}</span>
+        <span>{t('admin.users.showing', { n: filtered.length })}</span>
       </div>
     </div>
+  );
+}
+
+// ====== Modais Ver / Editar — Usuário ======
+function VerUsuarioModal({ user, onClose }) {
+  useLang();
+  var doc = (user && user._doc) || {};
+  var levelMap = {
+    aluno:  t('admin.userLevel.aluno'),
+    gestor: t('admin.userLevel.gestor'),
+    admin:  t('admin.userLevel.admin'),
+  };
+  return (
+    <AdminModalShell title={t('admin.ver.title')} onClose={onClose}>
+      <AdminDetailRow label={t('admin.field.name')}          value={doc.name} />
+      <AdminDetailRow label={t('admin.field.email')}         value={doc.email} />
+      <AdminDetailRow label={t('admin.field.jobTitle')}      value={doc.jobTitle} />
+      <AdminDetailRow label={t('admin.field.role')}          value={levelMap[doc.role] || doc.role} />
+      <AdminDetailRow label={t('admin.field.company')}       value={doc.companyName || doc.companyId} />
+      <AdminDetailRow label={t('admin.field.discMain')}      value={doc.discMain} />
+      <AdminDetailRow label={t('admin.field.discCompleted')} value={doc.discCompleted ? t('admin.bool.yes') : t('admin.bool.no')} />
+      <AdminDetailRow label={t('admin.field.createdAt')}     value={fmtAdminDate(doc.createdAt)} />
+    </AdminModalShell>
+  );
+}
+
+function EditarUsuarioModal({ user, onClose, onSaved }) {
+  useLang();
+  var doc = (user && user._doc) || {};
+  var [name, setName]         = React.useState(doc.name || '');
+  var [jobTitle, setJobTitle] = React.useState(doc.jobTitle || '');
+  var [loading, setLoading]   = React.useState(false);
+  var [error, setError]       = React.useState('');
+
+  async function handleSubmit(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    var trimmed = name.trim();
+    if (!trimmed) { setError(t('admin.editar.nameRequired')); return; }
+    setError('');
+    setLoading(true);
+    try {
+      await window.fbUpdateUserProfile(doc.id, { name: trimmed, jobTitle: jobTitle.trim() });
+      if (typeof onSaved === 'function') await onSaved();
+      onClose();
+    } catch (err) {
+      console.error('Erro ao atualizar usuário:', err);
+      setError(t('admin.editar.error'));
+      setLoading(false);
+    }
+  }
+
+  return (
+    <AdminModalShell title={t('admin.editar.title')} lede={t('admin.editar.readOnlyHint')} onClose={onClose}>
+      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16, marginTop: 8 }}>
+        <div className="field">
+          <label>{t('admin.field.name')} <span style={{ color: 'var(--disc-d)' }}>*</span></label>
+          <input className="input" type="text" autoFocus value={name} onChange={e => { setName(e.target.value); setError(''); }} />
+        </div>
+        <div className="field">
+          <label>{t('admin.field.jobTitle')}</label>
+          <input className="input" type="text" value={jobTitle} onChange={e => setJobTitle(e.target.value)} />
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, padding: '12px 0', borderTop: '1px solid var(--line-soft)' }}>
+          <div style={{ fontSize: 12, color: 'var(--muted)' }}>{t('admin.field.email')}: <strong style={{ color: 'var(--ink)' }}>{doc.email || '—'}</strong></div>
+          <div style={{ fontSize: 12, color: 'var(--muted)' }}>{t('admin.field.role')}: <strong style={{ color: 'var(--ink)' }}>{doc.role || '—'}</strong></div>
+          <div style={{ fontSize: 12, color: 'var(--muted)' }}>{t('admin.field.company')}: <strong style={{ color: 'var(--ink)' }}>{doc.companyName || doc.companyId || '—'}</strong></div>
+          <div style={{ fontSize: 12, color: 'var(--muted)' }}>{t('admin.field.discMain')}: <strong style={{ color: 'var(--ink)' }}>{doc.discMain || '—'}</strong></div>
+        </div>
+
+        {error && (
+          <div style={{ padding: '10px 14px', borderRadius: 8, background: '#fef2f2', border: '1px solid #fecaca', color: '#b91c1c', fontSize: 13 }}>{error}</div>
+        )}
+
+        <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
+          <button type="button" className="btn btn-ghost" onClick={onClose} disabled={loading} style={{ flex: 1 }}>{t('admin.editar.cancel')}</button>
+          <button type="submit" className="btn btn-primary" disabled={loading} style={{ flex: 1 }}>
+            {loading ? t('admin.editar.saving') : t('admin.editar.save')}
+          </button>
+        </div>
+      </form>
+    </AdminModalShell>
   );
 }
 
@@ -422,6 +798,11 @@ function AdminEmpresas({ go }) {
   var [cos, setCos] = React.useState([]);
   var [loading, setLoading] = React.useState(true);
   var [showModal, setShowModal] = React.useState(false);
+  var [query, setQuery]               = React.useState('');
+  var [sectorFilter, setSectorFilter] = React.useState('todos');
+  var [planFilter, setPlanFilter]     = React.useState('todos');
+  var [verCo, setVerCo]   = React.useState(null);
+  var [editCo, setEditCo] = React.useState(null);
 
   function reload() {
     setLoading(true);
@@ -432,28 +813,79 @@ function AdminEmpresas({ go }) {
   }
 
   React.useEffect(function() { reload(); }, []);
+
+  const sectorOptions = React.useMemo(function () {
+    var uniq = {};
+    cos.forEach(function (c) { if (c.sector && c.sector !== '—') uniq[c.sector] = true; });
+    return [{ key: 'todos', label: t('admin.filter.all') }].concat(
+      Object.keys(uniq).sort().map(function (s) { return { key: s, label: s }; })
+    );
+  }, [cos, window.getLang()]);
+
+  const planOptions = [
+    { key: 'todos',      label: t('admin.filter.all') },
+    { key: 'Starter',    label: 'Starter' },
+    { key: 'Business',   label: 'Business' },
+    { key: 'Enterprise', label: 'Enterprise' },
+  ];
+
+  const filtered = React.useMemo(function () {
+    var q = query.trim().toLowerCase();
+    return cos.filter(function (c) {
+      if (sectorFilter !== 'todos' && c.sector !== sectorFilter) return false;
+      if (planFilter   !== 'todos' && c.plan   !== planFilter)   return false;
+      if (!q) return true;
+      return (c.name || '').toLowerCase().indexOf(q) !== -1 ||
+             (c.sector || '').toLowerCase().indexOf(q) !== -1;
+    });
+  }, [cos, query, sectorFilter, planFilter]);
+
+  function handleExportCsv() {
+    downloadCsv('voratte-empresas.csv', filtered, [
+      { key: 'name',      label: t('admin.field.name') },
+      { key: 'sector',    label: t('admin.field.sector') },
+      { key: 'plan',      label: t('admin.field.plan') },
+      { key: 'users',     label: t('admin.field.userCount') },
+      { key: 'managers',  label: t('admin.field.managerCount') },
+      { key: 'completed', label: t('admin.field.completedPct'), format: function (r) { return r.completed + '%'; } },
+      { label: t('admin.field.createdAt'), format: function (r) { return fmtAdminDate(r._doc && r._doc.createdAt); } },
+    ]);
+  }
+
   return (
     <div className="page-enter" style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ display: 'flex', gap: 12 }}>
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
           <div style={{ position: 'relative', width: 280 }}>
-            <input className="input" placeholder={t('admin.empresas.search')} style={{ paddingLeft: 38 }} />
+            <input
+              className="input"
+              placeholder={t('admin.empresas.search')}
+              style={{ paddingLeft: 38 }}
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+            />
             <div style={{ position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)' }}><Ic.Search s={16}/></div>
           </div>
-          <button className="btn btn-secondary"><Ic.Settings s={14}/> {t('admin.empresas.sector')}</button>
-          <button className="btn btn-secondary"><Ic.Settings s={14}/> {t('admin.empresas.plan')}</button>
+          <AdminFilterPopover label={t('admin.empresas.sector')} value={sectorFilter} options={sectorOptions} onChange={setSectorFilter} />
+          <AdminFilterPopover label={t('admin.empresas.plan')}   value={planFilter}   options={planOptions}   onChange={setPlanFilter} />
+          <button className="btn btn-ghost" onClick={handleExportCsv} disabled={!filtered.length}>
+            <Ic.Download s={14}/> {t('admin.csv.companies')}
+          </button>
         </div>
         <button className="btn btn-primary" onClick={function(){ setShowModal(true); }}><Ic.Plus s={14}/> {t('admin.empresas.new')}</button>
       </div>
       {showModal && <CriarEmpresaModal
         onClose={function(){ setShowModal(false); }}
         onCreated={function(){ reload(); }} />}
+      {verCo && <VerEmpresaModal company={verCo} onClose={function(){ setVerCo(null); }} />}
+      {editCo && <EditarEmpresaModal company={editCo} onClose={function(){ setEditCo(null); }} onSaved={reload} />}
 
       {loading && <div style={{ padding: 32, textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>{t('admin.empresas.loading')}</div>}
       {!loading && cos.length === 0 && <div style={{ padding: 32, textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>{t('admin.empresas.empty')}</div>}
+      {!loading && cos.length > 0 && filtered.length === 0 && <div style={{ padding: 32, textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>{t('admin.filter.noResults')}</div>}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14 }}>
-        {cos.map((c, i) => (
-          <div key={i} className="card" style={{ padding: 22 }}>
+        {filtered.map((c, i) => (
+          <div key={c.id || i} className="card" style={{ padding: 22 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
               <div style={{ width: 44, height: 44, borderRadius: 10, background: 'var(--brown-50)', color: 'var(--brown-700)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 14, letterSpacing: '0.02em' }}>
                 {c.name.split(' ').map(n => n[0]).slice(0,2).join('')}
@@ -491,13 +923,130 @@ function AdminEmpresas({ go }) {
             </div>
 
             <div style={{ display: 'flex', gap: 6, marginTop: 16 }}>
-              <button className="btn btn-secondary" style={{ flex: 1, padding: '8px 12px', fontSize: 12 }}><Ic.Eye s={12}/> {t('admin.empresas.details')}</button>
-              <button className="btn btn-ghost" style={{ padding: '8px 10px' }}><Ic.More s={14}/></button>
+              <button className="btn btn-secondary" onClick={function(){ setVerCo(c); }} style={{ flex: 1, padding: '8px 12px', fontSize: 12 }}>
+                <Ic.Eye s={12}/> {t('admin.empresas.details')}
+              </button>
+              <button className="btn btn-ghost" onClick={function(){ setEditCo(c); }} style={{ padding: '8px 10px' }} title={t('admin.editar.empresaTitle')}>
+                <Ic.More s={14}/>
+              </button>
             </div>
           </div>
         ))}
       </div>
     </div>
+  );
+}
+
+// ====== Modais Ver / Editar — Empresa ======
+function VerEmpresaModal({ company, onClose }) {
+  useLang();
+  var doc = (company && company._doc) || {};
+  return (
+    <AdminModalShell title={t('admin.ver.empresaTitle')} onClose={onClose}>
+      <AdminDetailRow label={t('admin.field.name')}         value={doc.name} />
+      <AdminDetailRow label={t('admin.field.sector')}       value={doc.sector} />
+      <AdminDetailRow label={t('admin.field.plan')}         value={doc.plan} />
+      <AdminDetailRow label={t('admin.field.cnpj')}         value={doc.cnpj} />
+      <AdminDetailRow label={t('admin.field.phone')}        value={doc.phone} />
+      <AdminDetailRow label={t('admin.field.website')}      value={doc.website} />
+      <AdminDetailRow label={t('admin.field.userCount')}    value={doc.userCount} />
+      <AdminDetailRow label={t('admin.field.managerCount')} value={doc.managerCount} />
+      <AdminDetailRow label={t('admin.field.completedPct')} value={(doc.completedPct || 0) + '%'} />
+      <AdminDetailRow label={t('admin.field.createdAt')}    value={fmtAdminDate(doc.createdAt)} />
+    </AdminModalShell>
+  );
+}
+
+function EditarEmpresaModal({ company, onClose, onSaved }) {
+  useLang();
+  var doc = (company && company._doc) || {};
+  var [name, setName]       = React.useState(doc.name || '');
+  var [sector, setSector]   = React.useState(doc.sector || '');
+  var [plan, setPlan]       = React.useState(doc.plan || 'Starter');
+  var [cnpj, setCnpj]       = React.useState(doc.cnpj || '');
+  var [phone, setPhone]     = React.useState(doc.phone || '');
+  var [website, setWebsite] = React.useState(doc.website || '');
+  var [loading, setLoading] = React.useState(false);
+  var [error, setError]     = React.useState('');
+
+  async function handleSubmit(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    var trimmed = name.trim();
+    if (!trimmed) { setError(t('admin.editar.nameRequired')); return; }
+    setError('');
+    setLoading(true);
+    try {
+      await window.fbUpdateCompany(doc.id, {
+        name:    trimmed,
+        sector:  sector.trim(),
+        plan:    plan,
+        cnpj:    cnpj.trim(),
+        phone:   phone.trim(),
+        website: website.trim(),
+      });
+      if (typeof onSaved === 'function') await onSaved();
+      onClose();
+    } catch (err) {
+      console.error('Erro ao atualizar empresa:', err);
+      setError(t('admin.editar.error'));
+      setLoading(false);
+    }
+  }
+
+  return (
+    <AdminModalShell title={t('admin.editar.empresaTitle')} lede={t('admin.editar.readOnlyHint')} onClose={onClose}>
+      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 8 }}>
+        <div className="field">
+          <label>{t('admin.field.name')} <span style={{ color: 'var(--disc-d)' }}>*</span></label>
+          <input className="input" type="text" autoFocus value={name} onChange={e => { setName(e.target.value); setError(''); }} />
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div className="field">
+            <label>{t('admin.field.sector')}</label>
+            <input className="input" type="text" value={sector} onChange={e => setSector(e.target.value)} />
+          </div>
+          <div className="field">
+            <label>{t('admin.field.plan')}</label>
+            <select className="input" value={plan} onChange={e => setPlan(e.target.value)}>
+              <option value="Starter">Starter</option>
+              <option value="Business">Business</option>
+              <option value="Enterprise">Enterprise</option>
+            </select>
+          </div>
+        </div>
+        <div className="field">
+          <label>{t('admin.field.cnpj')}</label>
+          <input className="input" type="text" value={cnpj} onChange={e => setCnpj(e.target.value)} />
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div className="field">
+            <label>{t('admin.field.phone')}</label>
+            <input className="input" type="text" value={phone} onChange={e => setPhone(e.target.value)} />
+          </div>
+          <div className="field">
+            <label>{t('admin.field.website')}</label>
+            <input className="input" type="text" value={website} onChange={e => setWebsite(e.target.value)} />
+          </div>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, padding: '12px 0', borderTop: '1px solid var(--line-soft)' }}>
+          <div style={{ fontSize: 12, color: 'var(--muted)' }}>{t('admin.field.userCount')}: <strong style={{ color: 'var(--ink)' }}>{doc.userCount || 0}</strong></div>
+          <div style={{ fontSize: 12, color: 'var(--muted)' }}>{t('admin.field.managerCount')}: <strong style={{ color: 'var(--ink)' }}>{doc.managerCount || 0}</strong></div>
+          <div style={{ fontSize: 12, color: 'var(--muted)' }}>{t('admin.field.completedPct')}: <strong style={{ color: 'var(--ink)' }}>{(doc.completedPct || 0) + '%'}</strong></div>
+        </div>
+
+        {error && (
+          <div style={{ padding: '10px 14px', borderRadius: 8, background: '#fef2f2', border: '1px solid #fecaca', color: '#b91c1c', fontSize: 13 }}>{error}</div>
+        )}
+
+        <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
+          <button type="button" className="btn btn-ghost" onClick={onClose} disabled={loading} style={{ flex: 1 }}>{t('admin.editar.cancel')}</button>
+          <button type="submit" className="btn btn-primary" disabled={loading} style={{ flex: 1 }}>
+            {loading ? t('admin.editar.saving') : t('admin.editar.save')}
+          </button>
+        </div>
+      </form>
+    </AdminModalShell>
   );
 }
 
@@ -507,6 +1056,9 @@ function AdminGestores({ go }) {
   var [ms, setMs]             = React.useState([]);
   var [loading, setLoading]   = React.useState(true);
   var [showModal, setShowModal] = React.useState(false);
+  var [query, setQuery]   = React.useState('');
+  var [verG, setVerG]     = React.useState(null);
+  var [editG, setEditG]   = React.useState(null);
 
   function reload() {
     setLoading(true);
@@ -517,23 +1069,60 @@ function AdminGestores({ go }) {
   }
 
   React.useEffect(function() { reload(); }, []);
+
+  const filtered = React.useMemo(function () {
+    var q = query.trim().toLowerCase();
+    if (!q) return ms;
+    return ms.filter(function (m) {
+      return (m.name || '').toLowerCase().indexOf(q) !== -1 ||
+             (m.email || '').toLowerCase().indexOf(q) !== -1 ||
+             (m.company || '').toLowerCase().indexOf(q) !== -1;
+    });
+  }, [ms, query]);
+
+  function handleExportCsv() {
+    downloadCsv('voratte-gestores.csv', filtered, [
+      { key: 'name',      label: t('admin.field.name') },
+      { key: 'email',     label: t('admin.field.email') },
+      { key: 'company',   label: t('admin.field.company') },
+      { key: 'team',      label: t('admin.field.teamSize') },
+      { key: 'completed', label: t('admin.gestores.col.coverage') },
+      { label: t('admin.field.jobTitle'), format: function (r) { return (r._doc && r._doc.jobTitle) || ''; } },
+      { label: t('admin.field.createdAt'), format: function (r) { return fmtAdminDate(r._doc && r._doc.createdAt); } },
+    ]);
+  }
+
   return (
     <div className="page-enter" style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ position: 'relative', width: 320 }}>
-          <input className="input" placeholder={t('admin.gestores.search')} style={{ paddingLeft: 38 }} />
-          <div style={{ position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)' }}><Ic.Search s={16}/></div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center', flex: 1 }}>
+          <div style={{ position: 'relative', width: 320 }}>
+            <input
+              className="input"
+              placeholder={t('admin.gestores.search')}
+              style={{ paddingLeft: 38 }}
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+            />
+            <div style={{ position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)' }}><Ic.Search s={16}/></div>
+          </div>
+          <button className="btn btn-ghost" onClick={handleExportCsv} disabled={!filtered.length}>
+            <Ic.Download s={14}/> {t('admin.csv.gestores')}
+          </button>
         </div>
         <button className="btn btn-primary" onClick={function(){ setShowModal(true); }}><Ic.Plus s={14}/> {t('admin.gestores.promote')}</button>
       </div>
       {showModal && <CriarGestorModal
         onClose={function(){ setShowModal(false); }}
         onCreated={function(){ reload(); }} />}
+      {verG && <VerGestorModal gestor={verG} onClose={function(){ setVerG(null); }} />}
+      {editG && <EditarGestorModal gestor={editG} onClose={function(){ setEditG(null); }} onSaved={reload} />}
 
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
         {loading && <div style={{ padding: 32, textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>{t('admin.gestores.loading')}</div>}
         {!loading && ms.length === 0 && <div style={{ padding: 32, textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>{t('admin.gestores.empty')}</div>}
-        {!loading && ms.length > 0 && <table className="tbl">
+        {!loading && ms.length > 0 && filtered.length === 0 && <div style={{ padding: 32, textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>{t('admin.filter.noResults')}</div>}
+        {!loading && filtered.length > 0 && <table className="tbl">
           <thead><tr>
             <th style={{ paddingLeft: 24 }}>{t('admin.gestores.col.gestor')}</th>
             <th>{t('admin.gestores.col.company')}</th>
@@ -543,12 +1132,12 @@ function AdminGestores({ go }) {
             <th style={{ paddingRight: 24, textAlign: 'right' }}>{t('common.actions')}</th>
           </tr></thead>
           <tbody>
-            {ms.map((m, i) => {
+            {filtered.map((m, i) => {
               var parts = typeof m.completed === 'string' ? m.completed.split('/').map(Number) : [0, 0];
               var done = parts[0] || 0, total = parts[1] || m.team || 0;
               var pct = total ? (done/total) * 100 : 0;
               return (
-                <tr key={i}>
+                <tr key={m.id || i}>
                   <td style={{ paddingLeft: 24 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                       <div className="avatar" style={{ width: 32, height: 32, fontSize: 11 }}>{m.name.split(' ').map(n => n[0]).join('').slice(0,2)}</div>
@@ -575,9 +1164,9 @@ function AdminGestores({ go }) {
                   </td>
                   <td style={{ paddingRight: 24 }}>
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 4 }}>
-                      <button className="icon-btn"><Ic.Eye s={16}/></button>
-                      <button className="icon-btn"><Ic.Settings s={16}/></button>
-                      <button className="icon-btn"><Ic.More s={16}/></button>
+                      <button className="icon-btn" onClick={function(){ setVerG(m); }} title={t('admin.ver.gestorTitle')}><Ic.Eye s={16}/></button>
+                      <button className="icon-btn" onClick={function(){ setEditG(m); }} title={t('admin.editar.gestorTitle')}><Ic.Settings s={16}/></button>
+                      <button className="icon-btn" onClick={function(){ setEditG(m); }} title={t('admin.editar.gestorTitle')}><Ic.More s={16}/></button>
                     </div>
                   </td>
                 </tr>
@@ -587,6 +1176,80 @@ function AdminGestores({ go }) {
         </table>}
       </div>
     </div>
+  );
+}
+
+// ====== Modais Ver / Editar — Gestor ======
+function VerGestorModal({ gestor, onClose }) {
+  useLang();
+  var doc = (gestor && gestor._doc) || {};
+  return (
+    <AdminModalShell title={t('admin.ver.gestorTitle')} onClose={onClose}>
+      <AdminDetailRow label={t('admin.field.name')}       value={doc.name} />
+      <AdminDetailRow label={t('admin.field.email')}      value={doc.email} />
+      <AdminDetailRow label={t('admin.field.jobTitle')}   value={doc.jobTitle} />
+      <AdminDetailRow label={t('admin.field.company')}    value={doc.companyName || doc.companyId} />
+      <AdminDetailRow label={t('admin.field.teamSize')}   value={doc.teamSize || 0} />
+      <AdminDetailRow label={t('admin.field.createdAt')}  value={fmtAdminDate(doc.createdAt)} />
+    </AdminModalShell>
+  );
+}
+
+function EditarGestorModal({ gestor, onClose, onSaved }) {
+  useLang();
+  var doc = (gestor && gestor._doc) || {};
+  var [name, setName]         = React.useState(doc.name || '');
+  var [jobTitle, setJobTitle] = React.useState(doc.jobTitle || '');
+  var [loading, setLoading]   = React.useState(false);
+  var [error, setError]       = React.useState('');
+
+  async function handleSubmit(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    var trimmed = name.trim();
+    if (!trimmed) { setError(t('admin.editar.nameRequired')); return; }
+    setError('');
+    setLoading(true);
+    try {
+      await window.fbUpdateUserProfile(doc.id, { name: trimmed, jobTitle: jobTitle.trim() });
+      if (typeof onSaved === 'function') await onSaved();
+      onClose();
+    } catch (err) {
+      console.error('Erro ao atualizar gestor:', err);
+      setError(t('admin.editar.error'));
+      setLoading(false);
+    }
+  }
+
+  return (
+    <AdminModalShell title={t('admin.editar.gestorTitle')} lede={t('admin.editar.readOnlyHint')} onClose={onClose}>
+      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16, marginTop: 8 }}>
+        <div className="field">
+          <label>{t('admin.field.name')} <span style={{ color: 'var(--disc-d)' }}>*</span></label>
+          <input className="input" type="text" autoFocus value={name} onChange={e => { setName(e.target.value); setError(''); }} />
+        </div>
+        <div className="field">
+          <label>{t('admin.field.jobTitle')}</label>
+          <input className="input" type="text" value={jobTitle} onChange={e => setJobTitle(e.target.value)} />
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, padding: '12px 0', borderTop: '1px solid var(--line-soft)' }}>
+          <div style={{ fontSize: 12, color: 'var(--muted)' }}>{t('admin.field.email')}: <strong style={{ color: 'var(--ink)' }}>{doc.email || '—'}</strong></div>
+          <div style={{ fontSize: 12, color: 'var(--muted)' }}>{t('admin.field.company')}: <strong style={{ color: 'var(--ink)' }}>{doc.companyName || doc.companyId || '—'}</strong></div>
+          <div style={{ fontSize: 12, color: 'var(--muted)' }}>{t('admin.field.teamSize')}: <strong style={{ color: 'var(--ink)' }}>{doc.teamSize || 0}</strong></div>
+        </div>
+
+        {error && (
+          <div style={{ padding: '10px 14px', borderRadius: 8, background: '#fef2f2', border: '1px solid #fecaca', color: '#b91c1c', fontSize: 13 }}>{error}</div>
+        )}
+
+        <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
+          <button type="button" className="btn btn-ghost" onClick={onClose} disabled={loading} style={{ flex: 1 }}>{t('admin.editar.cancel')}</button>
+          <button type="submit" className="btn btn-primary" disabled={loading} style={{ flex: 1 }}>
+            {loading ? t('admin.editar.saving') : t('admin.editar.save')}
+          </button>
+        </div>
+      </form>
+    </AdminModalShell>
   );
 }
 
@@ -644,7 +1307,7 @@ function AdminEstatisticas({ go }) {
       <div className="card">
         <div className="card-title">{t('admin.stats.evalsTitle')}</div>
         <div className="card-sub">{t('admin.stats.evalsSub')}</div>
-        <GrowthChartPlaceholder />
+        <GrowthChart users={users} />
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
@@ -811,6 +1474,57 @@ function JobTitleSelect({ value, onChange }) {
         return <option key={job} value={job}>{job}</option>;
       })}
     </select>
+  );
+}
+
+// Botão de "Reenviar convite" na linha de cada usuário da tabela admin.
+// A senha original não fica armazenada (só o Firebase Auth), então o reenvio dispara
+// o email NATIVO do Firebase de redefinição de senha — o usuário recebe um link para
+// definir uma nova e entrar. Também re-marca invited:true para refletir o reenvio.
+function ReenviarConviteButton({ user }) {
+  useLang();
+  var [state, setState] = React.useState('idle'); // 'idle' | 'sending' | 'sent' | 'failed'
+  var resetTimer = React.useRef(null);
+
+  React.useEffect(function () {
+    return function () { if (resetTimer.current) clearTimeout(resetTimer.current); };
+  }, []);
+
+  async function handleClick(e) {
+    e.stopPropagation();
+    if (state === 'sending' || !user || !user.email) return;
+    setState('sending');
+    try {
+      await window.fbResetPassword(user.email);
+      if (user.id && window.fbMarkInvited) {
+        window.fbMarkInvited(user.id).catch(function () { /* best-effort */ });
+      }
+      setState('sent');
+      resetTimer.current = setTimeout(function () { setState('idle'); }, 3000);
+    } catch (err) {
+      console.error('Reenvio falhou:', err);
+      setState('failed');
+      resetTimer.current = setTimeout(function () { setState('idle'); }, 3500);
+    }
+  }
+
+  var color = state === 'sent' ? 'var(--brown-700)'
+            : state === 'failed' ? '#b91c1c'
+            : undefined;
+  var title = state === 'sent'   ? t('admin.resend.sent')
+            : state === 'failed' ? t('admin.resend.failed')
+            : t('admin.resend.title');
+
+  return (
+    <button
+      className="icon-btn"
+      onClick={handleClick}
+      disabled={state === 'sending'}
+      title={title}
+      style={color ? { color: color } : undefined}
+    >
+      <Ic.Mail s={16}/>
+    </button>
   );
 }
 

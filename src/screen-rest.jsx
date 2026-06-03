@@ -476,6 +476,8 @@ function RelatorioScreen({ go, user }) {
       {/* SECTION 5 — seu estilo de negociação (ótica comprador, via helper) */}
       <section className="card" style={{ padding: 36 }}>
         <SectionLabel num="05" label={t('relatorio.sec05')} />
+        <h2 className="serif" style={{ fontSize: 22, fontWeight: 500, marginBottom: 4 }}>Como você negocia</h2>
+        <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 16 }}>Autoconhecimento para reconhecer seus próprios gatilhos na mesa de negociação.</p>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
           {(function () {
             const e = (window.voratteEstiloComprador && window.voratteEstiloComprador(data.primary)) || { tom: '', ritmo: '', objecao: '' };
@@ -495,6 +497,59 @@ function RelatorioScreen({ go, user }) {
         </div>
       </section>
 
+      {/* SECTION 6 — playbook de negociação (motor) — espelha o §07 do PDF */}
+      {window.MOTOR_KRALJIC && window.MOTOR_KRALJIC[kr.dominantQuadrant] && (function () {
+        const MK = window.MOTOR_KRALJIC[kr.dominantQuadrant];
+        const MR = window.MOTOR_RESPOSTAS || {};
+        const MOBJ = window.MOTOR_OBJECOES_BY_ID || {};
+        const MD = window.MOTOR_DISC || {};
+        const perfis = ['D', 'I', 'S', 'C'];
+        const nomeP = function (x) { return (MD[x] && MD[x].nome) || x; };
+        const cap = function (s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : ''; };
+        return (
+          <section className="card" style={{ padding: 36 }}>
+            <SectionLabel num="06" label="Playbook de negociação" />
+            <h2 className="serif" style={{ fontSize: 22, fontWeight: 500, marginBottom: 4 }}>Como conduzir conforme o vendedor</h2>
+            <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 16 }}>
+              A recomendação muda com o perfil de quem está do outro lado. No seu quadrante (<strong>{MK.label}</strong>), conduza assim:
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 22 }}>
+              {perfis.map(function (x) {
+                return (
+                  <div key={x} style={{ padding: 14, background: 'var(--paper-warm)', borderRadius: 10, border: '1px solid var(--line)', borderLeft: '3px solid ' + REL_DISC_COLORS[x] }}>
+                    <div style={{ fontSize: 10.5, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--muted)', fontWeight: 700, marginBottom: 4 }}>Com um vendedor {x} · {nomeP(x)}</div>
+                    <div style={{ fontSize: 12.5, color: 'var(--ink-soft)', lineHeight: 1.5 }}>{cap(MK.usoDISC[x])}</div>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="serif" style={{ fontSize: 16, fontWeight: 600, marginBottom: 4 }}>Objeções comuns e sua resposta — por perfil do vendedor</div>
+            {['OBJ_01', 'OBJ_03'].map(function (oid) {
+              const o = MOBJ[oid]; const resp = MR[oid] || {};
+              if (!o) return null;
+              return (
+                <div key={oid} style={{ marginTop: 14 }}>
+                  <div style={{ fontSize: 13.5, fontWeight: 600, fontStyle: 'italic', color: 'var(--ink)', marginBottom: 4 }}>Objeção: &ldquo;{o.texto}&rdquo;</div>
+                  <p style={{ fontSize: 12, color: 'var(--muted)', lineHeight: 1.5, marginBottom: 10 }}>
+                    <strong>Diagnóstico:</strong> {o.diagnostico} <strong>· Próxima ação:</strong> {o.proximaAcao}
+                  </p>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                    {perfis.map(function (x) {
+                      return (
+                        <div key={x} style={{ padding: 14, background: 'var(--paper-warm)', borderRadius: 10, border: '1px solid var(--line)' }}>
+                          <div style={{ fontSize: 10.5, letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 700, marginBottom: 4, color: REL_DISC_COLORS[x] }}>Vendedor {x} · {nomeP(x)}</div>
+                          <div style={{ fontSize: 12.5, color: 'var(--ink-soft)', lineHeight: 1.5 }}>{resp[x] || ''}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </section>
+        );
+      })()}
+
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 8px', fontSize: 11.5, color: 'var(--muted)' }}>
         <span>{t('relatorio.footer', { date: data.dateStr })}</span>
         <button className="btn btn-secondary" onClick={exportPDF}><Ic.Pdf s={14} /> {t('relatorio.footerExport')}</button>
@@ -508,10 +563,10 @@ function RelKraljicMatrix({ kr }) {
   const x = kr.axis.riscoSuprimento;
   const y = kr.axis.impactoFinanceiro;
   const cells = [
-    { id: 'alavancagem',  dim: 'D', nameKey: 'relatorio.cellAlavancagem' },
-    { id: 'estrategico',  dim: 'I', nameKey: 'relatorio.cellEstrategico' },
-    { id: 'nao_criticos', dim: 'C', nameKey: 'relatorio.cellNaoCriticos' },
-    { id: 'gargalo',      dim: 'S', nameKey: 'relatorio.cellGargalo' },
+    { id: 'alavancagem',  icon: <Ic.Chart s={15} />,   nameKey: 'relatorio.cellAlavancagem' },
+    { id: 'estrategico',  icon: <Ic.Diamond s={15} />, nameKey: 'relatorio.cellEstrategico' },
+    { id: 'nao_criticos', icon: <Ic.Cart s={15} />,    nameKey: 'relatorio.cellNaoCriticos' },
+    { id: 'gargalo',      icon: <Ic.Link s={15} />,    nameKey: 'relatorio.cellGargalo' },
   ];
   return (
     <div>
@@ -525,8 +580,9 @@ function RelKraljicMatrix({ kr }) {
               background: mine ? 'var(--brown-50)' : 'var(--paper)',
               padding: 10, display: 'flex', flexDirection: 'column', gap: 3,
             }}>
-              <div className={'disc-tile disc-' + c.dim.toLowerCase()} style={{ width: 26, height: 26, fontSize: 13 }}>{c.dim}</div>
+              <div style={{ width: 26, height: 26, borderRadius: 6, background: 'var(--paper-warm)', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--brown-600)' }}>{c.icon}</div>
               <div style={{ fontSize: 12, fontWeight: 600 }}>{t(c.nameKey)}</div>
+              {mine && <div style={{ fontSize: 9.5, fontWeight: 700, color: 'var(--brown-700)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Sua posição</div>}
             </div>
           );
         })}

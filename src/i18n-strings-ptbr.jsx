@@ -143,7 +143,7 @@ window.I18N_PTBR = {
   'page.objecoes.title':       'Objeções por perfil',
   'page.objecoes.sub':         'Como contornar cada estilo',
   'page.relatorio.title':      'Relatório DISC completo',
-  'page.relatorio.sub':        'Documento executivo · 24 páginas',
+  'page.relatorio.sub':        'Documento executivo · pronto para impressão',
   // Aluno
   'page.aluno.dashboard.title':    'Bem-vindo',
   'page.aluno.dashboard.sub':      'Seu painel estratégico Vorätte',

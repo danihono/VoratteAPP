@@ -15,18 +15,8 @@
   const DISC_LABEL = { D: 'Dominante', I: 'Influente', S: 'Estável', C: 'Conforme' };
   const MES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
 
-  // Overrides de APRESENTAÇÃO (ótica do comprador). disc-data.jsx / kraljic-data.jsx
-  // seguem CONGELADOS — isto é camada de PDF, não dado.
-  // ⚠️ DÍVIDA: as chaves de KAVOID_OVERRIDE precisam bater LETRA A LETRA com
-  // whatToAvoid em kraljic-data.jsx (espelho do override da tela). Se editar lá, atualize aqui.
-  const KAVOID_OVERRIDE = {
-    estrategico: {
-      'Não envolver liderança nas reuniões': 'Deixar a liderança do fornecedor fora das reuniões',
-      'Vender só pelo preço': 'Reduzir a parceria estratégica a uma disputa de preço',
-    },
-    nao_criticos: { 'Burocratizar o processo dele': 'Burocratizar o seu processo de compra' },
-  };
-  // ("Seu estilo" §06 agora vem de window.voratteEstiloComprador — src/disc-estilo.jsx)
+  // Overrides de APRESENTAÇÃO (ótica-comprador) são fonte única em src/disc-estilo.jsx:
+  // window.voratteKavoid(item) e window.voratteEstiloComprador(primary). Dados congelados.
 
   function esc(s) {
     return String(s == null ? '' : s)
@@ -304,7 +294,7 @@
 
     // 05 — Leitura completa do quadrante (ótica comprador)
     const naoAceitar05 = (kr.whatToAvoid || []).map(function (it) {
-      return (KAVOID_OVERRIDE[kr.dominantQuadrant] && KAVOID_OVERRIDE[kr.dominantQuadrant][it]) || it;
+      return (window.voratteKavoid && window.voratteKavoid(it)) || it;
     });
     const sec05 =
       '<div class="section">' + sectionLabel('05', 'Leitura completa do quadrante') +

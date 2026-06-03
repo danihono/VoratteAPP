@@ -29,18 +29,6 @@ function ObjecoesScreen({ go }) {
   const quads = ['alavancagem', 'estrategico', 'gargalo', 'nao_criticos'];
   const objSel = (window.MOTOR_OBJECOES_BY_ID || {})[objecaoId] || {};
 
-  const origemMeta = {
-    'caso-exato': { label: 'Caso curado', sub: 'recomendação validada na base canônica (§20–23)', icon: 'Check', cor: 'var(--disc-s)' },
-    'caso-base':  { label: 'Caso base', sub: 'caso curado aproximado — mesmo perfil e objeção', icon: 'Shield', cor: 'var(--disc-i)' },
-    'composto':   { label: 'Montado pela base', sub: 'composto de fragmentos da base (§15/§18), sem texto gerado', icon: 'Sparkle', cor: 'var(--brown-700)' },
-    'erro':       { label: 'Sem dados suficientes', sub: 'informe perfil e objeção', icon: 'Search', cor: 'var(--disc-d)' },
-  };
-  const om = origemMeta[r.origem] || origemMeta['erro'];
-  const OmIcon = Ic[om.icon] || Ic.Sparkle;
-
-  const confCor = { Alta: 'var(--disc-s)', 'Média': 'var(--disc-i)', Baixa: 'var(--disc-d)' };
-  const cc = confCor[r.confianca] || 'var(--muted)';
-
   const selectStyle = {
     width: '100%', padding: '10px 12px', borderRadius: 8,
     border: '1px solid var(--line)', background: 'var(--paper)',
@@ -75,7 +63,7 @@ function ObjecoesScreen({ go }) {
       <div>
         <div className="serif" style={{ fontSize: 22, fontWeight: 600 }}>Tratamento de Objeções</div>
         <div style={{ fontSize: 13, color: 'var(--muted)', marginTop: 2 }}>
-          Copiloto do comprador · {objecoes.length} objeções mapeadas · respostas vindas da base Vorätte, nunca geradas por IA
+          Copiloto do Comprador
         </div>
       </div>
 
@@ -134,26 +122,10 @@ function ObjecoesScreen({ go }) {
 
       {/* Resultado */}
       <div className="card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-            <span style={{ fontSize: 12, fontStyle: 'italic', color: 'var(--ink-soft)' }}>
-              “{objSel.texto}”
-            </span>
-          </div>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <span className="badge" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, boxShadow: 'inset 0 0 0 1px ' + om.cor, color: om.cor }}>
-              <OmIcon s={13} />
-              {om.label}
-            </span>
-            <span className="badge badge-outline" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ width: 8, height: 8, borderRadius: 999, background: cc, display: 'inline-block' }} />
-              Confiança {r.confianca}
-            </span>
-          </div>
-        </div>
-
-        <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 6 }}>
-          {om.sub}{r.casoId ? ' · ' + r.casoId : ''}
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+          <span style={{ fontSize: 12, fontStyle: 'italic', color: 'var(--ink-soft)' }}>
+            “{objSel.texto}”
+          </span>
         </div>
 
         <Campo icon={<Ic.Eye s={16} />} label="Diagnóstico comportamental" texto={r.diagnostico} />
@@ -183,12 +155,15 @@ function ObjecoesScreen({ go }) {
             <Ic.Bulb s={20} />
           </div>
           <div style={{ flex: 1 }}>
-            <div className="serif" style={{ fontSize: 15, fontWeight: 600 }}>Como ler a origem da recomendação</div>
-            <p style={{ fontSize: 12.5, color: 'var(--brown-200)', marginTop: 4, lineHeight: 1.6 }}>
-              <strong style={{ color: 'var(--brown-50)' }}>Caso curado</strong>: combinação exata mapeada nos casos de decisão da base. ·{' '}
-              <strong style={{ color: 'var(--brown-50)' }}>Caso base</strong>: caso curado próximo (mesmo perfil e objeção, outro contexto). ·{' '}
-              <strong style={{ color: 'var(--brown-50)' }}>Montado pela base</strong>: combinação não mapeada, montada a partir dos blocos prontos do método (objeção §18 + Kraljic §15) — sem texto inventado.
+            <div className="serif" style={{ fontSize: 15, fontWeight: 600 }}>De onde vem cada recomendação</div>
+            <p style={{ fontSize: 12.5, color: 'var(--brown-200)', marginTop: 4, lineHeight: 1.7 }}>
+              Toda resposta sai da base de conhecimento da Vorätte — nada é inventado por IA. O que muda é o quanto ela se encaixa na sua situação:
             </p>
+            <ul style={{ fontSize: 12.5, color: 'var(--brown-200)', marginTop: 8, marginBottom: 0, paddingLeft: 18, lineHeight: 1.7, display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <li><strong style={{ color: 'var(--brown-50)' }}>Caso curado</strong> — a sua situação exata (este perfil + esta objeção) já está pronta e revisada na base. É a recomendação mais confiável.</li>
+              <li><strong style={{ color: 'var(--brown-50)' }}>Caso base</strong> — não temos a situação idêntica, então usamos um caso bem parecido (mesmo perfil e mesma objeção, em outro contexto).</li>
+              <li><strong style={{ color: 'var(--brown-50)' }}>Montado pela base</strong> — a combinação ainda não foi mapeada, então a resposta é montada juntando trechos prontos do método Vorätte.</li>
+            </ul>
           </div>
         </div>
       </div>

@@ -266,7 +266,7 @@
         '<div class="card" style="margin-bottom:12px"><div class="card-k">Estilo de decisão</div>' +
           '<div class="card-t">' + esc(p.decisionStyle) + '</div></div>' +
         '<div class="grid2">' +
-          '<div><div class="card-h">O que move a compra</div>' + listHTML(p.motivators) + '</div>' +
+          '<div><div class="card-h">O que move o comprador (a)</div>' + listHTML(p.motivators) + '</div>' +
           '<div><div class="card-h">O que trava a decisão</div>' + listHTML(p.fears, true) + '</div>' +
         '</div>' +
       '</div>';

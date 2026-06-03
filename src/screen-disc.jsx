@@ -281,7 +281,7 @@ function DiscTestScreen({ go, user, refreshProfile }) {
             const isLeast = current.least === o.dimension;
             return (
               <div
-                key={o.dimension}
+                key={q.id + '-' + o.dimension}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 14,
                   padding: '12px 16px', borderRadius: 'var(--radius-md)',
@@ -566,7 +566,7 @@ function AnaliseScreen({ go, user }) {
 
       {/* Detalhe do perfil */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-        <Pillar title="O que move a compra" items={profile.motivators} />
+        <Pillar title="O que move o comprador (a)" items={profile.motivators} />
         <Pillar title="O que trava a decisão" items={profile.fears} tone="warn" />
       </div>
       <div className="card">

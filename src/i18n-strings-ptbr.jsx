@@ -283,7 +283,7 @@ window.I18N_PTBR = {
   'relatorio.profileLine':      'Perfil',
   'relatorio.profileBlurb':     '{type}. Sua dimensão predominante é <strong>{primary} ({code})</strong>, com {pct}% de composição{secondaryPart}.',
   'relatorio.secondaryAnd':     ' e traço secundário {sec}',
-  'relatorio.movesTitle':       'O que move a compra',
+  'relatorio.movesTitle':       'O que move o comprador (a)',
   'relatorio.brakesTitle':      'O que trava a decisão',
   'relatorio.buyerLabel':       'Comprador {label}',
   'relatorio.financialImpact':  'Impacto financeiro',

@@ -1,4 +1,4 @@
-// Demo headless: imprime 3 saídas REAIS do motor (caso-exato, composto, inferência).
+// Demo headless (Motor 4.0): imprime saídas REAIS do motor — objetivo derivado.
 //   node tests/motor-demo.node.js
 const fs = require('fs');
 const path = require('path');
@@ -12,24 +12,18 @@ function dump(titulo, obj) {
   console.log(JSON.stringify(obj, null, 2));
 }
 
-// 1) CASO-EXATO — tupla mapeada (D + limite de preço + Alavancagem + capturar saving)
-dump('1) CASO-EXATO  (input: D | OBJ_01 | alavancagem | capturar_saving)',
-  window.resolverNegociacao({
-    perfilDISC: 'D', objecaoId: 'OBJ_01', quadranteKraljic: 'alavancagem', objetivoComprador: 'capturar_saving'
-  }));
+// 1) Derivação — D + "Esse é o nosso preço padrão" (OBJ_08) + Alavancagem
+dump('1) DERIVADO  (input: D | OBJ_08 | alavancagem)  → esperado primário OBJ01',
+  window.resolverNegociacao({ perfilDISC: 'D', objecaoId: 'OBJ_08', quadranteKraljic: 'alavancagem' }));
 
-// 2) COMPOSTO — tupla off-grid (C + "fila de clientes" + Gargalo + reduzir risco)
-dump('2) COMPOSTO  (input: C | OBJ_06 | gargalo | reduzir_risco_suprimento)',
-  window.resolverNegociacao({
-    perfilDISC: 'C', objecaoId: 'OBJ_06', quadranteKraljic: 'gargalo', objetivoComprador: 'reduzir_risco_suprimento'
-  }));
+// 2) Derivação — C + "Temos tecnologia exclusiva" (OBJ_18) + Estratégico
+dump('2) DERIVADO  (input: C | OBJ_18 | estrategico)  → esperado primário OBJ10',
+  window.resolverNegociacao({ perfilDISC: 'C', objecaoId: 'OBJ_18', quadranteKraljic: 'estrategico' }));
 
-// 3) INFERÊNCIA por sinais (§9.2) — sem informar o perfil
-dump('3a) INFERÊNCIA  (sinais: benchmark, metodologia, planilha, base de cálculo)',
-  window.inferirPerfilDISC(['Pediu benchmark', 'Questionou metodologia', 'Solicitou planilha', 'Pediu base de cálculo']));
+// 3) Normalização — texto da objeção + label do quadrante + perfil minúsculo
+dump('3) NORMALIZADO  (input: "s" | "Não consigo entregar nesse prazo" | "Gargalo")',
+  window.resolverNegociacao({ perfilDISC: 's', objecaoId: 'Não consigo entregar nesse prazo', quadranteKraljic: 'Gargalo' }));
 
-dump('3b) RESOLUÇÃO usando o perfil inferido + objeção "Não podemos abrir custos"',
-  window.resolverNegociacao({
-    sinais: ['Pediu benchmark', 'Questionou metodologia', 'Solicitou planilha', 'Pediu base de cálculo'],
-    objecaoId: 'OBJ_07', quadranteKraljic: 'alavancagem', objetivoComprador: 'validar_competitividade'
-  }));
+// 4) Erro — entrada incompleta (sem quadrante): saída completa, sem lançar
+dump('4) ERRO  (input: D | OBJ_01 | <sem quadrante>)',
+  window.resolverNegociacao({ perfilDISC: 'D', objecaoId: 'OBJ_01' }));

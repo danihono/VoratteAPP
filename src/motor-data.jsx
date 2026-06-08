@@ -1,13 +1,14 @@
-// Motor de Negociação Vorätte — base estática de conhecimento (dados)
-// Porta browser-runnable da base canônica docs/motor-ia-voratte-v2.1.md (§4–27).
-// Motor de REGRAS determinístico: a resposta vem de lookup + composição de
-// fragmentos JÁ ESCRITOS no doc. Nunca gera texto novo, nunca inventa dados.
+// Motor de Negociação Vorätte 4.0 — base estática de conhecimento (dados)
+// Porta browser-runnable da base canônica docs/motor-ia-voratte-v4.0.md.
+// Motor de REGRAS determinístico: o OBJETIVO é DERIVADO de objeção × quadrante
+// (matriz de inferência) e diagnóstico/risco/estratégia/alavanca/próxima-ação +
+// frase vêm do OBJETIVO. Nunca gera texto novo, nunca inventa dados.
 // Perspectiva SEMPRE do comprador.
 //
-// Expõe: window.MOTOR_DISC, MOTOR_SINAIS, MOTOR_RAIS, MOTOR_KRALJIC,
-// MOTOR_OBJECOES, MOTOR_OBJECOES_BY_ID, MOTOR_OBJECOES_BY_TEXT,
-// MOTOR_RESPOSTAS, MOTOR_OBJETIVOS, MOTOR_CASOS, MOTOR_CASOS_BY_KEY,
-// MOTOR_CASOS_BY_PERFIL_OBJ, MOTOR_ETHICS, motorNormalizeText.
+// Expõe: window.MOTOR_DISC, MOTOR_KRALJIC, MOTOR_OBJECOES,
+// MOTOR_OBJECOES_BY_ID, MOTOR_OBJECOES_BY_TEXT, MOTOR_RESPOSTAS,
+// MOTOR_OBJETIVOS (enriquecidos), MOTOR_REGRAS (matriz de inferência),
+// MOTOR_FRASES (frases DISC por objetivo), motorNormalizeText.
 //
 // Carrega ANTES de src/motor-engine.jsx.
 
@@ -61,67 +62,6 @@ const MOTOR_DISC = {
     estrategiaComprador: 'Preparar dados, usar TCO, apresentar benchmark, explicar premissas, antecipar objeções técnicas e formalizar critérios.',
     gatilhos: ['dados', 'benchmark', 'evidência', 'compliance', 'método', 'auditoria', 'processo'],
   },
-};
-
-// ===== §11 — Sinais comportamentais (para inferência de perfil) =====
-// palavrasChave = vocabulário canônico do doc (§4 linguagem típica, §11, §13).
-const MOTOR_SINAIS = {
-  D: {
-    perfil: 'D',
-    sinais: ['Fala direta', 'Pressiona por decisão', 'Pergunta sobre resultado', 'Testa limite de preço, prazo ou condição', 'Demonstra impaciência com explicações longas'],
-    perguntasTipicas: ['Qual o ganho?', 'Quanto economiza?', 'Por que não decidir agora?', 'Qual a melhor condição?'],
-    palavrasChave: ['resultado', 'ganho', 'prioridade', 'exclusividade', 'volume', 'velocidade', 'performance', 'roi', 'rápido', 'agora', 'economiza', 'economia', 'consequência', 'vantagem', 'decidir'],
-  },
-  I: {
-    perfil: 'I',
-    sinais: ['Busca conexão', 'Usa linguagem relacional', 'Valoriza parceria', 'Demonstra entusiasmo', 'Prefere conversa fluida'],
-    perguntasTipicas: ['Como isso fortalece nossa parceria?', 'Quem mais está envolvido?', 'Como isso será percebido?', 'Podemos construir isso juntos?'],
-    palavrasChave: ['parceria', 'relacionamento', 'juntos', 'conexão', 'visibilidade', 'reputação', 'reconhecimento', 'percebido', 'envolvido', 'entusiasmo', 'relacional'],
-  },
-  S: {
-    perfil: 'S',
-    sinais: ['Busca segurança', 'Evita conflito', 'Pede tempo', 'Valoriza continuidade', 'Demonstra cautela com mudança'],
-    perguntasTipicas: ['Como será a transição?', 'Isso muda muito o processo atual?', 'Qual o risco?', 'Teremos previsibilidade?'],
-    palavrasChave: ['segurança', 'continuidade', 'estabilidade', 'previsibilidade', 'confiança', 'transição', 'calma', 'gradual', 'estável', 'cautela', 'tempo'],
-  },
-  C: {
-    perfil: 'C',
-    sinais: ['Pede dados', 'Questiona premissas', 'Solicita documentação', 'Compara alternativas', 'Analisa riscos e critérios técnicos'],
-    perguntasTipicas: ['Qual a base de cálculo?', 'Existe benchmark?', 'Tem estudo ou histórico?', 'Como isso se sustenta tecnicamente?'],
-    palavrasChave: ['dados', 'benchmark', 'evidência', 'compliance', 'método', 'metodologia', 'auditoria', 'premissa', 'premissas', 'documentação', 'planilha', 'base de cálculo', 'histórico', 'técnico', 'critério', 'estudo'],
-  },
-};
-
-// ===== §14 — Biblioteca R.A.I.S. (referência; 5 cenários por perfil) =====
-const MOTOR_RAIS = {
-  D: [
-    { id: 'D-RAIS-01', tema: 'Redução de preço', razao: 'Com essa condição, conseguimos reduzir o custo total da categoria em 12%.', autoridade: 'Esse patamar está alinhado ao benchmark dos principais compradores do setor.', interesse: 'Ao fechar agora, você garante prioridade no volume previsto para este ciclo.', social: 'Outros fornecedores que aceitaram esse modelo ampliaram participação em compras futuras.' },
-    { id: 'D-RAIS-02', tema: 'Contrato de longo prazo', razao: 'Um contrato de 24 meses reduz volatilidade e melhora previsibilidade de demanda.', autoridade: 'Esse modelo é utilizado por grandes grupos em categorias de alto impacto.', interesse: 'Você passa a ter maior previsibilidade de receita e planejamento comercial.', social: 'Três parceiros estratégicos já operam conosco neste formato.' },
-    { id: 'D-RAIS-03', tema: 'SLA mais agressivo', razao: 'O novo SLA reduz falhas operacionais e melhora o nível de serviço.', autoridade: 'Esse indicador segue práticas de performance adotadas em contratos líderes.', interesse: 'Cumprindo esse SLA, você se posiciona como fornecedor prioritário.', social: 'Fornecedores que atingiram esse nível ganharam mais recorrência conosco.' },
-    { id: 'D-RAIS-04', tema: 'Exclusividade', razao: 'A concentração de volume gera ganho de escala e melhora a eficiência comercial.', autoridade: 'Esse tipo de consolidação é comum em categorias com alto potencial de alavancagem.', interesse: 'Você ganha acesso preferencial às oportunidades futuras desta categoria.', social: 'Fornecedores que aceitaram exclusividade com contrapartidas claras cresceram em volume conosco.' },
-    { id: 'D-RAIS-05', tema: 'Performance', razao: 'Melhorar performance agora reduz retrabalho, penalidades e risco de substituição.', autoridade: 'Indicadores de performance são critério padrão em programas estratégicos de fornecedores.', interesse: 'Você fortalece sua posição como fornecedor prioritário para novos projetos.', social: 'Parceiros com performance superior passaram a receber maior recorrência e previsibilidade de demanda.' },
-  ],
-  I: [
-    { id: 'I-RAIS-01', tema: 'Fortalecimento de parceria', razao: 'Esse modelo reduz ruídos e melhora a fluidez entre nossas equipes.', autoridade: 'É uma prática comum em relações comerciais maduras e colaborativas.', interesse: 'Você ganha mais visibilidade como parceiro estratégico para nossa operação.', social: 'Outros parceiros que adotaram esse formato melhoraram o relacionamento com nossas áreas internas.' },
-    { id: 'I-RAIS-02', tema: 'Novo modelo de governança', razao: 'A governança mensal evita desalinhamentos e melhora a comunicação.', autoridade: 'Esse modelo é utilizado por empresas com alto índice de colaboração fornecedor-cliente.', interesse: 'Você terá mais espaço para mostrar resultados e fortalecer a relação.', social: 'Parceiros que participam desse fórum têm maior proximidade com nossas lideranças.' },
-    { id: 'I-RAIS-03', tema: 'Ajuste de proposta', razao: 'Se ajustarmos esse ponto, conseguimos avançar sem comprometer a qualidade da parceria.', autoridade: 'É uma solução já praticada em acordos colaborativos de longo prazo.', interesse: 'Isso preserva a confiança entre as equipes e evita desgaste desnecessário.', social: 'Outros fornecedores resolveram situações parecidas por esse caminho.' },
-    { id: 'I-RAIS-04', tema: 'Reconhecimento como parceiro', razao: 'Uma proposta mais equilibrada permite ampliar a participação de vocês sem gerar atrito interno.', autoridade: 'Programas de parceria madura valorizam fornecedores que demonstram flexibilidade construtiva.', interesse: 'Você reforça sua imagem como parceiro confiável e colaborativo.', social: 'Fornecedores que atuaram dessa forma passaram a ser mais lembrados em novas demandas.' },
-    { id: 'I-RAIS-05', tema: 'Construção conjunta', razao: 'Construindo uma solução conjunta, reduzimos retrabalho e aumentamos aderência ao que as áreas precisam.', autoridade: 'Modelos colaborativos costumam gerar maior adesão e menor resistência interna.', interesse: 'Você participa da solução, ganha influência e fortalece a relação com nossas áreas.', social: 'Outros parceiros que cocriaram propostas conosco tiveram maior aceitação interna.' },
-  ],
-  S: [
-    { id: 'S-RAIS-01', tema: 'Contrato com previsibilidade', razao: 'Esse contrato estabiliza o fluxo de pedidos e reduz oscilações.', autoridade: 'É um modelo amplamente usado em cadeias maduras de fornecimento.', interesse: 'Você ganha segurança para planejar equipe, produção e capacidade.', social: 'Fornecedores semelhantes reduziram riscos operacionais com esse formato.' },
-    { id: 'S-RAIS-02', tema: 'Mudança gradual de escopo', razao: 'A transição em fases reduz risco e evita ruptura operacional.', autoridade: 'Esse tipo de migração gradual é recomendado em processos críticos.', interesse: 'Você terá tempo para se adaptar sem comprometer sua operação.', social: 'Parceiros que seguiram esse modelo tiveram implantação mais tranquila.' },
-    { id: 'S-RAIS-03', tema: 'Redução de risco', razao: 'O plano proposto reduz incertezas de prazo, volume e atendimento.', autoridade: 'Essa abordagem é aderente a boas práticas de gestão de risco em suprimentos.', interesse: 'Você terá clareza sobre próximos passos e responsabilidades.', social: 'Outros fornecedores usaram esse plano para manter estabilidade durante mudanças.' },
-    { id: 'S-RAIS-04', tema: 'Planejamento antecipado', razao: 'Planejar com antecedência reduz urgências e melhora a alocação de recursos.', autoridade: 'Cadeias de suprimento maduras priorizam previsibilidade e planejamento compartilhado.', interesse: 'Você consegue organizar capacidade, equipe e entrega com menor pressão.', social: 'Fornecedores que adotaram planejamento antecipado reduziram retrabalho e atrasos.' },
-    { id: 'S-RAIS-05', tema: 'Continuidade de fornecimento', razao: 'A estrutura proposta protege a continuidade de fornecimento e reduz rupturas.', autoridade: 'Planos de continuidade são prática recomendada para categorias com risco operacional.', interesse: 'Você terá mais segurança para manter a operação sem sobressaltos.', social: 'Parceiros em cenários semelhantes estabilizaram entregas após adotar esse modelo.' },
-  ],
-  C: [
-    { id: 'C-RAIS-01', tema: 'TCO', razao: 'O TCO aponta redução de 8,7% no custo total em 12 meses.', autoridade: 'A metodologia considera histórico de consumo, custo logístico, SLA e risco.', interesse: 'Isso reduz exposição a desvios e melhora a previsibilidade técnica do contrato.', social: 'Benchmarks da categoria mostram resultados semelhantes em operações comparáveis.' },
-    { id: 'C-RAIS-02', tema: 'Compliance contratual', razao: 'A cláusula reduz risco operacional e jurídico para ambas as partes.', autoridade: 'Esse padrão é adotado em contratos com maior criticidade regulatória.', interesse: 'Você ganha mais clareza sobre responsabilidades e limites de exposição.', social: 'Outros fornecedores já aceitaram essa redação em contratos equivalentes.' },
-    { id: 'C-RAIS-03', tema: 'Benchmark técnico', razao: 'Os dados mostram que a proposta está acima do intervalo competitivo da categoria.', autoridade: 'A análise foi construída com base em benchmark, histórico e comparação técnica.', interesse: 'A adequação melhora sua competitividade sem comprometer margem de forma desestruturada.', social: 'Fornecedores semelhantes ajustaram a proposta com base nesse mesmo critério.' },
-    { id: 'C-RAIS-04', tema: 'Redução de risco documental', razao: 'A documentação proposta reduz ambiguidades e evita divergências futuras.', autoridade: 'Contratos bem estruturados utilizam critérios objetivos para reduzir disputas.', interesse: 'Você ganha segurança sobre escopo, obrigação, prazo e responsabilidade.', social: 'Outros fornecedores aceitaram esse modelo após revisão técnica conjunta.' },
-    { id: 'C-RAIS-05', tema: 'Critério de avaliação', razao: 'A decisão será baseada em critérios objetivos: TCO, SLA, risco e aderência técnica.', autoridade: 'Essa metodologia é compatível com boas práticas de compras estratégicas.', interesse: 'Você tem clareza sobre como será avaliado e pode ajustar a proposta com precisão.', social: 'Fornecedores que entenderam os critérios conseguiram melhorar competitividade sem perder controle técnico.' },
-  ],
 };
 
 // ===== §15 — Matriz de Kraljic (4 quadrantes + Uso do DISC) =====
@@ -358,6 +298,8 @@ const MOTOR_OBJECOES = [
 ];
 
 // ===== §18 — Respostas por perfil DISC (84 = 21 objeções × 4 perfis) =====
+// Mantidas vivas: o Relatório (§06) e o PDF (§07) exibem estas frases por
+// objeção+perfil (OBJ_01/OBJ_03). NÃO são a frase derivada do motor 4.0.
 const MOTOR_RESPOSTAS = {
   OBJ_01: {
     D: 'Entendo. Se esse é o limite de preço, precisamos avaliar contrapartidas objetivas: volume, prazo, SLA ou condição de pagamento. Sem algum ajuste, a proposta perde competitividade frente às alternativas.',
@@ -487,236 +429,350 @@ const MOTOR_RESPOSTAS = {
   },
 };
 
-// ===== Objetivos do comprador — lista fechada (20 slugs) + famílias (11) =====
+// ===== §4 (4.0) — Tabela Mestra de Objetivos (20) =====
+// No 4.0, diagnóstico/risco/estratégia/alavanca/próxima-ação vêm do OBJETIVO.
+// Chaveado pelo código da spec (OBJ01..OBJ20; sem underscore — distinto dos
+// IDs de objeção OBJ_01).
 const MOTOR_OBJETIVOS = {
-  slugs: {
-    capturar_saving: 'Capturar saving',
-    validar_competitividade: 'Validar competitividade',
-    encontrar_alavancas_reducao: 'Encontrar alavancas técnicas de redução',
-    validar_valor_real: 'Validar valor real',
-    validar_diferenciacao: 'Validar diferenciação sem perder relacionamento',
-    reposicionar_valor_total: 'Reposicionar a conversa para valor total',
-    garantir_capacidade: 'Garantir capacidade',
-    garantir_abastecimento: 'Garantir abastecimento',
-    reduzir_dependencia: 'Reduzir dependência',
-    validar_valor_evitar_dependencia: 'Validar valor e evitar dependência',
-    reduzir_risco_suprimento: 'Reduzir risco de suprimento',
-    controlar_reajuste: 'Controlar reajuste com previsibilidade',
-    validar_reajuste: 'Validar reajuste',
-    preservar_parceria: 'Preservar parceria e capturar valor',
-    melhorar_performance: 'Melhorar performance sem romper relação',
-    evitar_pressao_artificial: 'Evitar pressão artificial',
-    manter_avanco: 'Manter avanço sem alongar negociação',
-    viabilizar_compra_baixo_esforco: 'Viabilizar compra com baixo esforço',
-    padronizar_reduzir_esforco: 'Padronizar e reduzir esforço',
-    proteger_contrato: 'Proteger contrato sem travar negociação',
-  },
-  familias: {
-    capturar_saving: 'capturar_valor_economico',
-    validar_competitividade: 'capturar_valor_economico',
-    encontrar_alavancas_reducao: 'capturar_valor_economico',
-    validar_valor_real: 'reposicionar_valor',
-    validar_diferenciacao: 'reposicionar_valor',
-    reposicionar_valor_total: 'reposicionar_valor',
-    garantir_capacidade: 'garantir_suprimento',
-    garantir_abastecimento: 'garantir_suprimento',
-    reduzir_dependencia: 'reduzir_dependencia',
-    validar_valor_evitar_dependencia: 'reduzir_dependencia',
-    reduzir_risco_suprimento: 'reduzir_risco',
-    controlar_reajuste: 'controlar_reajuste',
-    validar_reajuste: 'controlar_reajuste',
-    preservar_parceria: 'preservar_parceria',
-    melhorar_performance: 'gerir_performance',
-    evitar_pressao_artificial: 'gerir_processo_negociacao',
-    manter_avanco: 'gerir_processo_negociacao',
-    viabilizar_compra_baixo_esforco: 'reduzir_esforco',
-    padronizar_reduzir_esforco: 'reduzir_esforco',
-    proteger_contrato: 'proteger_contrato',
-  },
-  // mapaCasos (texto normalizado -> slug) é montado abaixo via forEach.
-  mapaCasos: {},
+  OBJ01: { codigo: 'OBJ01', nome: 'Capturar Saving', categoria: 'Econômico',
+    diagnostico: 'O vendedor está protegendo preço, margem ou política comercial.',
+    risco: 'Aceitar condições econômicas sem explorar oportunidades de redução.',
+    estrategia: 'Utilizar concorrência, benchmark, volume, consolidação de demanda e TCO.',
+    alavancaPrincipal: 'Preço',
+    proximaAcao: 'Solicitar proposta alternativa com contrapartidas comerciais.' },
+  OBJ02: { codigo: 'OBJ02', nome: 'Validar Competitividade', categoria: 'Econômico',
+    diagnostico: 'Existe dúvida se a proposta apresentada está alinhada ao mercado.',
+    risco: 'Assumir competitividade sem evidência objetiva.',
+    estrategia: 'Comparar preço, escopo, SLA, TCO e alternativas disponíveis.',
+    alavancaPrincipal: 'Benchmark',
+    proximaAcao: 'Montar comparativo técnico-comercial.' },
+  OBJ03: { codigo: 'OBJ03', nome: 'Encontrar Alavancas Técnicas de Redução', categoria: 'Econômico',
+    diagnostico: 'O vendedor demonstra limite para redução direta de preço.',
+    risco: 'Travar a negociação exclusivamente em desconto.',
+    estrategia: 'Atuar em escopo, frequência, especificação, SLA, lote, logística ou prazo.',
+    alavancaPrincipal: 'Escopo',
+    proximaAcao: 'Abrir decomposição técnica da proposta.' },
+  OBJ04: { codigo: 'OBJ04', nome: 'Validar Valor Real', categoria: 'Econômico',
+    diagnostico: 'O vendedor utiliza diferenciação, liderança ou qualidade para justificar preço.',
+    risco: 'Pagar prêmio sem comprovação objetiva de valor.',
+    estrategia: 'Converter diferenciação em indicadores mensuráveis.',
+    alavancaPrincipal: 'Valor',
+    proximaAcao: 'Solicitar evidências concretas de resultado.' },
+  OBJ05: { codigo: 'OBJ05', nome: 'Validar Diferenciação sem Perder Relacionamento', categoria: 'Estratégico',
+    diagnostico: 'O vendedor usa relacionamento ou reputação para sustentar posição comercial.',
+    risco: 'Aceitar argumentos subjetivos ou desgastar a relação.',
+    estrategia: 'Reconhecer valor percebido e solicitar comprovação objetiva.',
+    alavancaPrincipal: 'Qualidade',
+    proximaAcao: 'Solicitar indicadores comparativos.' },
+  OBJ06: { codigo: 'OBJ06', nome: 'Reposicionar a Conversa para Valor Total', categoria: 'Estratégico',
+    diagnostico: 'O vendedor tenta deslocar a negociação de preço para valor.',
+    risco: 'Entrar em postura defensiva ou abandonar critérios econômicos.',
+    estrategia: 'Reforçar avaliação por TCO, risco, qualidade e performance.',
+    alavancaPrincipal: 'TCO',
+    proximaAcao: 'Apresentar matriz multicritério.' },
+  OBJ07: { codigo: 'OBJ07', nome: 'Garantir Capacidade', categoria: 'Estratégico',
+    diagnostico: 'O fornecedor indica limitação de atendimento ou produção.',
+    risco: 'Perder prioridade operacional.',
+    estrategia: 'Formalizar capacidade, reserva de volume e prioridade.',
+    alavancaPrincipal: 'Capacidade',
+    proximaAcao: 'Solicitar plano formal de capacidade.' },
+  OBJ08: { codigo: 'OBJ08', nome: 'Garantir Abastecimento', categoria: 'Estratégico',
+    diagnostico: 'Existe ameaça à continuidade de fornecimento.',
+    risco: 'Ruptura operacional.',
+    estrategia: 'Priorizar abastecimento, continuidade e contingência.',
+    alavancaPrincipal: 'Continuidade',
+    proximaAcao: 'Definir plano de abastecimento.' },
+  OBJ09: { codigo: 'OBJ09', nome: 'Reduzir Dependência', categoria: 'Risco',
+    diagnostico: 'O vendedor reforça exclusividade ou baixa substituibilidade.',
+    risco: 'Dependência excessiva.',
+    estrategia: 'Buscar segunda fonte, alternativas ou substituição parcial.',
+    alavancaPrincipal: 'Dependência',
+    proximaAcao: 'Construir plano de mitigação.' },
+  OBJ10: { codigo: 'OBJ10', nome: 'Validar Valor e Evitar Dependência', categoria: 'Risco',
+    diagnostico: 'O fornecedor sustenta diferencial tecnológico ou exclusivo.',
+    risco: 'Criar lock-in sem avaliar benefícios.',
+    estrategia: 'Mensurar valor entregue versus dependência criada.',
+    alavancaPrincipal: 'Tecnologia',
+    proximaAcao: 'Executar análise de dependência.' },
+  OBJ11: { codigo: 'OBJ11', nome: 'Reduzir Risco de Suprimento', categoria: 'Risco',
+    diagnostico: 'A objeção revela risco operacional, jurídico ou logístico.',
+    risco: 'Transferência inadequada de risco para o comprador.',
+    estrategia: 'Mapear riscos e controles.',
+    alavancaPrincipal: 'Risco',
+    proximaAcao: 'Criar matriz de risco.' },
+  OBJ12: { codigo: 'OBJ12', nome: 'Controlar Reajuste com Previsibilidade', categoria: 'Econômico',
+    diagnostico: 'O fornecedor busca reajuste recorrente ou estrutural.',
+    risco: 'Perda de previsibilidade financeira.',
+    estrategia: 'Estabelecer índices, gatilhos e critérios claros.',
+    alavancaPrincipal: 'Índice',
+    proximaAcao: 'Formalizar política de reajuste.' },
+  OBJ13: { codigo: 'OBJ13', nome: 'Validar Reajuste', categoria: 'Econômico',
+    diagnostico: 'Existe pedido de aumento baseado em custos.',
+    risco: 'Aceitar reajuste sem fundamento.',
+    estrategia: 'Validar premissas, índices e memória de cálculo.',
+    alavancaPrincipal: 'Custo',
+    proximaAcao: 'Auditar composição do reajuste.' },
+  OBJ14: { codigo: 'OBJ14', nome: 'Preservar Parceria e Capturar Valor', categoria: 'Estratégico',
+    diagnostico: 'O fornecedor possui relevância estratégica.',
+    risco: 'Deteriorar relacionamento ou capturar pouco valor.',
+    estrategia: 'Combinar parceria, governança e geração de valor.',
+    alavancaPrincipal: 'Relacionamento',
+    proximaAcao: 'Construir modelo ganha-ganha.' },
+  OBJ15: { codigo: 'OBJ15', nome: 'Melhorar Performance sem Romper Relação', categoria: 'Estratégico',
+    diagnostico: 'O fornecedor resiste a metas de prazo, SLA ou qualidade.',
+    risco: 'Aceitar performance inadequada ou gerar ruptura.',
+    estrategia: 'Implementar melhoria gradual.',
+    alavancaPrincipal: 'Performance',
+    proximaAcao: 'Criar plano evolutivo.' },
+  OBJ16: { codigo: 'OBJ16', nome: 'Evitar Pressão Artificial', categoria: 'Governança',
+    diagnostico: 'O vendedor utiliza urgência para acelerar decisão.',
+    risco: 'Tomar decisão sem análise adequada.',
+    estrategia: 'Validar urgência e preservar governança.',
+    alavancaPrincipal: 'Prazo',
+    proximaAcao: 'Solicitar formalização da condição.' },
+  OBJ17: { codigo: 'OBJ17', nome: 'Manter Avanço sem Alongar Negociação', categoria: 'Governança',
+    diagnostico: 'O vendedor utiliza aprovação interna como barreira.',
+    risco: 'Perder velocidade de negociação.',
+    estrategia: 'Apoiar aprovação e controlar prazo.',
+    alavancaPrincipal: 'Follow-up',
+    proximaAcao: 'Definir data de retorno.' },
+  OBJ18: { codigo: 'OBJ18', nome: 'Viabilizar Compra com Baixo Esforço', categoria: 'Operacional',
+    diagnostico: 'A categoria não justifica processo complexo.',
+    risco: 'Desperdício de tempo e energia.',
+    estrategia: 'Simplificar.',
+    alavancaPrincipal: 'Eficiência',
+    proximaAcao: 'Padronizar processo.' },
+  OBJ19: { codigo: 'OBJ19', nome: 'Padronizar e Reduzir Esforço', categoria: 'Operacional',
+    diagnostico: 'O processo possui excesso de customização.',
+    risco: 'Custo transacional elevado.',
+    estrategia: 'Automação e padronização.',
+    alavancaPrincipal: 'Padronização',
+    proximaAcao: 'Migrar para fluxo padrão.' },
+  OBJ20: { codigo: 'OBJ20', nome: 'Proteger Contrato sem Travar Negociação', categoria: 'Contratual',
+    diagnostico: 'Existe resistência contratual relevante.',
+    risco: 'Perder proteção jurídica ou travar o negócio.',
+    estrategia: 'Buscar equivalência de proteção.',
+    alavancaPrincipal: 'Contrato',
+    proximaAcao: 'Solicitar contraproposta jurídica.' },
 };
 
-// ===== §20–23 — Casos de Decisão (20; chave de lookup principal) =====
-const MOTOR_CASOS = [
-  {
-    id: 'CASE_D_01', perfil: 'D', objecaoId: 'OBJ_01', quadrante: 'alavancagem', objetivo: 'capturar_saving',
-    diagnostico: 'O vendedor está usando uma afirmação de limite para encerrar a discussão econômica e testar a pressão do comprador.',
-    risco: 'Aceitar a condição sem explorar contrapartidas ou alternativas competitivas.',
-    estrategia: 'Responder com objetividade, consequência e alternativas de negociação.',
-    frase: 'Entendo. Se esse é o limite de preço, precisamos avaliar contrapartidas objetivas: volume, prazo, SLA ou condição de pagamento. Sem algum ajuste, a proposta perde competitividade frente às alternativas.',
-    proximaAcao: 'Solicitar proposta revisada com contrapartidas claras e comparar com benchmark.',
-  },
-  {
-    id: 'CASE_D_02', perfil: 'D', objecaoId: 'OBJ_06', quadrante: 'estrategico', objetivo: 'garantir_capacidade',
-    diagnostico: 'O vendedor está usando escassez de capacidade como elemento de poder e pressão.',
-    risco: 'Aceitar condições desfavoráveis sem garantia formal de atendimento.',
-    estrategia: 'Transformar escassez em compromisso objetivo de capacidade, SLA e prioridade.',
-    frase: 'Se há restrição de capacidade, precisamos garantir prioridade com critérios objetivos: volume, prazo, SLA e compromisso formal. Sem isso, o risco operacional permanece.',
-    proximaAcao: 'Solicitar plano formal de capacidade e compromisso de atendimento.',
-  },
-  {
-    id: 'CASE_D_03', perfil: 'D', objecaoId: 'OBJ_20', quadrante: 'alavancagem', objetivo: 'evitar_pressao_artificial',
-    diagnostico: 'O vendedor está usando urgência como mecanismo de fechamento.',
-    risco: 'Decidir sem governança, comparação ou validação interna.',
-    estrategia: 'Validar a urgência, exigir formalização e preservar o processo competitivo.',
-    frase: 'Entendo a urgência. Para decidirmos nesse prazo, preciso que a condição venha acompanhada de ganho claro, validade formal e impacto objetivo. Caso contrário, seguiremos o processo competitivo.',
-    proximaAcao: 'Solicitar proposta formal e justificativa objetiva da validade.',
-  },
-  {
-    id: 'CASE_D_04', perfil: 'D', objecaoId: 'OBJ_17', quadrante: 'estrategico', objetivo: 'validar_valor_real',
-    diagnostico: 'O vendedor usa autoridade de mercado para sustentar posição comercial.',
-    risco: 'Pagar prêmio por reputação sem comprovar impacto real.',
-    estrategia: 'Reconhecer liderança, mas exigir tradução em indicadores concretos.',
-    frase: 'Reconheço a posição de vocês. Agora precisamos traduzir essa liderança em resultado mensurável para nossa operação: performance, risco, SLA e impacto no custo total.',
-    proximaAcao: 'Solicitar indicadores de performance, cases e dados comparativos.',
-  },
-  {
-    id: 'CASE_D_05', perfil: 'D', objecaoId: 'OBJ_19', quadrante: 'gargalo', objetivo: 'reduzir_dependencia',
-    diagnostico: 'O vendedor reforça uma posição de baixa substituibilidade para aumentar poder de barganha.',
-    risco: 'Aumentar dependência sem garantias, plano de contingência ou compromisso de continuidade.',
-    estrategia: 'Tratar a criticidade com contrapartidas formais e plano de mitigação.',
-    frase: 'Se não há equivalente direto, precisamos discutir valor total, compromisso de entrega e contrapartidas proporcionais à criticidade. Também precisamos de um plano claro de continuidade.',
-    proximaAcao: 'Mapear dependência, alternativas parciais e plano de contingência.',
-  },
-  {
-    id: 'CASE_I_01', perfil: 'I', objecaoId: 'OBJ_02', quadrante: 'estrategico', objetivo: 'validar_diferenciacao',
-    diagnostico: 'O vendedor está tentando sustentar valor por reputação e percepção de qualidade.',
-    risco: 'Aceitar argumento relacional ou reputacional sem evidência objetiva.',
-    estrategia: 'Reconhecer a qualidade percebida e pedir evidências aplicáveis à operação.',
-    frase: 'Reconheço o valor da relação e da qualidade entregue. Para sustentar internamente essa escolha, precisamos mostrar de forma clara o diferencial de vocês em performance, risco e resultado.',
-    proximaAcao: 'Solicitar indicadores de qualidade, histórico e comparação com alternativas.',
-  },
-  {
-    id: 'CASE_I_02', perfil: 'I', objecaoId: 'OBJ_15', quadrante: 'alavancagem', objetivo: 'reposicionar_valor_total',
-    diagnostico: 'O vendedor está usando uma objeção emocional para tentar retirar a negociação do campo econômico.',
-    risco: 'Ficar defensivo ou abandonar critérios objetivos.',
-    estrategia: 'Validar a parceria e explicar critérios de valor total.',
-    frase: 'A parceria importa muito para nós. Justamente por isso avaliamos mais do que preço: consideramos TCO, qualidade, SLA, risco e sustentabilidade da relação.',
-    proximaAcao: 'Apresentar matriz de avaliação multicritério.',
-  },
-  {
-    id: 'CASE_I_03', perfil: 'I', objecaoId: 'OBJ_09', quadrante: 'estrategico', objetivo: 'preservar_parceria',
-    diagnostico: 'O vendedor busca proteger margem usando linguagem de sustentabilidade da relação.',
-    risco: 'Ceder sem contrapartida por receio de prejudicar a parceria.',
-    estrategia: 'Reforçar parceria, mas abrir alavancas de valor.',
-    frase: 'Queremos uma relação sustentável. Vamos encontrar um ponto que preserve a parceria e atenda aos critérios internos de compra, olhando preço, volume, prazo, escopo e previsibilidade.',
-    proximaAcao: 'Construir cenário com alternativas comerciais e contrapartidas.',
-  },
-  {
-    id: 'CASE_I_04', perfil: 'I', objecaoId: 'OBJ_18', quadrante: 'estrategico', objetivo: 'validar_valor_evitar_dependencia',
-    diagnostico: 'O vendedor usa diferenciação tecnológica como argumento de valor e prestígio.',
-    risco: 'Aceitar dependência sem comprovar impacto operacional.',
-    estrategia: 'Reconhecer o diferencial e pedir demonstração do impacto concreto.',
-    frase: 'A tecnologia de vocês pode fortalecer muito a parceria. Vamos mostrar internamente como esse diferencial gera valor concreto em desempenho, risco, eficiência ou continuidade.',
-    proximaAcao: 'Solicitar demonstração, comparativo funcional e avaliação de dependência.',
-  },
-  {
-    id: 'CASE_I_05', perfil: 'I', objecaoId: 'OBJ_12', quadrante: 'nao_criticos', objetivo: 'manter_avanco',
-    diagnostico: 'O vendedor precisa alinhar internamente ou está usando aprovação como adiamento.',
-    risco: 'A negociação se alongar em uma categoria que deveria ser simples.',
-    estrategia: 'Apoiar a aprovação, mas fixar prazo e próximos passos.',
-    frase: 'Claro. Posso te ajudar a estruturar a mensagem para que sua aprovação interna seja mais fluida. Para mantermos o avanço, combinamos um retorno até amanhã com as duas opções fechadas?',
-    proximaAcao: 'Definir prazo de retorno e condições objetivas para aprovação.',
-  },
-  {
-    id: 'CASE_S_01', perfil: 'S', objecaoId: 'OBJ_11', quadrante: 'gargalo', objetivo: 'garantir_abastecimento',
-    diagnostico: 'O vendedor demonstra preocupação real ou percebida com estabilidade operacional.',
-    risco: 'Pressionar prazo inviável ou aceitar atraso sem mitigação.',
-    estrategia: 'Construir plano faseado, previsível e com contingência.',
-    frase: 'Podemos estruturar uma transição por etapas, com prazos realistas e menor risco de ruptura. O importante é garantir segurança para sua operação e continuidade para a nossa.',
-    proximaAcao: 'Solicitar cronograma por fases e plano de contingência.',
-  },
-  {
-    id: 'CASE_S_02', perfil: 'S', objecaoId: 'OBJ_10', quadrante: 'estrategico', objetivo: 'melhorar_performance',
-    diagnostico: 'O vendedor evita assumir obrigação que percebe como arriscada.',
-    risco: 'Aceitar SLA abaixo do necessário ou criar pressão excessiva.',
-    estrategia: 'Propor evolução gradual com marcos e segurança operacional.',
-    frase: 'Podemos estruturar uma evolução gradual do SLA, com marcos de melhoria e segurança operacional. Assim evitamos ruptura e construímos performance de forma sustentável.',
-    proximaAcao: 'Definir SLA mínimo, SLA-alvo e plano de evolução.',
-  },
-  {
-    id: 'CASE_S_03', perfil: 'S', objecaoId: 'OBJ_03', quadrante: 'estrategico', objetivo: 'controlar_reajuste',
-    diagnostico: 'O vendedor busca repassar custos, mas pode estar sensível a estabilidade e continuidade.',
-    risco: 'Aceitar aumento integral sem estrutura ou romper estabilidade da relação.',
-    estrategia: 'Revisar custos com calma, usar índices e propor previsibilidade futura.',
-    frase: 'Podemos revisar os custos de forma estruturada, evitando mudanças bruscas e criando previsibilidade para os próximos ciclos. Vamos separar o impacto real do que pode ser compensado por eficiência.',
-    proximaAcao: 'Solicitar índice, período de referência e proposta com vigência definida.',
-  },
-  {
-    id: 'CASE_S_04', perfil: 'S', objecaoId: 'OBJ_16', quadrante: 'gargalo', objetivo: 'reduzir_risco_suprimento',
-    diagnostico: 'O vendedor está avesso a exposição e precisa de clareza sobre limites de responsabilidade.',
-    risco: 'Assumir risco demais ou deixar risco sem dono.',
-    estrategia: 'Construir matriz de risco, limites e mitigadores.',
-    frase: 'Podemos criar um modelo de transição, limites claros e plano de contingência para reduzir insegurança. O objetivo é que o risco fique claro e controlado para os dois lados.',
-    proximaAcao: 'Criar matriz de risco com responsabilidades e plano de mitigação.',
-  },
-  {
-    id: 'CASE_S_05', perfil: 'S', objecaoId: 'OBJ_04', quadrante: 'nao_criticos', objetivo: 'viabilizar_compra_baixo_esforco',
-    diagnostico: 'O vendedor teme baixa atratividade e possível ineficiência operacional.',
-    risco: 'Gastar energia excessiva em categoria simples ou aceitar sobrepreço desnecessário.',
-    estrategia: 'Propor padronização, recorrência ou consolidação simples.',
-    frase: 'Podemos estruturar um modelo gradual, começando com menor volume e criando previsibilidade para evolução futura, sem tornar o processo mais complexo do que precisa ser.',
-    proximaAcao: 'Avaliar catálogo, pedido mínimo, recorrência ou consolidação com outros itens.',
-  },
-  {
-    id: 'CASE_C_01', perfil: 'C', objecaoId: 'OBJ_07', quadrante: 'alavancagem', objetivo: 'validar_competitividade',
-    diagnostico: 'O vendedor resiste à transparência, possivelmente por proteção de margem ou política interna.',
-    risco: 'Ficar sem base técnica para validar preço ou reajuste.',
-    estrategia: 'Substituir abertura total por evidência parcial, benchmark e premissas.',
-    frase: 'Podemos substituir a abertura completa por memória de cálculo resumida, índices verificáveis, premissas e benchmark independente. O objetivo é validar competitividade sem expor informações sensíveis.',
-    proximaAcao: 'Solicitar dados agregados, índice de referência e benchmark comparativo.',
-  },
-  {
-    id: 'CASE_C_02', perfil: 'C', objecaoId: 'OBJ_08', quadrante: 'nao_criticos', objetivo: 'padronizar_reduzir_esforco',
-    diagnostico: 'O vendedor usa política comercial como barreira a negociação.',
-    risco: 'Discutir demais uma categoria de baixa criticidade ou aceitar preço sem lógica.',
-    estrategia: 'Validar se o preço padrão é adequado ao volume, escopo e processo.',
-    frase: 'Vamos comparar a condição padrão com o perfil da demanda, volume, SLA, prazo e benchmark para avaliar se ela é tecnicamente adequada.',
-    proximaAcao: 'Comparar preço padrão com catálogo, benchmark e custo transacional.',
-  },
-  {
-    id: 'CASE_C_03', perfil: 'C', objecaoId: 'OBJ_13', quadrante: 'estrategico', objetivo: 'proteger_contrato',
-    diagnostico: 'O vendedor identifica risco contratual e precisa de base técnica para aceitar alternativa.',
-    risco: 'Abrir mão de proteção crítica ou criar impasse jurídico.',
-    estrategia: 'Analisar risco específico e propor redação equivalente.',
-    frase: 'Vamos analisar o risco específico, comparar com contratos similares e ajustar a redação com base técnica, desde que a proteção operacional seja preservada.',
-    proximaAcao: 'Solicitar contraproposta jurídica com matriz de risco.',
-  },
-  {
-    id: 'CASE_C_04', perfil: 'C', objecaoId: 'OBJ_03', quadrante: 'alavancagem', objetivo: 'validar_reajuste',
-    diagnostico: 'O vendedor apresenta justificativa econômica que exige validação objetiva.',
-    risco: 'Aceitar aumento sem índice, base de cálculo ou comparação de mercado.',
-    estrategia: 'Exigir memória de cálculo, índice, período e impacto real.',
-    frase: 'Vamos analisar índices, período de referência, componentes impactados e memória de cálculo para validar tecnicamente o reajuste.',
-    proximaAcao: 'Solicitar documentação do reajuste e simular impacto no TCO.',
-  },
-  {
-    id: 'CASE_C_05', perfil: 'C', objecaoId: 'OBJ_14', quadrante: 'alavancagem', objetivo: 'encontrar_alavancas_reducao',
-    diagnostico: 'O vendedor indica limite de concessão e precisa discutir variáveis objetivas.',
-    risco: 'Repetir pressão por desconto sem alterar variáveis econômicas.',
-    estrategia: 'Analisar componentes de custo e alavancas técnicas.',
-    frase: 'Vamos verificar tecnicamente quais componentes de custo são fixos e quais podem ser otimizados. Podemos avaliar volume, frequência, escopo, prazo e SLA para encontrar uma condição defensável.',
-    proximaAcao: 'Criar análise de sensibilidade com variáveis comerciais e técnicas.',
-  },
-];
+// ===== §5 (4.0) — Matriz Oficial de Inferência (84 = 21 objeções × 4 quadrantes) =====
+// Chave = objecaoId + '|' + quadrante  →  { primario, secundario } (códigos OBJxx).
+// Transcrita da spec §5; o texto da objeção foi convertido para o ID OBJ_xx.
+const MOTOR_REGRAS = {
+  // GRUPO 1 — Preço e margem
+  'OBJ_01|alavancagem': { primario: 'OBJ01', secundario: 'OBJ03' },
+  'OBJ_01|estrategico': { primario: 'OBJ14', secundario: 'OBJ04' },
+  'OBJ_01|gargalo': { primario: 'OBJ08', secundario: 'OBJ11' },
+  'OBJ_01|nao_criticos': { primario: 'OBJ19', secundario: 'OBJ18' },
 
-// ===== §26–27 — Regras de qualidade e ética =====
-const MOTOR_ETHICS = {
-  nuncaRecomendar: ['Mentira', 'Blefe falso', 'Pressão abusiva', 'Manipulação emocional', 'Informação inventada', 'Benchmark fictício', 'Urgência falsa', 'Ameaça indevida'],
-  semprePriorizar: ['Ética', 'Transparência', 'Critério técnico', 'Dados verificáveis', 'Preservação da relação', 'Criação de valor', 'Sustentabilidade do acordo'],
-  regrasQualidade: [
-    'Responder sempre pela ótica do comprador.',
-    'Considerar DISC, objeção e Kraljic.',
-    'Ser específica e prática.',
-    'Sugerir frase aplicável.',
-    'Indicar risco e próxima ação.',
-    'Evitar generalidades.',
-    'Não inventar dados.',
-    'Não criar benchmarks fictícios.',
-    'Não recomendar blefes falsos.',
-    'Não incentivar manipulação emocional.',
-  ],
+  'OBJ_08|alavancagem': { primario: 'OBJ01', secundario: 'OBJ02' },
+  'OBJ_08|estrategico': { primario: 'OBJ14', secundario: 'OBJ04' },
+  'OBJ_08|gargalo': { primario: 'OBJ08', secundario: 'OBJ11' },
+  'OBJ_08|nao_criticos': { primario: 'OBJ19', secundario: 'OBJ18' },
+
+  'OBJ_14|alavancagem': { primario: 'OBJ03', secundario: 'OBJ01' },
+  'OBJ_14|estrategico': { primario: 'OBJ14', secundario: 'OBJ04' },
+  'OBJ_14|gargalo': { primario: 'OBJ11', secundario: 'OBJ08' },
+  'OBJ_14|nao_criticos': { primario: 'OBJ19', secundario: 'OBJ18' },
+
+  'OBJ_09|alavancagem': { primario: 'OBJ03', secundario: 'OBJ01' },
+  'OBJ_09|estrategico': { primario: 'OBJ14', secundario: 'OBJ04' },
+  'OBJ_09|gargalo': { primario: 'OBJ08', secundario: 'OBJ11' },
+  'OBJ_09|nao_criticos': { primario: 'OBJ19', secundario: 'OBJ18' },
+
+  'OBJ_21|alavancagem': { primario: 'OBJ03', secundario: 'OBJ01' },
+  'OBJ_21|estrategico': { primario: 'OBJ14', secundario: 'OBJ05' },
+  'OBJ_21|gargalo': { primario: 'OBJ08', secundario: 'OBJ11' },
+  'OBJ_21|nao_criticos': { primario: 'OBJ19', secundario: 'OBJ18' },
+
+  // GRUPO 2 — Valor e diferenciação
+  'OBJ_17|alavancagem': { primario: 'OBJ04', secundario: 'OBJ02' },
+  'OBJ_17|estrategico': { primario: 'OBJ14', secundario: 'OBJ04' },
+  'OBJ_17|gargalo': { primario: 'OBJ09', secundario: 'OBJ10' },
+  'OBJ_17|nao_criticos': { primario: 'OBJ19', secundario: 'OBJ18' },
+
+  'OBJ_18|alavancagem': { primario: 'OBJ04', secundario: 'OBJ02' },
+  'OBJ_18|estrategico': { primario: 'OBJ10', secundario: 'OBJ14' },
+  'OBJ_18|gargalo': { primario: 'OBJ09', secundario: 'OBJ10' },
+  'OBJ_18|nao_criticos': { primario: 'OBJ19', secundario: 'OBJ18' },
+
+  'OBJ_19|alavancagem': { primario: 'OBJ02', secundario: 'OBJ04' },
+  'OBJ_19|estrategico': { primario: 'OBJ10', secundario: 'OBJ14' },
+  'OBJ_19|gargalo': { primario: 'OBJ09', secundario: 'OBJ10' },
+  'OBJ_19|nao_criticos': { primario: 'OBJ19', secundario: 'OBJ18' },
+
+  'OBJ_02|alavancagem': { primario: 'OBJ04', secundario: 'OBJ02' },
+  'OBJ_02|estrategico': { primario: 'OBJ05', secundario: 'OBJ14' },
+  'OBJ_02|gargalo': { primario: 'OBJ08', secundario: 'OBJ09' },
+  'OBJ_02|nao_criticos': { primario: 'OBJ19', secundario: 'OBJ18' },
+
+  // GRUPO 3 — Custos e reajustes
+  'OBJ_03|alavancagem': { primario: 'OBJ13', secundario: 'OBJ03' },
+  'OBJ_03|estrategico': { primario: 'OBJ12', secundario: 'OBJ14' },
+  'OBJ_03|gargalo': { primario: 'OBJ12', secundario: 'OBJ11' },
+  'OBJ_03|nao_criticos': { primario: 'OBJ19', secundario: 'OBJ18' },
+
+  'OBJ_07|alavancagem': { primario: 'OBJ02', secundario: 'OBJ13' },
+  'OBJ_07|estrategico': { primario: 'OBJ14', secundario: 'OBJ12' },
+  'OBJ_07|gargalo': { primario: 'OBJ11', secundario: 'OBJ08' },
+  'OBJ_07|nao_criticos': { primario: 'OBJ19', secundario: 'OBJ18' },
+
+  // GRUPO 4 — Capacidade e atendimento
+  'OBJ_04|alavancagem': { primario: 'OBJ01', secundario: 'OBJ03' },
+  'OBJ_04|estrategico': { primario: 'OBJ14', secundario: 'OBJ07' },
+  'OBJ_04|gargalo': { primario: 'OBJ08', secundario: 'OBJ11' },
+  'OBJ_04|nao_criticos': { primario: 'OBJ18', secundario: 'OBJ19' },
+
+  'OBJ_06|alavancagem': { primario: 'OBJ02', secundario: 'OBJ01' },
+  'OBJ_06|estrategico': { primario: 'OBJ07', secundario: 'OBJ14' },
+  'OBJ_06|gargalo': { primario: 'OBJ08', secundario: 'OBJ11' },
+  'OBJ_06|nao_criticos': { primario: 'OBJ18', secundario: 'OBJ19' },
+
+  'OBJ_11|alavancagem': { primario: 'OBJ02', secundario: 'OBJ15' },
+  'OBJ_11|estrategico': { primario: 'OBJ15', secundario: 'OBJ14' },
+  'OBJ_11|gargalo': { primario: 'OBJ08', secundario: 'OBJ11' },
+  'OBJ_11|nao_criticos': { primario: 'OBJ18', secundario: 'OBJ19' },
+
+  'OBJ_10|alavancagem': { primario: 'OBJ15', secundario: 'OBJ02' },
+  'OBJ_10|estrategico': { primario: 'OBJ15', secundario: 'OBJ14' },
+  'OBJ_10|gargalo': { primario: 'OBJ11', secundario: 'OBJ08' },
+  'OBJ_10|nao_criticos': { primario: 'OBJ19', secundario: 'OBJ18' },
+
+  // GRUPO 5 — Contratual e governança
+  'OBJ_05|alavancagem': { primario: 'OBJ01', secundario: 'OBJ03' },
+  'OBJ_05|estrategico': { primario: 'OBJ14', secundario: 'OBJ12' },
+  'OBJ_05|gargalo': { primario: 'OBJ08', secundario: 'OBJ11' },
+  'OBJ_05|nao_criticos': { primario: 'OBJ19', secundario: 'OBJ18' },
+
+  'OBJ_12|alavancagem': { primario: 'OBJ17', secundario: 'OBJ01' },
+  'OBJ_12|estrategico': { primario: 'OBJ14', secundario: 'OBJ17' },
+  'OBJ_12|gargalo': { primario: 'OBJ08', secundario: 'OBJ11' },
+  'OBJ_12|nao_criticos': { primario: 'OBJ17', secundario: 'OBJ19' },
+
+  'OBJ_13|alavancagem': { primario: 'OBJ20', secundario: 'OBJ03' },
+  'OBJ_13|estrategico': { primario: 'OBJ20', secundario: 'OBJ14' },
+  'OBJ_13|gargalo': { primario: 'OBJ11', secundario: 'OBJ08' },
+  'OBJ_13|nao_criticos': { primario: 'OBJ19', secundario: 'OBJ18' },
+
+  'OBJ_16|alavancagem': { primario: 'OBJ03', secundario: 'OBJ20' },
+  'OBJ_16|estrategico': { primario: 'OBJ20', secundario: 'OBJ14' },
+  'OBJ_16|gargalo': { primario: 'OBJ11', secundario: 'OBJ08' },
+  'OBJ_16|nao_criticos': { primario: 'OBJ19', secundario: 'OBJ18' },
+
+  'OBJ_15|alavancagem': { primario: 'OBJ06', secundario: 'OBJ04' },
+  'OBJ_15|estrategico': { primario: 'OBJ14', secundario: 'OBJ05' },
+  'OBJ_15|gargalo': { primario: 'OBJ08', secundario: 'OBJ09' },
+  'OBJ_15|nao_criticos': { primario: 'OBJ19', secundario: 'OBJ18' },
+
+  'OBJ_20|alavancagem': { primario: 'OBJ16', secundario: 'OBJ17' },
+  'OBJ_20|estrategico': { primario: 'OBJ14', secundario: 'OBJ16' },
+  'OBJ_20|gargalo': { primario: 'OBJ08', secundario: 'OBJ11' },
+  'OBJ_20|nao_criticos': { primario: 'OBJ17', secundario: 'OBJ19' },
+};
+
+// ===== §6 (4.0) — Biblioteca DISC de Frases (80 = 20 objetivos × 4 perfis) =====
+// Chave = objetivoCodigo + '|' + perfil. A frase é a única parte adaptada ao DISC.
+const MOTOR_FRASES = {
+  'OBJ01|D': 'Entendo sua posição. Considerando volume, recorrência e potencial da oportunidade, precisamos revisar a condição para garantir competitividade frente às alternativas disponíveis.',
+  'OBJ01|I': 'Entendo sua posição e quero preservar uma relação sustentável para ambos. Vamos buscar uma condição que gere valor para vocês e seja defensável internamente para nós.',
+  'OBJ01|S': 'Entendo. Podemos avaliar alternativas que tragam previsibilidade e segurança para os dois lados sem comprometer a continuidade da operação.',
+  'OBJ01|C': 'Vamos analisar benchmark, TCO e composição da proposta para identificar oportunidades objetivas de redução.',
+
+  'OBJ02|D': 'Preciso entender como sua proposta se posiciona frente ao mercado para justificar uma decisão competitiva.',
+  'OBJ02|I': 'Quero garantir que estamos tomando a melhor decisão possível sem perder os benefícios da parceria construída.',
+  'OBJ02|S': 'Vamos comparar as opções disponíveis de forma estruturada para reduzir riscos e aumentar segurança na decisão.',
+  'OBJ02|C': 'Precisamos comparar preço, escopo, SLA, TCO e critérios técnicos para validar a competitividade da proposta.',
+
+  'OBJ03|D': 'Se o preço já atingiu seu limite, vamos trabalhar outras alavancas que possam melhorar a competitividade da proposta.',
+  'OBJ03|I': 'Talvez exista uma forma de gerar valor para ambos sem concentrar toda a negociação exclusivamente em preço.',
+  'OBJ03|S': 'Podemos avaliar ajustes graduais em escopo, frequência ou modelo operacional para reduzir impacto para ambos.',
+  'OBJ03|C': 'Vamos decompor os fatores que influenciam custo para identificar oportunidades técnicas de otimização.',
+
+  'OBJ04|D': 'Se existe um diferencial relevante, preciso entender qual resultado concreto ele entrega para justificar essa condição.',
+  'OBJ04|I': 'Reconheço o valor que vocês afirmam entregar. Vamos traduzir isso em benefícios objetivos para facilitar nossa decisão.',
+  'OBJ04|S': 'Gostaria de entender como esse diferencial contribui para estabilidade, segurança e continuidade da operação.',
+  'OBJ04|C': 'Precisamos medir esse diferencial por meio de indicadores, evidências e resultados comparáveis.',
+
+  'OBJ05|D': 'Reconheço seu posicionamento. Agora precisamos comprovar objetivamente o valor adicional entregue.',
+  'OBJ05|I': 'Valorizamos muito a relação construída. Para avançarmos, precisamos demonstrar internamente o diferencial de vocês.',
+  'OBJ05|S': 'Vamos analisar o diferencial apresentado sem comprometer a confiança e a estabilidade da relação.',
+  'OBJ05|C': 'Gostaria de avaliar métricas comparativas que sustentem tecnicamente essa diferenciação.',
+
+  'OBJ06|D': 'Preço é apenas uma variável. Precisamos avaliar o resultado total gerado pela solução.',
+  'OBJ06|I': 'Nosso objetivo é construir valor para ambos e não apenas discutir preço isoladamente.',
+  'OBJ06|S': 'Precisamos avaliar todos os impactos da decisão para garantir uma solução equilibrada e sustentável.',
+  'OBJ06|C': 'Vamos analisar TCO, SLA, risco, qualidade e performance para tomar uma decisão completa.',
+
+  'OBJ07|D': 'Precisamos de uma garantia clara de capacidade para sustentar nossa operação.',
+  'OBJ07|I': 'Quero construir uma solução que dê previsibilidade para ambos e preserve nossa parceria.',
+  'OBJ07|S': 'Vamos estruturar um planejamento que ofereça segurança e estabilidade operacional.',
+  'OBJ07|C': 'Preciso validar capacidade produtiva, lead time e critérios de priorização para reduzir riscos.',
+
+  'OBJ08|D': 'O ponto principal é assegurar continuidade de fornecimento sem risco para nossa operação.',
+  'OBJ08|I': 'Precisamos encontrar uma solução que preserve a parceria e garanta atendimento contínuo.',
+  'OBJ08|S': 'Vamos construir um plano de abastecimento previsível e seguro para ambos.',
+  'OBJ08|C': 'Gostaria de validar plano de continuidade, lead time e contingências disponíveis.',
+
+  'OBJ09|D': 'Precisamos reduzir riscos associados à concentração excessiva em uma única alternativa.',
+  'OBJ09|I': 'Quero preservar a relação, mas também construir um modelo sustentável para o longo prazo.',
+  'OBJ09|S': 'Precisamos garantir segurança operacional mesmo em cenários de mudança.',
+  'OBJ09|C': 'Vamos avaliar objetivamente o grau de dependência e os riscos associados.',
+
+  'OBJ10|D': 'Se a tecnologia gera valor superior, precisamos medir esse ganho frente ao risco de dependência.',
+  'OBJ10|I': 'Reconheço o diferencial da solução. Vamos avaliar como maximizar valor sem criar vulnerabilidades futuras.',
+  'OBJ10|S': 'Precisamos garantir que a adoção dessa tecnologia preserve estabilidade e continuidade.',
+  'OBJ10|C': 'Gostaria de comparar benefícios, riscos, substituibilidade e impacto operacional.',
+
+  'OBJ11|D': 'Precisamos reduzir a exposição ao risco antes de avançar. Quero entender quais garantias existem para assegurar continuidade e minimizar impactos na operação.',
+  'OBJ11|I': 'Quero construir uma solução segura para ambos os lados, preservando a parceria e reduzindo vulnerabilidades futuras.',
+  'OBJ11|S': 'Vamos estruturar uma alternativa que aumente previsibilidade e reduza riscos para nossas operações.',
+  'OBJ11|C': 'Gostaria de avaliar objetivamente os riscos envolvidos, os controles existentes e os mecanismos de mitigação disponíveis.',
+
+  'OBJ12|D': 'Entendo a necessidade de reajuste, mas precisamos construir uma regra previsível que evite impactos inesperados ao longo do contrato.',
+  'OBJ12|I': 'Vamos encontrar um modelo de reajuste que preserve a relação e dê previsibilidade para ambos.',
+  'OBJ12|S': 'Precisamos criar uma estrutura estável que reduza incertezas futuras para nossas equipes.',
+  'OBJ12|C': 'Gostaria de formalizar critérios objetivos, índices e gatilhos para garantir previsibilidade financeira.',
+
+  'OBJ13|D': 'Antes de aprovar qualquer reajuste, preciso entender claramente os fatores que justificam esse aumento.',
+  'OBJ13|I': 'Vamos analisar juntos os fundamentos do reajuste para garantir uma decisão justa para ambos.',
+  'OBJ13|S': 'Quero compreender os impactos desse reajuste de forma estruturada para evitar riscos futuros.',
+  'OBJ13|C': 'Precisamos validar memória de cálculo, índices utilizados, período de referência e componentes impactados.',
+
+  'OBJ14|D': 'Nosso objetivo é manter uma relação estratégica, mas também garantir geração de valor para ambos os lados.',
+  'OBJ14|I': 'Valorizamos muito essa parceria e queremos construir uma solução que fortaleça nossa relação no longo prazo.',
+  'OBJ14|S': 'Precisamos encontrar um equilíbrio que preserve estabilidade, continuidade e benefícios mútuos.',
+  'OBJ14|C': 'Vamos avaliar a proposta considerando valor total, riscos, performance e perspectivas futuras da parceria.',
+
+  'OBJ15|D': 'Precisamos melhorar os resultados atuais sem comprometer a continuidade da relação.',
+  'OBJ15|I': 'Quero encontrar um caminho de evolução que fortaleça a parceria e aumente a performance.',
+  'OBJ15|S': 'Vamos construir um plano gradual de melhoria que seja seguro para todos os envolvidos.',
+  'OBJ15|C': 'Precisamos definir indicadores claros, metas mensuráveis e um plano estruturado de evolução.',
+
+  'OBJ16|D': 'Entendo a urgência, mas precisamos tomar uma decisão baseada em valor e não apenas em prazo.',
+  'OBJ16|I': 'Quero avançar rapidamente, mas também garantir que a decisão seja boa para ambos.',
+  'OBJ16|S': 'Precisamos de tempo suficiente para avaliar a proposta sem comprometer a segurança da decisão.',
+  'OBJ16|C': 'Gostaria de entender objetivamente o motivo da limitação de prazo e validar os impactos envolvidos.',
+
+  'OBJ17|D': 'Vamos definir claramente os próximos passos para evitar atrasos desnecessários.',
+  'OBJ17|I': 'Posso ajudar a acelerar os alinhamentos internos para mantermos o ritmo da negociação.',
+  'OBJ17|S': 'Vamos organizar um cronograma simples para garantir continuidade e previsibilidade.',
+  'OBJ17|C': 'Precisamos estabelecer responsáveis, critérios de aprovação e datas objetivas para avançar.',
+
+  'OBJ18|D': 'Precisamos encontrar uma solução simples e rápida que resolva a necessidade sem gerar complexidade desnecessária.',
+  'OBJ18|I': 'Vamos buscar uma alternativa prática que funcione bem para todos os envolvidos.',
+  'OBJ18|S': 'Gostaria de construir um processo simples e previsível para reduzir esforço operacional.',
+  'OBJ18|C': 'Vamos simplificar o fluxo mantendo os controles necessários para garantir conformidade.',
+
+  'OBJ19|D': 'Precisamos reduzir complexidade e tornar esse processo mais eficiente.',
+  'OBJ19|I': 'Uma solução padronizada pode beneficiar todos os envolvidos e facilitar nossa interação.',
+  'OBJ19|S': 'Vamos estruturar um modelo estável que reduza retrabalho e aumente previsibilidade.',
+  'OBJ19|C': 'Gostaria de formalizar um padrão operacional que reduza custo transacional e aumente eficiência.',
+
+  'OBJ20|D': 'Precisamos preservar as proteções essenciais do contrato sem impedir o avanço do negócio.',
+  'OBJ20|I': 'Quero encontrar uma solução equilibrada que proteja ambos os lados e preserve a relação.',
+  'OBJ20|S': 'Vamos construir uma alternativa contratual que gere segurança sem criar barreiras desnecessárias.',
+  'OBJ20|C': 'Precisamos analisar tecnicamente a cláusula e buscar uma redação equivalente que preserve a proteção necessária.',
 };
 
 // ===== Índices de lookup (montados a partir dos dados acima) =====
@@ -727,40 +783,14 @@ MOTOR_OBJECOES.forEach(function (o) {
   MOTOR_OBJECOES_BY_TEXT[motorNormalizeText(o.texto)] = o.id;
 });
 
-// mapaCasos: texto verboso normalizado -> slug, e também slug -> slug (idempotente).
-Object.keys(MOTOR_OBJETIVOS.slugs).forEach(function (slug) {
-  MOTOR_OBJETIVOS.mapaCasos[motorNormalizeText(MOTOR_OBJETIVOS.slugs[slug])] = slug;
-  MOTOR_OBJETIVOS.mapaCasos[slug] = slug;
-});
-
-const MOTOR_CASOS_BY_KEY = {};
-const MOTOR_CASOS_BY_PERFIL_OBJ = {};
-MOTOR_CASOS.forEach(function (c) {
-  const key = c.perfil + '|' + c.objecaoId + '|' + c.quadrante + '|' + c.objetivo;
-  MOTOR_CASOS_BY_KEY[key] = c;
-  const pk = c.perfil + '|' + c.objecaoId;
-  if (!MOTOR_CASOS_BY_PERFIL_OBJ[pk]) MOTOR_CASOS_BY_PERFIL_OBJ[pk] = [];
-  MOTOR_CASOS_BY_PERFIL_OBJ[pk].push(c);
-});
-// Garante ordem determinística (por id) dentro de cada bucket parcial.
-Object.keys(MOTOR_CASOS_BY_PERFIL_OBJ).forEach(function (pk) {
-  MOTOR_CASOS_BY_PERFIL_OBJ[pk].sort(function (a, b) {
-    return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
-  });
-});
-
 // ===== Exposição global =====
 window.motorNormalizeText = motorNormalizeText;
 window.MOTOR_DISC = MOTOR_DISC;
-window.MOTOR_SINAIS = MOTOR_SINAIS;
-window.MOTOR_RAIS = MOTOR_RAIS;
 window.MOTOR_KRALJIC = MOTOR_KRALJIC;
 window.MOTOR_OBJECOES = MOTOR_OBJECOES;
 window.MOTOR_OBJECOES_BY_ID = MOTOR_OBJECOES_BY_ID;
 window.MOTOR_OBJECOES_BY_TEXT = MOTOR_OBJECOES_BY_TEXT;
 window.MOTOR_RESPOSTAS = MOTOR_RESPOSTAS;
 window.MOTOR_OBJETIVOS = MOTOR_OBJETIVOS;
-window.MOTOR_CASOS = MOTOR_CASOS;
-window.MOTOR_CASOS_BY_KEY = MOTOR_CASOS_BY_KEY;
-window.MOTOR_CASOS_BY_PERFIL_OBJ = MOTOR_CASOS_BY_PERFIL_OBJ;
-window.MOTOR_ETHICS = MOTOR_ETHICS;
+window.MOTOR_REGRAS = MOTOR_REGRAS;
+window.MOTOR_FRASES = MOTOR_FRASES;

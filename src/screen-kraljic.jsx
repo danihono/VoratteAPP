@@ -79,10 +79,35 @@ function KraljicScreen({ go, user }) {
   const dotX = kr.axis.riscoSuprimento;
   const dotY = kr.axis.impactoFinanceiro;
 
+  // Dados do motor para o quadrante em foco — compartilhados entre o topo
+  // ("sua próxima ação", na coluna direita da matriz) e a seção de detalhe.
+  const mk = (window.MOTOR_KRALJIC && window.MOTOR_KRALJIC[act.id]) || null;
+  const discVend = (window.MOTOR_DISC && window.MOTOR_DISC[vendedor]) || { nome: vendedor };
+  const usoRaw = (mk && mk.usoDISC && mk.usoDISC[vendedor]) || '';
+  const usoFmt = usoRaw ? usoRaw.charAt(0).toUpperCase() + usoRaw.slice(1) : '';
+  const naoAceitar = (act.kp.whatToAvoid || []).map(function (it) {
+    return (window.voratteKavoid && window.voratteKavoid(it)) || it;
+  });
+  const secLabel = { fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--muted)', fontWeight: 700, margin: '22px 0 12px' };
+  function cardRow(rows) {
+    return (
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+        {rows.map(function (row) {
+          return (
+            <div key={row[0]} style={{ padding: 16, borderRadius: 12, background: 'var(--paper-warm)', border: '1px solid var(--line)' }}>
+              <div style={{ fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--muted)', fontWeight: 600, marginBottom: 5 }}>{row[0]}</div>
+              <div style={{ fontSize: 13.5, color: 'var(--ink-soft)', lineHeight: 1.55 }}>{row[1]}</div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+
   return (
     <div className="page-enter" style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
 
-      {/* Matriz + cabeçalho do resultado */}
+      {/* SEÇÃO 1 — Matriz + cabeçalho do resultado + "Como conduzir" (ação imediata) */}
       <div className="card" style={{ padding: 28 }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1.15fr 1fr', gap: 36, alignItems: 'start' }}>
 
@@ -143,7 +168,7 @@ function KraljicScreen({ go, user }) {
             </div>
           </div>
 
-          {/* CABEÇALHO DO RESULTADO */}
+          {/* CABEÇALHO DO RESULTADO + "COMO CONDUZIR" (ação imediata) */}
           <div>
             {activeQuad === kr.dominantQuadrant ? (
               <div className="badge badge-brown" style={{ marginBottom: 12 }}>
@@ -189,47 +214,19 @@ function KraljicScreen({ go, user }) {
             <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 12, lineHeight: 1.55 }}>
               Clique nos quadrantes da matriz para comparar os outros perfis de comprador.
             </div>
-          </div>
-        </div>
-      </div>
 
-      {/* COMO CONDUZIR — bloco ÚNICO, 100% ótica do comprador (§15 + kraljic-data reenquadrado) */}
-      {window.MOTOR_KRALJIC && window.MOTOR_KRALJIC[act.id] && (function () {
-        const mk = window.MOTOR_KRALJIC[act.id];
-        const discVend = (window.MOTOR_DISC && window.MOTOR_DISC[vendedor]) || { nome: vendedor };
-        const usoRaw = (mk.usoDISC && mk.usoDISC[vendedor]) || '';
-        const usoFmt = usoRaw ? usoRaw.charAt(0).toUpperCase() + usoRaw.slice(1) : '';
-        const naoAceitar = (act.kp.whatToAvoid || []).map(function (it) { return (window.voratteKavoid && window.voratteKavoid(it)) || it; });
-        const secLabel = { fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--muted)', fontWeight: 700, margin: '22px 0 12px' };
-        function cardRow(rows) {
-          return (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-              {rows.map(function (row) {
-                return (
-                  <div key={row[0]} style={{ padding: 16, borderRadius: 12, background: 'var(--paper-warm)', border: '1px solid var(--line)' }}>
-                    <div style={{ fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--muted)', fontWeight: 600, marginBottom: 5 }}>{row[0]}</div>
-                    <div style={{ fontSize: 13.5, color: 'var(--ink-soft)', lineHeight: 1.55 }}>{row[1]}</div>
-                  </div>
-                );
-              })}
-            </div>
-          );
-        }
-        return (
-          <div className="card">
-            {/* cabeçalho + seletor de vendedor */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, flexWrap: 'wrap', marginBottom: 18 }}>
-              <div>
+            {/* COMO CONDUZIR — ação imediata (subiu p/ a coluna direita, embaixo do foco) */}
+            {mk && (
+              <div style={{ marginTop: 18, paddingTop: 18, borderTop: '1px solid var(--line)' }}>
                 <div className="card-title">Como conduzir a negociação</div>
-                <div className="card-sub" style={{ marginBottom: 0 }}>
-                  Sua estratégia no quadrante <strong>{mk.label}</strong>, conforme o perfil do <strong>vendedor</strong>
+                <div className="card-sub" style={{ marginBottom: 12 }}>
+                  Conforme o perfil do <strong>vendedor</strong>
                 </div>
-              </div>
-              <div>
-                <div style={{ fontSize: 11, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--muted)', fontWeight: 700, marginBottom: 6, textAlign: 'right' }}>
+
+                <div style={{ fontSize: 11, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--muted)', fontWeight: 700, marginBottom: 6 }}>
                   Perfil DISC do vendedor
                 </div>
-                <div style={{ display: 'flex', gap: 6 }}>
+                <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
                   {['D', 'I', 'S', 'C'].map(function (p) {
                     const on = vendedor === p;
                     return (
@@ -244,49 +241,24 @@ function KraljicScreen({ go, user }) {
                     );
                   })}
                 </div>
+
+                {/* sua próxima ação (usoDISC §15, indexado pelo VENDEDOR) */}
+                <div style={{ borderRadius: 12, background: 'var(--paper-warm)', border: '1px solid var(--line)', borderLeft: '3px solid var(--disc-' + vendedor.toLowerCase() + ')', padding: '16px 18px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                    <span className={'disc-tile disc-' + vendedor.toLowerCase()} style={{ width: 22, height: 22, fontSize: 12, borderRadius: 6 }}>{vendedor}</span>
+                    <span style={{ fontSize: 11.5, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--muted)', fontWeight: 700 }}>
+                      Sua próxima ação · com um vendedor {vendedor} ({discVend.nome})
+                    </span>
+                  </div>
+                  <div className="serif" style={{ fontSize: 16, lineHeight: 1.55, color: 'var(--ink)' }}>{usoFmt}</div>
+                </div>
               </div>
-            </div>
-
-            {/* 1 — sua próxima ação (usoDISC §15, indexado pelo VENDEDOR) */}
-            <div style={{ borderRadius: 12, background: 'var(--paper-warm)', border: '1px solid var(--line)', borderLeft: '3px solid var(--disc-' + vendedor.toLowerCase() + ')', padding: '16px 18px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                <span className={'disc-tile disc-' + vendedor.toLowerCase()} style={{ width: 22, height: 22, fontSize: 12, borderRadius: 6 }}>{vendedor}</span>
-                <span style={{ fontSize: 11.5, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--muted)', fontWeight: 700 }}>
-                  Sua próxima ação · com um vendedor {vendedor} ({discVend.nome})
-                </span>
-              </div>
-              <div className="serif" style={{ fontSize: 16, lineHeight: 1.55, color: 'var(--ink)' }}>{usoFmt}</div>
-            </div>
-
-            {/* 2 — seu jogo no quadrante (§15) */}
-            <div style={secLabel}>Seu jogo neste quadrante</div>
-            {cardRow([
-              ['Seu objetivo no quadrante', mk.objetivoComprador],
-              ['Sua estratégia', mk.estrategia],
-              ['Estilo de negociação', mk.estiloNegociacao],
-              ['Risco a evitar', mk.riscoPrincipal],
-            ])}
-
-            {/* 3 — o que buscar × o que não aceitar (kraljic-data reenquadrado p/ ótica comprador) */}
-            <div style={secLabel}>O que buscar × o que não aceitar</div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-              <KPillar title="O que você deve buscar neste fornecedor" items={act.kp.whatHeWants} />
-              <KPillar title="Táticas do vendedor a não aceitar" items={naoAceitar} tone="warn" />
-            </div>
-
-            {/* 4 — leitura de poder (kraljic-data reenquadrado por rótulo) */}
-            <div style={secLabel}>Leitura de poder</div>
-            {cardRow([
-              ['Seu poder de negociação', act.kp.negotiationLeverage],
-              ['Onde focar a proposta', act.kp.proposalFocus],
-              ['Como estruturar o contrato', act.kp.contractStyle],
-              ['Sua alavanca: o ponto de pressão do vendedor', act.kp.riskForVendor],
-            ])}
+            )}
           </div>
-        );
-      })()}
+        </div>
+      </div>
 
-      {/* Referência — DISC × Kraljic */}
+      {/* SEÇÃO 2 — Os 4 quadrantes de Kraljic (seletor central; liga topo e detalhe) */}
       <div className="card">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18 }}>
           <div>
@@ -316,15 +288,53 @@ function KraljicScreen({ go, user }) {
             );
           })}
         </div>
+      </div>
 
-        <div style={{ marginTop: 22, display: 'flex', gap: 10 }}>
-          <button className="btn btn-primary" onClick={function () { go('relatorio'); }}>
-            Ver estratégias recomendadas <Ic.Arrow s={14} />
-          </button>
-          <button className="btn btn-secondary" onClick={function () { go('cruzamento'); }}>
-            <Ic.Compare s={14} /> Cruzar com outros perfis
-          </button>
+      {/* SEÇÃO 3 — Condução detalhada (Seu jogo · Buscar×Evitar · Leitura de poder) */}
+      {mk && (
+        <div className="card">
+          <div>
+            <div className="card-title">Condução detalhada</div>
+            <div className="card-sub" style={{ marginBottom: 0 }}>
+              Seu plano no quadrante <strong>{mk.label}</strong>
+            </div>
+          </div>
+
+          {/* seu jogo no quadrante (§15) */}
+          <div style={secLabel}>Seu jogo neste quadrante</div>
+          {cardRow([
+            ['Seu objetivo no quadrante', mk.objetivoComprador],
+            ['Sua estratégia', mk.estrategia],
+            ['Estilo de negociação', mk.estiloNegociacao],
+            ['Risco a evitar', mk.riscoPrincipal],
+          ])}
+
+          {/* o que buscar × o que não aceitar (kraljic-data reenquadrado p/ ótica comprador) */}
+          <div style={secLabel}>O que buscar × o que não aceitar</div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <KPillar title="O que você deve buscar neste fornecedor" items={act.kp.whatHeWants} />
+            <KPillar title="Táticas do vendedor a não aceitar" items={naoAceitar} tone="warn" />
+          </div>
+
+          {/* leitura de poder (kraljic-data reenquadrado por rótulo) */}
+          <div style={secLabel}>Leitura de poder</div>
+          {cardRow([
+            ['Seu poder de negociação', act.kp.negotiationLeverage],
+            ['Onde focar a proposta', act.kp.proposalFocus],
+            ['Como estruturar o contrato', act.kp.contractStyle],
+            ['Sua alavanca: o ponto de pressão do vendedor', act.kp.riskForVendor],
+          ])}
         </div>
+      )}
+
+      {/* Rodapé de ação da tela */}
+      <div style={{ display: 'flex', gap: 10 }}>
+        <button className="btn btn-primary" onClick={function () { go('relatorio'); }}>
+          Ver estratégias recomendadas <Ic.Arrow s={14} />
+        </button>
+        <button className="btn btn-secondary" onClick={function () { go('cruzamento'); }}>
+          <Ic.Compare s={14} /> Cruzar com outros perfis
+        </button>
       </div>
     </div>
   );

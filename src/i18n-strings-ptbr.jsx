@@ -9,6 +9,7 @@ window.I18N_PTBR = {
   'app.devCredit':            'Desenvolvido por Daniel Honorato',
   'app.logout':               'Sair',
   'app.openMenu':             'Abrir menu',
+  'app.closeMenu':            'Fechar menu',
 
   // === Common ===
   'common.search':            'Buscar',

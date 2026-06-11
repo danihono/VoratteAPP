@@ -308,6 +308,13 @@ function App() {
       <div className="nav-backdrop" onClick={() => setNavOpen(false)} />
       {/* Sidebar */}
       <aside className="sidebar">
+        <button
+          className="sidebar-close"
+          onClick={() => setNavOpen(false)}
+          aria-label={t('app.closeMenu')}
+        >
+          <Ic.Close s={18}/>
+        </button>
         <div className="sidebar-logo">
           <img src="assets/voratte-logo.webp" alt="Vorätte" />
           <div className="sidebar-tag">{t('app.brandTag').split('\n').map(function (line, i, arr) {

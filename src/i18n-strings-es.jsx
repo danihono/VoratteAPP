@@ -9,6 +9,7 @@ window.I18N_ES = {
   'app.devCredit':            'Desarrollado por Daniel Honorato',
   'app.logout':               'Salir',
   'app.openMenu':             'Abrir menú',
+  'app.closeMenu':            'Cerrar menú',
 
   // === Common ===
   'common.search':            'Buscar',

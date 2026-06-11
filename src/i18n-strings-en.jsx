@@ -8,6 +8,7 @@ window.I18N_EN = {
   'app.brandTag':             'DISC\nProcurement',
   'app.devCredit':            'Developed by Daniel Honorato',
   'app.logout':               'Sign out',
+  'app.openMenu':             'Open menu',
 
   // === Common ===
   'common.search':            'Search',
@@ -417,6 +418,13 @@ window.I18N_EN = {
   'gestor.stat.noData':          'No data',
   'gestor.cta.viewTeam':         'View my team',
   'gestor.cta.report':           'Consolidated report',
+  'gestor.myDisc.title':         'My DISC profile',
+  'gestor.myDisc.sub':           'Your personal test result (optional)',
+  'gestor.myDisc.loading':       'Loading…',
+  'gestor.myDisc.empty':         'You haven\'t taken the DISC test yet. As a manager it\'s optional — but you can take it to learn your own profile and generate your report.',
+  'gestor.myDisc.ctaTest':       'Take my DISC test',
+  'gestor.myDisc.ctaAnalise':    'View analysis',
+  'gestor.myDisc.ctaReport':     'Generate report',
   'gestor.distTitle':            'Team behavioral distribution',
   'gestor.distSub':              'Predominant profiles',
   'gestor.distEmpty':            'Distribution will be shown when your team completes assessments.',
@@ -706,15 +714,19 @@ window.I18N_EN = {
 
   // Modal — Create Student
   'admin.aluno.modal.title':          'Register new student',
-  'admin.aluno.modal.sub':            'Create a student account and link to a registered company and manager.',
-  'admin.aluno.modal.field.gestor':   'Manager in charge *',
+  'admin.aluno.modal.sub':            'Create a student account. Company and manager are optional and can be linked later.',
+  'admin.aluno.modal.field.company':  'Company (optional)',
+  'admin.aluno.modal.field.companyPh':'Select a company',
+  'admin.aluno.modal.field.gestor':   'Manager in charge (optional)',
   'admin.aluno.modal.field.gestorPh': 'Select a company first',
   'admin.aluno.modal.field.noGestor': 'This company has no manager yet — register one in the Managers tab first.',
   'admin.aluno.modal.create':         'Register student',
   'admin.aluno.modal.creating':       'Creating account…',
   'admin.aluno.modal.successTitle':   'Student registered!',
   'admin.aluno.modal.successBody':    '<strong>{name}</strong> has been registered as a student of <strong>{company}</strong>, under manager <strong>{gestor}</strong>.',
-  'admin.aluno.modal.errors.required':'Name, e-mail, password, company and manager are required.',
+  'admin.aluno.modal.successBodyCompany': '<strong>{name}</strong> has been registered as a student of <strong>{company}</strong>.',
+  'admin.aluno.modal.successBodyPlain':   '<strong>{name}</strong> has been registered as a student.',
+  'admin.aluno.modal.errors.required':'Name, e-mail and password are required.',
 
   // Invite email
   'admin.invite.button':         'Send invite by email',

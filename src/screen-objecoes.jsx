@@ -71,7 +71,7 @@ function ObjecoesScreen({ go }) {
 
       {/* Controles — perfil + objeção + quadrante. O objetivo deixou de ser entrada. */}
       <div className="card">
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+        <div className="m-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
 
           <div>
             <span style={labelStyle}>Perfil DISC do vendedor</span>
@@ -137,7 +137,7 @@ function ObjecoesScreen({ go }) {
                 Derivado da matriz
               </span>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div className="m-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <div style={{ background: 'var(--paper)', border: '1px solid var(--line)', borderLeft: '3px solid var(--brown-400)', borderRadius: 10, padding: '12px 14px' }}>
                 <div style={{ fontSize: 10.5, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--muted)', fontWeight: 700, marginBottom: 4 }}>
                   Primário · {op.codigo}

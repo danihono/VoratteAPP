@@ -189,6 +189,7 @@ function ForgotPasswordModal({ initialEmail, onClose }) {
 
   return (
     <div
+      className="m-modal-overlay"
       onClick={onClose}
       style={{
         position: 'fixed', inset: 0, zIndex: 1000,

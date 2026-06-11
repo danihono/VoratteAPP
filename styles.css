@@ -1129,3 +1129,101 @@ html[data-theme="dark"], html[data-theme="dark"] body {
   color: var(--brown-950);
   border-color: var(--brown-200);
 }
+
+/* ============================================================
+   RESPONSIVE — mobile (<=768px) + phone (<=420px).
+   Desktop (>=769px) permanece intocado: todas as sobrescritas
+   vivem dentro de @media. Elementos com estilo INLINE (grids,
+   padding de overlay) exigem !important para vencer o inline.
+   ============================================================ */
+
+/* hamburger toggle — escondido no desktop, visível no mobile */
+.nav-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-md);
+  color: var(--ink-soft);
+  flex-shrink: 0;
+}
+.nav-toggle:hover { background: var(--brown-50); }
+[data-theme="dark"] .nav-toggle:hover { background: var(--surface-soft); color: var(--ink); }
+
+/* backdrop do drawer — só existe/visível no mobile via .nav-open */
+.nav-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(21, 9, 10, 0.5);
+  z-index: 1100;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 240ms ease;
+}
+
+@media (max-width: 768px) {
+  /* ---- app shell vira coluna única + sidebar off-canvas ---- */
+  .app-shell { grid-template-columns: 1fr; }
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 280px;
+    max-width: 84vw;
+    z-index: 1200;
+    transform: translateX(-100%);
+    transition: transform 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
+    box-shadow: var(--shadow-xl);
+    overflow-y: auto;
+  }
+  .app-shell.nav-open .sidebar { transform: translateX(0); }
+  .nav-backdrop { display: block; }
+  .app-shell.nav-open .nav-backdrop { opacity: 1; pointer-events: auto; }
+  .nav-toggle { display: inline-flex; }
+
+  /* ---- topbar + page padding ---- */
+  .topbar { padding: 0 16px; height: 60px; gap: 8px; }
+  .topbar-title h1 { font-size: 18px; }
+  .topbar-title .sub { display: none; }
+  .topbar-right { gap: 8px; }
+  .page { padding: 18px 16px 36px; }
+
+  /* ---- marcadores de grid (colapsam estilos inline) ---- */
+  .m-stack   { grid-template-columns: 1fr !important; }
+  .m-stack-2 { grid-template-columns: 1fr 1fr !important; }
+  .theme-card-row { grid-template-columns: 1fr 1fr; }
+
+  /* ---- master/detail (gestor): some o height:100% inline ---- */
+  .m-split { grid-template-columns: 1fr !important; height: auto !important; }
+
+  /* ---- rolagem horizontal: tabelas e grids tipo-tabela ---- */
+  .tbl-wrap, .m-rowgrid-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .tbl-wrap .tbl { min-width: max-content; }
+  .m-rowgrid-wrap > * { min-width: 560px; }
+
+  /* ---- opção do teste DISC: palavra em cima, pílulas abaixo ---- */
+  .m-discopt { flex-wrap: wrap; }
+  .m-discopt > .m-discword { flex: 1 0 100% !important; }
+
+  /* ---- login: esconde lado editorial, form ocupa tudo ---- */
+  .login-shell { grid-template-columns: 1fr; }
+  .login-side { display: none; }
+  .login-form-side { padding: 56px 22px 40px; min-height: 100%; justify-content: flex-start; }
+  .login-form { max-width: 100%; }
+
+  /* ---- Kraljic: células mais compactas ---- */
+  .kraljic-cell { padding: 14px; }
+  .kraljic-cell h4 { font-size: 18px; }
+}
+
+@media (max-width: 420px) {
+  .m-stack-2 { grid-template-columns: 1fr !important; }
+  .theme-card-row { grid-template-columns: 1fr; }
+  .m-kv { grid-template-columns: 1fr !important; gap: 2px !important; }
+  .top-user .name, .top-user .role { display: none; }
+  .top-user { padding: 4px; }
+  .m-modal-overlay { padding: 12px !important; }
+}

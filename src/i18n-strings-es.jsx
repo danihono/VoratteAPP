@@ -8,6 +8,7 @@ window.I18N_ES = {
   'app.brandTag':             'DISC\nCompras',
   'app.devCredit':            'Desarrollado por Daniel Honorato',
   'app.logout':               'Salir',
+  'app.openMenu':             'Abrir menú',
 
   // === Common ===
   'common.search':            'Buscar',
@@ -417,6 +418,13 @@ window.I18N_ES = {
   'gestor.stat.noData':          'Sin datos',
   'gestor.cta.viewTeam':         'Ver mi equipo',
   'gestor.cta.report':           'Informe consolidado',
+  'gestor.myDisc.title':         'Mi perfil DISC',
+  'gestor.myDisc.sub':           'Tu resultado personal en el test (opcional)',
+  'gestor.myDisc.loading':       'Cargando…',
+  'gestor.myDisc.empty':         'Aún no has hecho el test DISC. Como gestor es opcional — pero puedes hacerlo para conocer tu propio perfil y generar tu informe.',
+  'gestor.myDisc.ctaTest':       'Hacer mi test DISC',
+  'gestor.myDisc.ctaAnalise':    'Ver análisis',
+  'gestor.myDisc.ctaReport':     'Generar informe',
   'gestor.distTitle':            'Distribución conductual del equipo',
   'gestor.distSub':              'Perfiles predominantes',
   'gestor.distEmpty':            'La distribución se mostrará cuando tu equipo complete evaluaciones.',
@@ -706,15 +714,19 @@ window.I18N_ES = {
 
   // Modal — Registrar alumno
   'admin.aluno.modal.title':          'Registrar nuevo alumno',
-  'admin.aluno.modal.sub':            'Crea la cuenta de un alumno vinculándolo a una empresa y gestor registrados.',
-  'admin.aluno.modal.field.gestor':   'Gestor responsable *',
+  'admin.aluno.modal.sub':            'Crea la cuenta de un alumno. La empresa y el gestor son opcionales y pueden vincularse después.',
+  'admin.aluno.modal.field.company':  'Empresa (opcional)',
+  'admin.aluno.modal.field.companyPh':'Selecciona una empresa',
+  'admin.aluno.modal.field.gestor':   'Gestor responsable (opcional)',
   'admin.aluno.modal.field.gestorPh': 'Selecciona primero una empresa',
   'admin.aluno.modal.field.noGestor': 'Esta empresa aún no tiene gestor — regístralo en la pestaña Gestores.',
   'admin.aluno.modal.create':         'Registrar alumno',
   'admin.aluno.modal.creating':       'Creando cuenta…',
   'admin.aluno.modal.successTitle':   '¡Alumno registrado!',
   'admin.aluno.modal.successBody':    '<strong>{name}</strong> fue registrado(a) como alumno(a) de <strong>{company}</strong>, bajo el gestor <strong>{gestor}</strong>.',
-  'admin.aluno.modal.errors.required':'Nombre, correo, contraseña, empresa y gestor son obligatorios.',
+  'admin.aluno.modal.successBodyCompany': '<strong>{name}</strong> fue registrado(a) como alumno(a) de <strong>{company}</strong>.',
+  'admin.aluno.modal.successBodyPlain':   '<strong>{name}</strong> fue registrado(a) como alumno(a).',
+  'admin.aluno.modal.errors.required':'Nombre, correo y contraseña son obligatorios.',
 
   // Invitación por correo
   'admin.invite.button':         'Enviar invitación por correo',

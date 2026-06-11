@@ -135,6 +135,36 @@ function GestorDashboard({ go, user }) {
     };
   }, [GESTOR_TEAM, window.getLang()]);
 
+  // DISC do próprio gestor (opcional) — alimenta o card "Meu perfil DISC".
+  // Usa o cache em memória se houver, senão busca o doc em /disc_results.
+  var [myDisc, setMyDisc] = React.useState(window.DISC_LAST_RESULT || null);
+  var [myDiscLoading, setMyDiscLoading] = React.useState(!window.DISC_LAST_RESULT);
+  React.useEffect(function () {
+    if (!user || !user.id || !window.fbGetDiscResult) { setMyDiscLoading(false); return; }
+    window.fbGetDiscResult(user.id).then(function (doc) {
+      if (doc) { setMyDisc(doc); }
+      setMyDiscLoading(false);
+    }).catch(function () { setMyDiscLoading(false); });
+  }, [user && user.id]);
+
+  // Normaliza tanto o doc do Firestore (d/i/s/c) quanto o resultado em cache (mostGraph)
+  function readMyDisc(src) {
+    if (!src) return null;
+    var mg = src.mostGraph || (typeof src.d === 'number' ? { D: src.d, I: src.i, S: src.s, C: src.c } : null);
+    if (!mg) return null;
+    var total = (mg.D + mg.I + mg.S + mg.C) || 1;
+    var main = src.main || (src.profile && src.profile.primary) ||
+      ['D','I','S','C'].reduce(function (a, b) { return mg[a] >= mg[b] ? a : b; });
+    return {
+      main: main, code: src.code || (src.profile && src.profile.code) || main, counts: mg,
+      pct: {
+        D: Math.round(mg.D / total * 100), I: Math.round(mg.I / total * 100),
+        S: Math.round(mg.S / total * 100), C: Math.round(mg.C / total * 100),
+      },
+    };
+  }
+  var my = readMyDisc(myDisc);
+
   // Linha do hero: pluralização
   var heroLine;
   if (teamLoading) heroLine = t('gestor.loadingTeam');
@@ -147,7 +177,7 @@ function GestorDashboard({ go, user }) {
   return (
     <div className="page-enter" style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 24 }}>
+      <div className="m-stack" style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 24 }}>
         <div className="card" style={{ padding: 28, position: 'relative', overflow: 'hidden' }}>
           <div style={{ position: 'absolute', right: -60, top: -60, width: 240, height: 240, background: 'radial-gradient(circle, var(--brown-50), transparent 70%)' }} />
           <div className="badge badge-brown" style={{ position: 'relative' }}><Ic.Shield s={12}/> {t('gestor.badge')}</div>
@@ -157,7 +187,7 @@ function GestorDashboard({ go, user }) {
             </span>
           </h2>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginTop: 26 }}>
+          <div className="m-stack-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginTop: 26 }}>
             <div className="stat">
               <div className="stat-label">{t('gestor.stat.collaborators')}</div>
               <div className="stat-value">{GESTOR_TEAM.length}</div>
@@ -215,6 +245,49 @@ function GestorDashboard({ go, user }) {
         </div>
       </div>
 
+      {/* Meu perfil DISC — resultado pessoal do gestor (opcional) */}
+      <div className="card">
+        <div className="card-title">{t('gestor.myDisc.title')}</div>
+        <div className="card-sub">{t('gestor.myDisc.sub')}</div>
+        {myDiscLoading ? (
+          <div style={{ padding: '18px 0', color: 'var(--muted)', fontSize: 13 }}>{t('gestor.myDisc.loading')}</div>
+        ) : !my ? (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+            <div style={{ fontSize: 13, color: 'var(--muted)', maxWidth: 460 }}>{t('gestor.myDisc.empty')}</div>
+            <button className="btn btn-primary" onClick={() => go('teste')}>
+              <Ic.Disc s={14}/> {t('gestor.myDisc.ctaTest')}
+            </button>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', gap: 22, alignItems: 'center', flexWrap: 'wrap' }}>
+            <Donut
+              size={130} stroke={18}
+              data={[
+                { key: 'D', value: my.counts.D, color: 'var(--disc-d)' },
+                { key: 'I', value: my.counts.I, color: 'var(--disc-i)' },
+                { key: 'S', value: my.counts.S, color: 'var(--disc-s)' },
+                { key: 'C', value: my.counts.C, color: 'var(--disc-c)' },
+              ]}
+              center={<><div className="letter">{my.main}</div><div className="label">{my.code}</div></>}
+            />
+            <div className="legend" style={{ flex: 1, minWidth: 220 }}>
+              <div className="legend-row"><div className="sw" style={{ background: 'var(--disc-d)' }}/><span>{t('disc.D.label')}</span><span className="pct">{my.pct.D}%</span></div>
+              <div className="legend-row"><div className="sw" style={{ background: 'var(--disc-i)' }}/><span>{t('disc.I.label')}</span><span className="pct">{my.pct.I}%</span></div>
+              <div className="legend-row"><div className="sw" style={{ background: 'var(--disc-s)' }}/><span>{t('disc.S.label')}</span><span className="pct">{my.pct.S}%</span></div>
+              <div className="legend-row"><div className="sw" style={{ background: 'var(--disc-c)' }}/><span>{t('disc.C.label')}</span><span className="pct">{my.pct.C}%</span></div>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <button className="btn btn-secondary" onClick={() => go('analise')}>
+                <Ic.Target s={14}/> {t('gestor.myDisc.ctaAnalise')}
+              </button>
+              <button className="btn btn-primary" onClick={() => go('relatorio')}>
+                <Ic.Pdf s={14}/> {t('gestor.myDisc.ctaReport')}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Quem ainda não fez */}
       <div className="card">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
@@ -232,7 +305,7 @@ function GestorDashboard({ go, user }) {
           </button>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div className="m-rowgrid-wrap" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {GESTOR_TEAM.map(p => (
             <div key={p.id} style={{ display: 'grid', gridTemplateColumns: '36px 1fr 140px 140px 60px', gap: 14, alignItems: 'center', padding: '10px 14px', borderRadius: 10, background: p.status === 'done' ? 'var(--paper)' : 'var(--paper-warm)', border: '1px solid var(--line-soft)' }}>
               <div className="avatar" style={{ width: 32, height: 32, fontSize: 11 }}>{p.name.split(' ').map(n => n[0]).join('').slice(0,2)}</div>
@@ -297,7 +370,7 @@ function GestorEquipe({ go, user }) {
   }
 
   return (
-    <div className="page-enter" style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: 16, height: '100%' }}>
+    <div className="page-enter m-split" style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: 16, height: '100%' }}>
 
       {/* List */}
       <div className="card" style={{ padding: 0, display: 'flex', flexDirection: 'column' }}>
@@ -375,7 +448,7 @@ function GestorEquipe({ go, user }) {
             <div className="card" style={{ padding: 24 }}>
               <div className="card-title">{t('gestor.detail.discTitle', { name: p.name.split(' ')[0] })}</div>
               <div className="card-sub">{t('gestor.detail.discSub')}</div>
-              <div style={{ display: 'grid', gridTemplateColumns: '200px 1fr', gap: 24, alignItems: 'center' }}>
+              <div className="m-stack" style={{ display: 'grid', gridTemplateColumns: '200px 1fr', gap: 24, alignItems: 'center' }}>
                 <Donut
                   size={170} stroke={22}
                   data={[
@@ -405,7 +478,7 @@ function GestorEquipe({ go, user }) {
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <div className="m-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
               <div className="card">
                 <div className="card-title">{t('gestor.detail.strengthsTitle')}</div>
                 {[
@@ -493,6 +566,7 @@ function GestorMapa({ go, user }) {
             {t('gestor.mapa.empty')}
           </div>
         ) : (
+          <div className="m-rowgrid-wrap">
           <div style={{ display: 'grid', gridTemplateColumns: '220px repeat(4, 1fr)', gap: 4, alignItems: 'center' }}>
             <div />
             {['D','I','S','C'].map(k => (
@@ -515,6 +589,7 @@ function GestorMapa({ go, user }) {
                 ))}
               </React.Fragment>
             ))}
+          </div>
           </div>
         )}
       </div>
@@ -586,7 +661,7 @@ function GestorRelatorios({ go, user }) {
             {t('gestor.relatorios.empty')}
           </div>
         ) : (
-          <table className="tbl">
+          <div className="tbl-wrap"><table className="tbl">
             <thead><tr>
               <th style={{ paddingLeft: 24 }}>{t('gestor.relatorios.col.report')}</th>
               <th>{t('gestor.relatorios.col.type')}</th>
@@ -622,7 +697,7 @@ function GestorRelatorios({ go, user }) {
                 );
               })}
             </tbody>
-          </table>
+          </table></div>
         )}
       </div>
     </div>

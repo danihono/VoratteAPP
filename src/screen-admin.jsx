@@ -207,6 +207,7 @@ function AdminModalShell({ title, lede, onClose, children, footer, width }) {
   useLang();
   return (
     <div
+      className="m-modal-overlay"
       onClick={onClose}
       style={{
         position: 'fixed', inset: 0, zIndex: 1000,
@@ -245,7 +246,7 @@ function AdminModalShell({ title, lede, onClose, children, footer, width }) {
 // Linha chave/valor usada nos modais "Ver detalhes" (read-only).
 function AdminDetailRow({ label, value }) {
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '160px 1fr', padding: '10px 0', borderBottom: '1px solid var(--line-soft)', fontSize: 13.5 }}>
+    <div className="m-kv" style={{ display: 'grid', gridTemplateColumns: '160px 1fr', padding: '10px 0', borderBottom: '1px solid var(--line-soft)', fontSize: 13.5 }}>
       <div style={{ color: 'var(--muted)' }}>{label}</div>
       <div style={{ color: 'var(--ink)', fontWeight: 500, wordBreak: 'break-word' }}>{value == null || value === '' ? '—' : value}</div>
     </div>
@@ -336,7 +337,7 @@ function AdminDashboard({ go }) {
             {t('admin.heroLede')}
           </p>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginTop: 28 }}>
+          <div className="m-stack-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginTop: 28 }}>
             <AdminStat label={t('admin.stat.companies')} value={loading ? '—' : String(stats.empresas)} />
             <AdminStat label={t('admin.stat.managers')}  value={loading ? '—' : String(stats.gestores)} />
             <AdminStat label={t('admin.stat.users')}     value={loading ? '—' : String(stats.usuarios)} />
@@ -376,7 +377,7 @@ function AdminDashboard({ go }) {
       </div>
 
       {/* Companies & cargos */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 16 }}>
+      <div className="m-stack" style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 16 }}>
         <div className="card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
             <div>
@@ -387,6 +388,7 @@ function AdminDashboard({ go }) {
               {t('admin.topCompanies.viewAll')} <Ic.Arrow s={12}/>
             </button>
           </div>
+          <div className="m-rowgrid-wrap">
           {loading ? (
             <div style={{ padding: '24px 0', color: 'var(--muted)', fontSize: 13 }}>{t('admin.topCompanies.loading')}</div>
           ) : topCompanies.length === 0 ? (
@@ -408,6 +410,7 @@ function AdminDashboard({ go }) {
               </div>
             );
           })}
+          </div>
         </div>
 
         <div className="card">
@@ -606,7 +609,7 @@ function AdminUsuarios({ go }) {
       {verUser && <VerUsuarioModal user={verUser} onClose={function(){ setVerUser(null); }} />}
       {editUser && <EditarUsuarioModal user={editUser} onClose={function(){ setEditUser(null); }} onSaved={reload} />}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
+      <div className="m-stack-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
         <Mini2 label={t('admin.users.mini.total')}    value={loading ? '—' : String(rawCounts.total)}  sub={t('admin.users.mini.totalSub')} />
         <Mini2 label={t('admin.users.mini.alunos')}   value={loading ? '—' : String(rawCounts.aluno)}  sub={pctSub(rawCounts.aluno)} />
         <Mini2 label={t('admin.users.mini.gestores')} value={loading ? '—' : String(rawCounts.gestor)} sub={pctSub(rawCounts.gestor)} />
@@ -623,7 +626,7 @@ function AdminUsuarios({ go }) {
         {!loading && users.length > 0 && filtered.length === 0 && (
           <div style={{ padding: 32, textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>{t('admin.filter.noResults')}</div>
         )}
-        {!loading && filtered.length > 0 && <table className="tbl">
+        {!loading && filtered.length > 0 && <div className="tbl-wrap"><table className="tbl">
           <thead><tr>
             <th style={{ paddingLeft: 24 }}>{t('admin.users.col.user')}</th>
             <th>{t('admin.users.col.company')}</th>
@@ -690,7 +693,7 @@ function AdminUsuarios({ go }) {
               );
             })}
           </tbody>
-        </table>}
+        </table></div>}
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center', fontSize: 12.5, color: 'var(--muted)' }}>
@@ -760,7 +763,7 @@ function EditarUsuarioModal({ user, onClose, onSaved }) {
           <input className="input" type="text" value={jobTitle} onChange={e => setJobTitle(e.target.value)} />
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, padding: '12px 0', borderTop: '1px solid var(--line-soft)' }}>
+        <div className="m-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, padding: '12px 0', borderTop: '1px solid var(--line-soft)' }}>
           <div style={{ fontSize: 12, color: 'var(--muted)' }}>{t('admin.field.email')}: <strong style={{ color: 'var(--ink)' }}>{doc.email || '—'}</strong></div>
           <div style={{ fontSize: 12, color: 'var(--muted)' }}>{t('admin.field.role')}: <strong style={{ color: 'var(--ink)' }}>{doc.role || '—'}</strong></div>
           <div style={{ fontSize: 12, color: 'var(--muted)' }}>{t('admin.field.company')}: <strong style={{ color: 'var(--ink)' }}>{doc.companyName || doc.companyId || '—'}</strong></div>
@@ -883,7 +886,7 @@ function AdminEmpresas({ go }) {
       {loading && <div style={{ padding: 32, textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>{t('admin.empresas.loading')}</div>}
       {!loading && cos.length === 0 && <div style={{ padding: 32, textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>{t('admin.empresas.empty')}</div>}
       {!loading && cos.length > 0 && filtered.length === 0 && <div style={{ padding: 32, textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>{t('admin.filter.noResults')}</div>}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14 }}>
+      <div className="m-stack" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14 }}>
         {filtered.map((c, i) => (
           <div key={c.id || i} className="card" style={{ padding: 22 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
@@ -901,7 +904,7 @@ function AdminEmpresas({ go }) {
               }}>{c.plan}</span>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6, padding: '12px 0', borderTop: '1px solid var(--line-soft)', borderBottom: '1px solid var(--line-soft)' }}>
+            <div className="m-stack" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6, padding: '12px 0', borderTop: '1px solid var(--line-soft)', borderBottom: '1px solid var(--line-soft)' }}>
               <div>
                 <div style={{ fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--muted)', fontWeight: 600 }}>{t('admin.empresas.users')}</div>
                 <div style={{ fontFamily: 'Fraunces, serif', fontSize: 22, fontWeight: 500 }}>{c.users}</div>
@@ -1000,7 +1003,7 @@ function EditarEmpresaModal({ company, onClose, onSaved }) {
           <label>{t('admin.field.name')} <span style={{ color: 'var(--disc-d)' }}>*</span></label>
           <input className="input" type="text" autoFocus value={name} onChange={e => { setName(e.target.value); setError(''); }} />
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <div className="m-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           <div className="field">
             <label>{t('admin.field.sector')}</label>
             <input className="input" type="text" value={sector} onChange={e => setSector(e.target.value)} />
@@ -1018,7 +1021,7 @@ function EditarEmpresaModal({ company, onClose, onSaved }) {
           <label>{t('admin.field.cnpj')}</label>
           <input className="input" type="text" value={cnpj} onChange={e => setCnpj(e.target.value)} />
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <div className="m-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           <div className="field">
             <label>{t('admin.field.phone')}</label>
             <input className="input" type="text" value={phone} onChange={e => setPhone(e.target.value)} />
@@ -1029,7 +1032,7 @@ function EditarEmpresaModal({ company, onClose, onSaved }) {
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, padding: '12px 0', borderTop: '1px solid var(--line-soft)' }}>
+        <div className="m-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, padding: '12px 0', borderTop: '1px solid var(--line-soft)' }}>
           <div style={{ fontSize: 12, color: 'var(--muted)' }}>{t('admin.field.userCount')}: <strong style={{ color: 'var(--ink)' }}>{doc.userCount || 0}</strong></div>
           <div style={{ fontSize: 12, color: 'var(--muted)' }}>{t('admin.field.managerCount')}: <strong style={{ color: 'var(--ink)' }}>{doc.managerCount || 0}</strong></div>
           <div style={{ fontSize: 12, color: 'var(--muted)' }}>{t('admin.field.completedPct')}: <strong style={{ color: 'var(--ink)' }}>{(doc.completedPct || 0) + '%'}</strong></div>
@@ -1122,7 +1125,7 @@ function AdminGestores({ go }) {
         {loading && <div style={{ padding: 32, textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>{t('admin.gestores.loading')}</div>}
         {!loading && ms.length === 0 && <div style={{ padding: 32, textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>{t('admin.gestores.empty')}</div>}
         {!loading && ms.length > 0 && filtered.length === 0 && <div style={{ padding: 32, textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>{t('admin.filter.noResults')}</div>}
-        {!loading && filtered.length > 0 && <table className="tbl">
+        {!loading && filtered.length > 0 && <div className="tbl-wrap"><table className="tbl">
           <thead><tr>
             <th style={{ paddingLeft: 24 }}>{t('admin.gestores.col.gestor')}</th>
             <th>{t('admin.gestores.col.company')}</th>
@@ -1173,7 +1176,7 @@ function AdminGestores({ go }) {
               );
             })}
           </tbody>
-        </table>}
+        </table></div>}
       </div>
     </div>
   );
@@ -1232,7 +1235,7 @@ function EditarGestorModal({ gestor, onClose, onSaved }) {
           <input className="input" type="text" value={jobTitle} onChange={e => setJobTitle(e.target.value)} />
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, padding: '12px 0', borderTop: '1px solid var(--line-soft)' }}>
+        <div className="m-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, padding: '12px 0', borderTop: '1px solid var(--line-soft)' }}>
           <div style={{ fontSize: 12, color: 'var(--muted)' }}>{t('admin.field.email')}: <strong style={{ color: 'var(--ink)' }}>{doc.email || '—'}</strong></div>
           <div style={{ fontSize: 12, color: 'var(--muted)' }}>{t('admin.field.company')}: <strong style={{ color: 'var(--ink)' }}>{doc.companyName || doc.companyId || '—'}</strong></div>
           <div style={{ fontSize: 12, color: 'var(--muted)' }}>{t('admin.field.teamSize')}: <strong style={{ color: 'var(--ink)' }}>{doc.teamSize || 0}</strong></div>
@@ -1297,7 +1300,7 @@ function AdminEstatisticas({ go }) {
   return (
     <div className="page-enter" style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
+      <div className="m-stack-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
         <Mini2 label={t('admin.stats.discDone')}        value={loading ? '—' : String(completed)}        sub={loading ? '' : t('admin.stats.discDoneSub', { n: users.length })} />
         <Mini2 label={t('admin.stats.completionRate')}  value={loading ? '—' : completionRate}           sub={t('admin.stats.completionRateSub')} />
         <Mini2 label={t('admin.stats.companies')}       value={loading ? '—' : String(companies.length)} sub={t('admin.stats.companiesSub')} />
@@ -1310,7 +1313,7 @@ function AdminEstatisticas({ go }) {
         <GrowthChart users={users} />
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+      <div className="m-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
         <div className="card">
           <div className="card-title">{t('admin.stats.sectorsTitle')}</div>
           <div className="card-sub">{t('admin.stats.sectorsSub')}</div>
@@ -1387,6 +1390,7 @@ function AdminPermissoes({ go }) {
         <div className="card-title">{t('admin.perms.title')}</div>
         <div className="card-sub">{t('admin.perms.sub')}</div>
 
+        <div className="m-rowgrid-wrap">
         <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr 1fr', gap: 0 }}>
           <div />
           {roles.map(r => (
@@ -1421,6 +1425,7 @@ function AdminPermissoes({ go }) {
             </React.Fragment>
           ))}
         </div>
+        </div>
       </div>
     </div>
   );
@@ -1430,6 +1435,7 @@ function AdminPermissoes({ go }) {
 function ModalFrame({ children, onClose, width }) {
   return (
     <div
+      className="m-modal-overlay"
       style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(0,0,0,0.45)',
                display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
       onClick={onClose}
@@ -1656,7 +1662,7 @@ function CriarEmpresaModal({ onClose, onCreated }) {
                 placeholder={t('admin.empresa.modal.field.namePh')} autoFocus />
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div className="m-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <div className="field">
                 <label>{t('admin.empresa.modal.field.sector')}</label>
                 <input className="input" type="text" value={form.sector}
@@ -1671,7 +1677,7 @@ function CriarEmpresaModal({ onClose, onCreated }) {
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div className="m-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <div className="field">
                 <label>{t('admin.empresa.modal.field.phone')}</label>
                 <input className="input" type="tel" value={form.phone}
@@ -1807,7 +1813,7 @@ function CriarGestorModal({ onClose, onCreated }) {
                 placeholder={t('admin.modal.field.namePh')} autoFocus />
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div className="m-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <div className="field">
                 <label>{t('admin.modal.field.email')}</label>
                 <input className="input" type="email" value={form.email}
@@ -1895,38 +1901,40 @@ function CriarAlunoModal({ onClose, onCreated }) {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (!form.name || !form.email || !form.password || !form.companyId || !form.gestorId) {
+    if (!form.name || !form.email || !form.password) {
       setError(t('admin.aluno.modal.errors.required'));
       return;
     }
-    var company = companies.find(function(c) { return c.id === form.companyId; });
-    var gestor  = gestores.find(function(g) { return g.id === form.gestorId; });
-    if (!company || !gestor) {
-      setError(t('admin.aluno.modal.errors.required'));
-      return;
-    }
+    // Empresa e gestor são opcionais
+    var company = form.companyId ? companies.find(function(c) { return c.id === form.companyId; }) : null;
+    var gestor  = form.gestorId ? gestores.find(function(g) { return g.id === form.gestorId; }) : null;
     setError(''); setLoading(true);
     try {
       var uid = await window.fbCreateUser(form.email, form.password);
-      await window.fbCreateUserDoc(uid, {
+      var userDoc = {
         name:        form.name.trim(),
         email:       form.email.trim(),
         role:        'aluno',
         jobTitle:    form.jobTitle.trim(),
-        companyId:   company.id,
-        companyName: company.name,
-        gestorId:    gestor.id,
-        gestorName:  gestor.name,
-      });
-      window.fbIncrementCompanyCounter(company.id, 'userCount');
+      };
+      if (company) {
+        userDoc.companyId   = company.id;
+        userDoc.companyName = company.name;
+      }
+      if (gestor) {
+        userDoc.gestorId   = gestor.id;
+        userDoc.gestorName = gestor.name;
+      }
+      await window.fbCreateUserDoc(uid, userDoc);
+      if (company) window.fbIncrementCompanyCounter(company.id, 'userCount');
       setCreated({
         uid:         uid,
         name:        form.name.trim(),
         email:       form.email.trim(),
         password:    form.password,
         role:        'aluno',
-        companyName: company.name,
-        gestorName:  gestor.name,
+        companyName: company ? company.name : '',
+        gestorName:  gestor ? gestor.name : '',
       });
       if (onCreated) onCreated();
     } catch (err) {
@@ -1947,7 +1955,12 @@ function CriarAlunoModal({ onClose, onCreated }) {
           <ModalSuccessIcon />
           <div className="serif" style={{ fontSize: 22, marginBottom: 8 }}>{t('admin.aluno.modal.successTitle')}</div>
           <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 20, lineHeight: 1.5 }}
-             dangerouslySetInnerHTML={{ __html: t('admin.aluno.modal.successBody', { name: created.name, company: created.companyName, gestor: created.gestorName }) }} />
+             dangerouslySetInnerHTML={{ __html:
+               created.companyName
+                 ? (created.gestorName
+                     ? t('admin.aluno.modal.successBody',        { name: created.name, company: created.companyName, gestor: created.gestorName })
+                     : t('admin.aluno.modal.successBodyCompany', { name: created.name, company: created.companyName }))
+                 : t('admin.aluno.modal.successBodyPlain',       { name: created.name }) }} />
           <div style={{ marginBottom: 14 }}>
             <InviteEmailButton recipient={created} />
           </div>
@@ -1975,7 +1988,7 @@ function CriarAlunoModal({ onClose, onCreated }) {
                 placeholder={t('admin.modal.field.namePh')} autoFocus />
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div className="m-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <div className="field">
                 <label>{t('admin.modal.field.email')}</label>
                 <input className="input" type="email" value={form.email}
@@ -1996,13 +2009,13 @@ function CriarAlunoModal({ onClose, onCreated }) {
                 onChange={function(e) { setField('jobTitle', e.target.value); }} />
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div className="m-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <div className="field">
-                <label>{t('admin.gestor.modal.field.company')}</label>
+                <label>{t('admin.aluno.modal.field.company')}</label>
                 <select className="input" value={form.companyId}
                   onChange={function(e) { setField('companyId', e.target.value); }}
                   disabled={loadingCompanies || emptyCompanies}>
-                  <option value="">{t('admin.gestor.modal.field.companyPh')}</option>
+                  <option value="">{t('admin.aluno.modal.field.companyPh')}</option>
                   {companies.map(function(c) {
                     return <option key={c.id} value={c.id}>{c.name}</option>;
                   })}
@@ -2034,7 +2047,7 @@ function CriarAlunoModal({ onClose, onCreated }) {
               {t('common.cancel')}
             </button>
             <button type="submit" className="btn btn-primary" style={{ flex: 1 }}
-              disabled={loading || emptyCompanies || emptyGestores}>
+              disabled={loading}>
               {loading ? t('admin.aluno.modal.creating') : t('admin.aluno.modal.create')}
             </button>
           </div>

@@ -91,7 +91,7 @@ function KraljicScreen({ go, user }) {
   const secLabel = { fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--muted)', fontWeight: 700, margin: '22px 0 12px' };
   function cardRow(rows) {
     return (
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+      <div className="m-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
         {rows.map(function (row) {
           return (
             <div key={row[0]} style={{ padding: 16, borderRadius: 12, background: 'var(--paper-warm)', border: '1px solid var(--line)' }}>
@@ -109,7 +109,7 @@ function KraljicScreen({ go, user }) {
 
       {/* SEÇÃO 1 — Matriz + cabeçalho do resultado + "Como conduzir" (ação imediata) */}
       <div className="card" style={{ padding: 28 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1.15fr 1fr', gap: 36, alignItems: 'start' }}>
+        <div className="m-stack" style={{ display: 'grid', gridTemplateColumns: '1.15fr 1fr', gap: 36, alignItems: 'start' }}>
 
           {/* MATRIZ com o comprador plotado */}
           <div>
@@ -189,7 +189,7 @@ function KraljicScreen({ go, user }) {
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 16 }}>
+            <div className="m-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 16 }}>
               <div className="stat">
                 <div className="stat-label">Perfil DISC</div>
                 <div className="stat-value" style={{ fontSize: 22 }}>{result.code}</div>
@@ -268,7 +268,7 @@ function KraljicScreen({ go, user }) {
           <div className="badge badge-brown"><Ic.Sparkle s={11} /> Inteligência aplicada</div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+        <div className="m-stack-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
           {grid.map(function (q) {
             const mine = kr.dominantQuadrant === q.id;
             return (
@@ -311,7 +311,7 @@ function KraljicScreen({ go, user }) {
 
           {/* o que buscar × o que não aceitar (kraljic-data reenquadrado p/ ótica comprador) */}
           <div style={secLabel}>O que buscar × o que não aceitar</div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+          <div className="m-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
             <KPillar title="O que você deve buscar neste fornecedor" items={act.kp.whatHeWants} />
             <KPillar title="Táticas do vendedor a não aceitar" items={naoAceitar} tone="warn" />
           </div>

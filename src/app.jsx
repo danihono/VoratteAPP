@@ -136,7 +136,8 @@ function buildNavGestor() {
     { key: 'kraljic',     label: t('nav.kraljic'),             icon: <Ic.Diamond/>,   group: t('navGroup.estrategia') },
     { key: 'objecoes',    label: t('nav.gestor.objecoes'),     icon: <Ic.Object/>,    group: t('navGroup.estrategia') },
     { key: 'relatorios',  label: t('nav.gestor.relatorios'),   icon: <Ic.Report/>,    group: t('navGroup.documentos') },
-    { key: 'analise',     label: t('nav.gestor.analise'),      icon: <Ic.Disc/>,      group: t('navGroup.conta') },
+    { key: 'teste',       label: t('nav.teste'),               icon: <Ic.Disc/>,      group: t('navGroup.conta') },
+    { key: 'analise',     label: t('nav.gestor.analise'),      icon: <Ic.Target/>,    group: t('navGroup.conta') },
     { key: 'perfil',      label: t('nav.perfil'),              icon: <Ic.User/>,      group: t('navGroup.conta') },
   ];
 }
@@ -173,6 +174,7 @@ function buildPageMeta() {
       comparacoes: { title: t('page.gestor.comparacoes.title'), sub: t('page.gestor.comparacoes.sub') },
       mapa:        { title: t('page.gestor.mapa.title'),        sub: t('page.gestor.mapa.sub') },
       relatorios:  { title: t('page.gestor.relatorios.title'),  sub: t('page.gestor.relatorios.sub') },
+      teste:       { title: t('page.aluno.teste.title'),        sub: t('page.aluno.teste.sub') },
       analise:     { title: t('page.gestor.analise.title'),     sub: t('page.gestor.analise.sub') },
     },
     admin: {
@@ -196,6 +198,15 @@ function App() {
   const [role, setRole] = React.useState('aluno'); // 'aluno' | 'gestor' | 'admin' — fonte da verdade
   const [viewAsRole, setViewAsRole] = React.useState(null); // override apenas para admin (modo demo)
   const [route, setRoute] = React.useState('dashboard');
+  const [navOpen, setNavOpen] = React.useState(false); // drawer da sidebar no mobile
+
+  // Fecha o drawer com Escape (mobile)
+  React.useEffect(function () {
+    if (!navOpen) return;
+    const onKey = function (e) { if (e.key === 'Escape') setNavOpen(false); };
+    window.addEventListener('keydown', onKey);
+    return function () { window.removeEventListener('keydown', onKey); };
+  }, [navOpen]);
 
   // Carrega perfil do Firestore a partir do usuário Firebase Auth
   const loadProfile = React.useCallback(async function (firebaseUser) {
@@ -292,7 +303,9 @@ function App() {
   } : { name: '—', role: roleLabel, initials: '·' };
 
   return (
-    <div className="app-shell">
+    <div className={'app-shell' + (navOpen ? ' nav-open' : '')}>
+      {/* Backdrop do drawer (mobile) */}
+      <div className="nav-backdrop" onClick={() => setNavOpen(false)} />
       {/* Sidebar */}
       <aside className="sidebar">
         <div className="sidebar-logo">
@@ -318,7 +331,7 @@ function App() {
                   <button
                     key={item.key}
                     className={'nav-item' + (route === item.key ? ' active' : '')}
-                    onClick={() => setRoute(item.key)}
+                    onClick={() => { setRoute(item.key); setNavOpen(false); }}
                   >
                     {item.icon}
                     <span>{item.label}</span>
@@ -353,9 +366,19 @@ function App() {
       {/* Main area */}
       <main className="main">
         <header className="topbar">
-          <div className="topbar-title">
-            <h1>{meta.title}</h1>
-            <span className="sub">{meta.sub}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+            <button
+              className="nav-toggle"
+              onClick={() => setNavOpen(o => !o)}
+              aria-label={t('app.openMenu')}
+              aria-expanded={navOpen}
+            >
+              <Ic.Menu s={20}/>
+            </button>
+            <div className="topbar-title">
+              <h1>{meta.title}</h1>
+              <span className="sub">{meta.sub}</span>
+            </div>
           </div>
           <div className="topbar-right">
             {/* Badge avisando que o admin está navegando como outra role */}
@@ -423,6 +446,7 @@ function renderScreen(role, route, go, user, refreshProfile) {
       objecoes:    <ObjecoesScreen     go={go} />,
       relatorios:  <GestorRelatorios   go={go} user={user} />,
       relatorio:   <RelatorioScreen    go={go} user={user} />,
+      teste:       <DiscTestScreen     go={go} user={user} refreshProfile={refreshProfile} />,
       analise:     <AnaliseScreen      go={go} user={user} />,
       perfil:      <PerfilScreen       go={go} user={user} refreshProfile={refreshProfile} />,
     }[route] || <GestorDashboard go={go} user={user} />);

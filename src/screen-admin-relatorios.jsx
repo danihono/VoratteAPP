@@ -152,7 +152,7 @@
             <div style={{ padding: '48px 24px', textAlign: 'center', color: 'var(--muted)', fontSize: 13.5 }}
                  dangerouslySetInnerHTML={{ __html: reports.length === 0 ? t('adminRel.emptyAll') : t('adminRel.emptyFiltered') }} />
           ) : (
-            <table className="tbl">
+            <div className="tbl-wrap"><table className="tbl">
               <thead>
                 <tr>
                   <th style={{ paddingLeft: 24 }}>{t('adminRel.col.report')}</th>
@@ -190,7 +190,7 @@
                   );
                 })}
               </tbody>
-            </table>
+            </table></div>
           )}
         </div>
 
@@ -382,6 +382,7 @@
 
     return (
       <div
+        className="m-modal-overlay"
         style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(0,0,0,0.45)',
                  display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '40px 20px', overflowY: 'auto' }}
         onClick={onClose}
@@ -400,7 +401,7 @@
           </div>
 
           {step === 1 && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div className="m-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <KindCard icon={<Ic.User s={20}/>}     title={t('adminRel.wiz.kind.individual')} desc={t('adminRel.wiz.kind.individualDesc')} onClick={function () { setKind('individual'); setStep(2); }} />
               <KindCard icon={<Ic.Kraljic s={20}/>}  title={t('adminRel.wiz.kind.empresa')}    desc={t('adminRel.wiz.kind.empresaDesc')}    onClick={function () { setKind('empresa'); setStep(2); }} />
               <KindCard icon={<Ic.Target s={20}/>}   title={t('adminRel.wiz.kind.grupo')}      desc={t('adminRel.wiz.kind.grupoDesc')}      onClick={function () { setKind('grupo'); setStep(2); }} />

@@ -8,6 +8,7 @@ window.I18N_PTBR = {
   'app.brandTag':             'DISC\nCompras',
   'app.devCredit':            'Desenvolvido por Daniel Honorato',
   'app.logout':               'Sair',
+  'app.openMenu':             'Abrir menu',
 
   // === Common ===
   'common.search':            'Buscar',
@@ -418,6 +419,13 @@ window.I18N_PTBR = {
   'gestor.stat.noData':          'Sem dados',
   'gestor.cta.viewTeam':         'Ver minha equipe',
   'gestor.cta.report':           'Relatório consolidado',
+  'gestor.myDisc.title':         'Meu perfil DISC',
+  'gestor.myDisc.sub':           'Seu resultado pessoal no teste (opcional)',
+  'gestor.myDisc.loading':       'Carregando…',
+  'gestor.myDisc.empty':         'Você ainda não fez o teste DISC. Como gestor, ele é opcional — mas pode fazer para conhecer seu próprio perfil e gerar seu relatório.',
+  'gestor.myDisc.ctaTest':       'Fazer meu teste DISC',
+  'gestor.myDisc.ctaAnalise':    'Ver análise',
+  'gestor.myDisc.ctaReport':     'Gerar relatório',
   'gestor.distTitle':            'Distribuição comportamental do time',
   'gestor.distSub':              'Perfis predominantes',
   'gestor.distEmpty':            'Distribuição será exibida quando sua equipe completar avaliações.',
@@ -709,15 +717,19 @@ window.I18N_PTBR = {
 
   // Modal — cadastrar Aluno
   'admin.aluno.modal.title':          'Cadastrar novo aluno',
-  'admin.aluno.modal.sub':            'Crie a conta de um aluno e vincule a uma empresa e gestor cadastrados.',
-  'admin.aluno.modal.field.gestor':   'Gestor responsável *',
+  'admin.aluno.modal.sub':            'Crie a conta de um aluno. Empresa e gestor são opcionais e podem ser vinculados depois.',
+  'admin.aluno.modal.field.company':  'Empresa (opcional)',
+  'admin.aluno.modal.field.companyPh':'Selecione uma empresa',
+  'admin.aluno.modal.field.gestor':   'Gestor responsável (opcional)',
   'admin.aluno.modal.field.gestorPh': 'Selecione primeiro uma empresa',
   'admin.aluno.modal.field.noGestor': 'Esta empresa ainda não tem gestor — cadastre um na aba Gestores antes.',
   'admin.aluno.modal.create':         'Cadastrar aluno',
   'admin.aluno.modal.creating':       'Criando conta…',
   'admin.aluno.modal.successTitle':   'Aluno cadastrado!',
   'admin.aluno.modal.successBody':    '<strong>{name}</strong> foi cadastrado(a) como aluno(a) de <strong>{company}</strong>, vinculado(a) ao gestor <strong>{gestor}</strong>.',
-  'admin.aluno.modal.errors.required':'Nome, e-mail, senha, empresa e gestor são obrigatórios.',
+  'admin.aluno.modal.successBodyCompany': '<strong>{name}</strong> foi cadastrado(a) como aluno(a) de <strong>{company}</strong>.',
+  'admin.aluno.modal.successBodyPlain':   '<strong>{name}</strong> foi cadastrado(a) como aluno(a).',
+  'admin.aluno.modal.errors.required':'Nome, e-mail e senha são obrigatórios.',
 
   // Convite por email (botão no success state dos modais de gestor/aluno)
   'admin.invite.button':         'Enviar convite por email',

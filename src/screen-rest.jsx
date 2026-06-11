@@ -186,7 +186,7 @@ function RelatoriosScreen({ go, user }) {
             {t('relatorios.noResults')}
           </div>
         ) : (
-          <table className="tbl">
+          <div className="tbl-wrap"><table className="tbl">
             <thead>
               <tr>
                 <th style={{ paddingLeft: 24 }}>{t('relatorios.col.report')}</th>
@@ -219,7 +219,7 @@ function RelatoriosScreen({ go, user }) {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></div>
         )}
       </div>
 
@@ -338,7 +338,7 @@ function RelatorioScreen({ go, user }) {
           <em>{t('relatorio.titleEm')}</em>
         </h1>
 
-        <div style={{ marginTop: 32, display: 'grid', gridTemplateColumns: 'repeat(4, auto)', gap: 40, fontSize: 12 }}>
+        <div className="m-stack-2" style={{ marginTop: 32, display: 'grid', gridTemplateColumns: 'repeat(4, auto)', gap: 40, fontSize: 12 }}>
           <div>
             <div style={{ fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'var(--brown-300)', fontWeight: 600 }}>{t('relatorio.cover.professional')}</div>
             <div style={{ fontFamily: 'Fraunces, serif', fontSize: 22, fontWeight: 500, marginTop: 4 }}>{data.name}</div>
@@ -367,7 +367,7 @@ function RelatorioScreen({ go, user }) {
       {/* SECTION 1 — análise comportamental */}
       <section className="card" style={{ padding: 36 }}>
         <SectionLabel num="01" label={t('relatorio.sec01')} />
-        <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: 36, alignItems: 'center' }}>
+        <div className="m-stack" style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: 36, alignItems: 'center' }}>
           <Donut size={220} stroke={26} data={donutData}
             center={<><div className="letter" style={{ color: mainColor }}>{data.primary}</div><div className="label">{primaryLabel}</div></>}
           />
@@ -395,7 +395,7 @@ function RelatorioScreen({ go, user }) {
       {/* SECTION 2 — o que move / o que trava */}
       <section className="card" style={{ padding: 36 }}>
         <SectionLabel num="02" label={t('relatorio.sec02')} />
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+        <div className="m-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
           <div>
             <div className="serif" style={{ fontSize: 18, fontWeight: 600, marginBottom: 12 }}>{t('relatorio.movesTitle')}</div>
             {profile.motivators.map(function (s) {
@@ -414,7 +414,7 @@ function RelatorioScreen({ go, user }) {
       {/* SECTION 3 — Kraljic */}
       <section className="card" style={{ padding: 36 }}>
         <SectionLabel num="03" label={t('relatorio.sec03')} />
-        <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: 36, alignItems: 'center' }}>
+        <div className="m-stack" style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: 36, alignItems: 'center' }}>
           <RelKraljicMatrix kr={kr} />
           <div>
             <div className="badge badge-brown" style={{ marginBottom: 10 }}>{kr.positionLabel}</div>
@@ -441,7 +441,7 @@ function RelatorioScreen({ go, user }) {
       {/* SECTION 4 — leitura completa do quadrante */}
       <section className="card" style={{ padding: 36 }}>
         <SectionLabel num="04" label={t('relatorio.sec04')} />
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 20 }}>
+        <div className="m-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 20 }}>
           <div>
             <div className="serif" style={{ fontSize: 17, fontWeight: 600, marginBottom: 10 }}>{t('relatorio.wantsTitle')}</div>
             {kr.whatHeWants.map(function (s) {
@@ -456,7 +456,7 @@ function RelatorioScreen({ go, user }) {
             })}
           </div>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+        <div className="m-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
           {[
             [t('relatorio.metricLeverage'), kr.negotiationLeverage],
             [t('relatorio.metricProposal'), kr.proposalFocus],
@@ -478,7 +478,7 @@ function RelatorioScreen({ go, user }) {
         <SectionLabel num="05" label={t('relatorio.sec05')} />
         <h2 className="serif" style={{ fontSize: 22, fontWeight: 500, marginBottom: 4 }}>Como você negocia</h2>
         <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 16 }}>Autoconhecimento para reconhecer seus próprios gatilhos na mesa de negociação.</p>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
+        <div className="m-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
           {(function () {
             const e = (window.voratteEstiloComprador && window.voratteEstiloComprador(data.primary)) || { tom: '', ritmo: '', objecao: '' };
             return [
@@ -513,7 +513,7 @@ function RelatorioScreen({ go, user }) {
             <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 16 }}>
               A recomendação muda com o perfil de quem está do outro lado. No seu quadrante (<strong>{MK.label}</strong>), conduza assim:
             </p>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 22 }}>
+            <div className="m-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 22 }}>
               {perfis.map(function (x) {
                 return (
                   <div key={x} style={{ padding: 14, background: 'var(--paper-warm)', borderRadius: 10, border: '1px solid var(--line)', borderLeft: '3px solid ' + REL_DISC_COLORS[x] }}>
@@ -533,7 +533,7 @@ function RelatorioScreen({ go, user }) {
                   <p style={{ fontSize: 12, color: 'var(--muted)', lineHeight: 1.5, marginBottom: 10 }}>
                     <strong>Diagnóstico:</strong> {o.diagnostico} <strong>· Próxima ação:</strong> {o.proximaAcao}
                   </p>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <div className="m-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                     {perfis.map(function (x) {
                       return (
                         <div key={x} style={{ padding: 14, background: 'var(--paper-warm)', borderRadius: 10, border: '1px solid var(--line)' }}>
@@ -671,7 +671,7 @@ function PlanoScreen({ go, user }) {
     <div className="page-enter" style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
 
       <div className="card" style={{ padding: 28, background: 'linear-gradient(135deg, var(--ink), var(--brown-900))', color: 'var(--brown-50)', border: 'none' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 24, alignItems: 'center' }}>
+        <div className="m-stack" style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 24, alignItems: 'center' }}>
           <div>
             <div style={{ fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--brown-300)', fontWeight: 600 }}>
               {t('plano.eyebrow')}
@@ -700,7 +700,7 @@ function PlanoScreen({ go, user }) {
           </div>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        <div className="m-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
           {cards.map(it => (
             <div key={it.key} className="card">
               <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
@@ -784,7 +784,7 @@ function ComparacoesScreen({ go, user }) {
     <div className="page-enter" style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
 
       <div className="card" style={{ padding: 24 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr', gap: 20 }}>
+        <div className="m-stack-2" style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr', gap: 20 }}>
           <div>
             <div className="card-title" style={{ marginBottom: 2 }}>{t('comp.summary')}</div>
             <div className="card-sub" style={{ marginBottom: 0 }}>
@@ -796,7 +796,7 @@ function ComparacoesScreen({ go, user }) {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 16 }}>
+      <div className="m-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 16 }}>
         <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
           <div style={{ padding: '18px 24px', borderBottom: '1px solid var(--line)' }}>
             <div className="card-title" style={{ marginBottom: 2 }}>{t('comp.tableTitle')}</div>
@@ -809,7 +809,7 @@ function ComparacoesScreen({ go, user }) {
               {t('comp.tableEmpty')}
             </div>
           ) : (
-            <table className="tbl">
+            <div className="tbl-wrap"><table className="tbl">
               <thead>
                 <tr>
                   <th style={{ paddingLeft: 24 }}>{t('comp.col.person')}</th>
@@ -858,7 +858,7 @@ function ComparacoesScreen({ go, user }) {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </table></div>
           )}
         </div>
 
@@ -1030,7 +1030,7 @@ function PerfilScreen({ go, user, refreshProfile }) {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+      <div className="m-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
         <div className="card">
           <div className="card-title">{t('perfil.profDataTitle')}</div>
           <div className="card-sub">{t('perfil.profDataSub')}</div>
@@ -1040,7 +1040,7 @@ function PerfilScreen({ go, user, refreshProfile }) {
             </div>
           ) : profileFields.map(function (f, i) {
             return (
-              <div key={f[0]} style={{ display: 'grid', gridTemplateColumns: '180px 1fr', padding: '10px 0', borderBottom: i < profileFields.length - 1 ? '1px solid var(--line-soft)' : 'none', fontSize: 13.5 }}>
+              <div key={f[0]} className="m-kv" style={{ display: 'grid', gridTemplateColumns: '180px 1fr', padding: '10px 0', borderBottom: i < profileFields.length - 1 ? '1px solid var(--line-soft)' : 'none', fontSize: 13.5 }}>
                 <div style={{ color: 'var(--muted)' }}>{f[0]}</div>
                 <div style={{ color: 'var(--ink)', fontWeight: 500 }}>{f[1]}</div>
               </div>
@@ -1105,6 +1105,7 @@ function EditarPerfilModal({ user, onClose, onSaved }) {
 
   return (
     <div
+      className="m-modal-overlay"
       onClick={onClose}
       style={{
         position: 'fixed', inset: 0, zIndex: 1000,

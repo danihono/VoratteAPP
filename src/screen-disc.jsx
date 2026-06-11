@@ -281,6 +281,7 @@ function DiscTestScreen({ go, user, refreshProfile }) {
             const isLeast = current.least === o.dimension;
             return (
               <div
+                className="m-discopt"
                 key={q.id + '-' + o.dimension}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 14,
@@ -290,7 +291,7 @@ function DiscTestScreen({ go, user, refreshProfile }) {
                   transition: 'all 140ms ease',
                 }}
               >
-                <div style={{ flex: 1, fontSize: 15, fontWeight: 500, color: 'var(--ink)' }}>{o.word}</div>
+                <div className="m-discword" style={{ flex: 1, fontSize: 15, fontWeight: 500, color: 'var(--ink)' }}>{o.word}</div>
                 <div
                   onClick={function () { pick('most', o.dimension); }}
                   style={Object.assign({}, pillBase, isMost ? {
@@ -489,7 +490,7 @@ function AnaliseScreen({ go, user }) {
 
       {/* Topo — rosca + composição */}
       <div className="card" style={{ padding: 28 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: 32 }}>
+        <div className="m-stack" style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: 32 }}>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}>
             <Donut size={220} stroke={28} data={composition}
               center={<><div className="letter">{primary}</div><div className="label">{meta.label}</div></>}
@@ -543,7 +544,7 @@ function AnaliseScreen({ go, user }) {
           Como esse comprador se comporta em três cenários
         </h2>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 22 }}>
+        <div className="m-stack-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 22 }}>
           {panels.map(function (p) {
             return (
               <div key={p.label} className="stat">
@@ -565,14 +566,14 @@ function AnaliseScreen({ go, user }) {
       </div>
 
       {/* Detalhe do perfil */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+      <div className="m-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
         <Pillar title="O que move o comprador (a)" items={profile.motivators} />
         <Pillar title="O que trava a decisão" items={profile.fears} tone="warn" />
       </div>
       <div className="card">
         <div className="card-title">Seu estilo de negociação</div>
         <div className="card-sub">Autoconhecimento — seus próprios gatilhos na mesa de negociação</div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+        <div className="m-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
           {(function () {
             const e = (window.voratteEstiloComprador && window.voratteEstiloComprador(profile.primary)) || { tom: '', ritmo: '', objecao: '' };
             return [
@@ -604,7 +605,7 @@ function AnaliseScreen({ go, user }) {
           Perfis puros + combinações. O seu está destacado.
         </p>
 
-        <table className="tbl">
+        <div className="tbl-wrap"><table className="tbl">
           <thead>
             <tr>
               <th style={{ width: 70 }}>Código</th>
@@ -627,12 +628,17 @@ function AnaliseScreen({ go, user }) {
               );
             })}
           </tbody>
-        </table>
+        </table></div>
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-        <button className="btn btn-secondary" onClick={function () { go('cruzamento'); }}>
-          Cruzamento com outros perfis <Ic.Arrow s={14} />
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+        {!(user && user.role === 'gestor') && (
+          <button className="btn btn-secondary" onClick={function () { go('cruzamento'); }}>
+            Cruzamento com outros perfis <Ic.Arrow s={14} />
+          </button>
+        )}
+        <button className="btn btn-primary" onClick={function () { go('relatorio'); }}>
+          Gerar meu relatório <Ic.Arrow s={14} />
         </button>
       </div>
     </div>
@@ -718,7 +724,7 @@ function CruzamentoScreen({ go }) {
         <div style={{ fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--muted)', fontWeight: 600 }}>
           Seu perfil é <strong style={{ color: 'var(--brown-700)' }}>{myPrimary} · {DISC_META[myPrimary].label}</strong>. Escolha com quem você está negociando:
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginTop: 14 }}>
+        <div className="m-stack-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginTop: 14 }}>
           {Object.entries(profiles).map(function (entry) {
             const k = entry[0], v = entry[1];
             return (
@@ -746,7 +752,7 @@ function CruzamentoScreen({ go }) {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+      <div className="m-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
         <div className="card">
           <div className="card-title">Como identificar um perfil {target}</div>
           <div className="card-sub">Sinais comportamentais mais evidentes</div>
@@ -782,10 +788,10 @@ function CruzamentoScreen({ go }) {
           <div className="badge badge-brown"><Ic.Sparkle s={11} /> Sugerido por IA</div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginTop: 14 }}>
+        <div className="m-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginTop: 14 }}>
           {d.objs.map(function (pair, i) {
             return (
-              <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0, borderRadius: 12, overflow: 'hidden', border: '1px solid var(--line)' }}>
+              <div key={i} className="m-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0, borderRadius: 12, overflow: 'hidden', border: '1px solid var(--line)' }}>
                 <div style={{ padding: 14, background: 'var(--paper-warm)', fontStyle: 'italic', color: 'var(--ink-soft)', fontSize: 13 }}>{pair[0]}</div>
                 <div style={{ padding: 14, borderLeft: '1px solid var(--line)', fontSize: 13, color: 'var(--ink)', fontWeight: 500 }}>{pair[1]}</div>
               </div>

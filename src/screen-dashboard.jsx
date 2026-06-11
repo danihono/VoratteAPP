@@ -70,7 +70,7 @@ function DashboardScreen({ go, user }) {
     <div className="page-enter" style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
 
       {/* Welcome hero */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 24 }}>
+      <div className="m-stack" style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 24 }}>
         <div className="card" style={{ padding: 28, position: 'relative', overflow: 'hidden' }}>
           <div style={{ position: 'absolute', right: -60, top: -60, width: 240, height: 240, background: 'radial-gradient(circle, var(--brown-50), transparent 70%)' }} />
 
@@ -85,7 +85,7 @@ function DashboardScreen({ go, user }) {
             </span>
           </h2>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, marginTop: 26 }}>
+          <div className="m-stack-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, marginTop: 26 }}>
             <div className="stat">
               <div className="stat-label">{t('dashboard.stat.dominantLbl')}</div>
               <div className="stat-value">
@@ -163,7 +163,7 @@ function DashboardScreen({ go, user }) {
       {/* Quick access */}
       <div>
         <div className="section-title">{t('dashboard.quickAccess')}</div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
+        <div className="m-stack-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
           <QuickCard icon={<Ic.Kraljic s={20}/>} title={t('dashboard.quick.kraljic')}     sub={t('dashboard.quick.kraljicSub')}     onClick={() => go('kraljic')} />
           <QuickCard icon={<Ic.Object s={20}/>}  title={t('dashboard.quick.objecoes')}    sub={t('dashboard.quick.objecoesSub')}    onClick={() => go('objecoes')} />
           <QuickCard icon={<Ic.Compare s={20}/>} title={t('dashboard.quick.comparacoes')} sub={t('dashboard.quick.comparacoesSub')} onClick={() => go('comparacoes')} />
@@ -172,7 +172,7 @@ function DashboardScreen({ go, user }) {
       </div>
 
       {/* Bottom row — plano + atividade recente */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 24 }}>
+      <div className="m-stack" style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 24 }}>
         <div className="card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18 }}>
             <div>

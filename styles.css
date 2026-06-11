@@ -1214,10 +1214,18 @@ html[data-theme="dark"], html[data-theme="dark"] body {
   .sidebar-logo { padding-right: 44px; }
 
   /* ---- topbar + page padding ---- */
-  .topbar { padding: 0 16px; height: 60px; gap: 8px; }
-  .topbar-title h1 { font-size: 18px; }
+  .topbar { padding: 0 12px; height: 60px; gap: 8px; }
+  .topbar-left { flex: 1; min-width: 0; }
+  .topbar-title { min-width: 0; }
+  .topbar-title h1 { font-size: 18px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .topbar-title .sub { display: none; }
-  .topbar-right { gap: 8px; }
+  .topbar-right { gap: 6px; flex-shrink: 0; }
+  /* enxuga itens secundários da topbar no mobile p/ caber numa linha */
+  .topbar-demo { display: none !important; }
+  .topbar-bell { display: none; }
+  .rs-label { display: none; }
+  .top-user .name, .top-user .role { display: none; }
+  .top-user { padding: 4px; }
   .page { padding: 18px 16px 36px; }
 
   /* ---- marcadores de grid (colapsam estilos inline) ---- */
@@ -1252,7 +1260,5 @@ html[data-theme="dark"], html[data-theme="dark"] body {
   .m-stack-2 { grid-template-columns: 1fr !important; }
   .theme-card-row { grid-template-columns: 1fr; }
   .m-kv { grid-template-columns: 1fr !important; gap: 2px !important; }
-  .top-user .name, .top-user .role { display: none; }
-  .top-user { padding: 4px; }
   .m-modal-overlay { padding: 12px !important; }
 }

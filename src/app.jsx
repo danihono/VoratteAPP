@@ -373,7 +373,7 @@ function App() {
       {/* Main area */}
       <main className="main">
         <header className="topbar">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+          <div className="topbar-left" style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
             <button
               className="nav-toggle"
               onClick={() => setNavOpen(o => !o)}
@@ -391,6 +391,7 @@ function App() {
             {/* Badge avisando que o admin está navegando como outra role */}
             {isDemoMode && (
               <div
+                className="topbar-demo"
                 title={t('topbar.demoBadgeTitle')}
                 style={{
                   display: 'inline-flex', alignItems: 'center', gap: 6,
@@ -409,7 +410,7 @@ function App() {
             )}
             <LangPicker />
             <ThemeTogglePill />
-            <button className="icon-btn"><Ic.Bell s={18}/><span className="dot"/></button>
+            <button className="icon-btn topbar-bell"><Ic.Bell s={18}/><span className="dot"/></button>
             <div className="top-user">
               <div className="avatar">{profile.initials}</div>
               <div>
@@ -486,7 +487,7 @@ function RoleSwitcher({ current, onChange }) {
         style={{ padding: '8px 14px', fontSize: 12, gap: 8 }}
         title={t('roleSwitcher.title')}
       >
-        <Ic.Sparkle s={14}/> {t('roleSwitcher.label')} <strong>{roleLabels[current]}</strong>
+        <Ic.Sparkle s={14}/> <span className="rs-label">{t('roleSwitcher.label')} <strong>{roleLabels[current]}</strong></span>
         <Ic.Arrow s={12} />
       </button>
       {open && (

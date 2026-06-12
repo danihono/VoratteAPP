@@ -677,7 +677,7 @@ window.I18N_EN = {
   'admin.modal.errors.required': 'Name, email and password are required.',
   'admin.modal.errors.generic':  'Error creating user.',
   'admin.modal.errors.exists':   'This email is already registered.',
-  'admin.modal.errors.weak':     'Password must be at least 6 characters.',
+  'admin.modal.errors.weak':     'Password must be at least 8 characters.',
 
   // Modal — Create Company
   'admin.empresa.modal.title':        'Register new company',

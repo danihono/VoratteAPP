@@ -1,0 +1,23 @@
+# Segredos / credenciais — NUNCA versionar
+.env
+.env.*
+!.env.example
+*.key
+*-key.json
+serviceAccount*.json
+firebase-adminsdk*.json
+
+# Firebase
+.firebase/
+firebase-debug.log
+firestore-debug.log
+firestore.rules.bak
+
+# Dependências / build
+node_modules/
+
+# SO / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

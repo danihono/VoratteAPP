@@ -1744,6 +1744,10 @@ function CriarGestorModal({ onClose, onCreated }) {
       setError(t('admin.gestor.modal.errors.required'));
       return;
     }
+    if (form.password.length < 8) {
+      setError(t('admin.modal.errors.weak'));
+      return;
+    }
     var company = companies.find(function(c) { return c.id === form.companyId; });
     if (!company) {
       setError(t('admin.gestor.modal.errors.required'));
@@ -1903,6 +1907,10 @@ function CriarAlunoModal({ onClose, onCreated }) {
     e.preventDefault();
     if (!form.name || !form.email || !form.password) {
       setError(t('admin.aluno.modal.errors.required'));
+      return;
+    }
+    if (form.password.length < 8) {
+      setError(t('admin.modal.errors.weak'));
       return;
     }
     // Empresa e gestor são opcionais

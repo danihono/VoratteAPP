@@ -2,7 +2,15 @@
 /**
  * Vorätte — setup-admins.js
  * Cria os usuários admin no Firebase Auth + doc no Firestore.
- * Rode UMA VEZ: node scripts/setup-admins.js
+ * Rode UMA VEZ, passando as credenciais por variáveis de ambiente
+ * (NUNCA hardcode senha neste arquivo — ele é versionado no git):
+ *
+ *   ADMIN_EMAIL='admin@voratte.com.br' \
+ *   ADMIN_PASSWORD='<senha-forte>' \
+ *   FIREBASE_API_KEY='<web-api-key>' \
+ *   node scripts/setup-admins.js
+ *
+ * Opcional: ADMIN_NAME, ADMIN_JOBTITLE, FIREBASE_PROJECT_ID.
  * Pode deletar este arquivo depois que rodar com sucesso.
  */
 
@@ -11,20 +19,26 @@ const https  = require('https');
 const fs     = require('fs');
 const path   = require('path');
 
-// ─── CONFIG ─────────────────────────────────────────────────────────────────
-const PROJECT_ID = 'voratte-3fc9f';
-const API_KEY    = 'AIzaSyAeMc2-zGJ5ZgfA34AV-lZaXgXetO7n0wY';
+// ─── CONFIG (tudo vem do ambiente — nada de segredo no código) ───────────────
+const PROJECT_ID = process.env.FIREBASE_PROJECT_ID || 'voratte-3fc9f';
+const API_KEY    = process.env.FIREBASE_API_KEY;
 const ROOT       = path.join(__dirname, '..');
+
+if (!API_KEY || !process.env.ADMIN_EMAIL || !process.env.ADMIN_PASSWORD) {
+  console.error(
+    '\n❌ Faltam variáveis de ambiente.\n' +
+    '   Defina FIREBASE_API_KEY, ADMIN_EMAIL e ADMIN_PASSWORD antes de rodar.\n'
+  );
+  process.exit(1);
+}
 
 const ADMINS = [
   {
-    email:    'danielboy200627@gmail.com',
-    password: 'dani2006',
-    name:     'Daniel',
-    jobTitle: 'Admin Vorätte',
+    email:    process.env.ADMIN_EMAIL,
+    password: process.env.ADMIN_PASSWORD,
+    name:     process.env.ADMIN_NAME     || 'Admin',
+    jobTitle: process.env.ADMIN_JOBTITLE || 'Admin Vorätte',
   },
-  // Adicione o segundo admin aqui quando tiver os dados:
-  // { email: '...', password: '...', name: '...', jobTitle: 'Admin Vorätte' },
 ];
 // ────────────────────────────────────────────────────────────────────────────
 

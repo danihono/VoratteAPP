@@ -680,7 +680,7 @@ window.I18N_PTBR = {
   'admin.modal.errors.required': 'Nome, e-mail e senha são obrigatórios.',
   'admin.modal.errors.generic':  'Erro ao criar usuário.',
   'admin.modal.errors.exists':   'Este e-mail já está cadastrado.',
-  'admin.modal.errors.weak':     'A senha deve ter pelo menos 6 caracteres.',
+  'admin.modal.errors.weak':     'A senha deve ter pelo menos 8 caracteres.',
 
   // Modal — cadastrar Empresa
   'admin.empresa.modal.title':        'Cadastrar nova empresa',

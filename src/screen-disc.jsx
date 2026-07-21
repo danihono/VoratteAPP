@@ -22,14 +22,41 @@ function discResultFromDoc(doc) {
 }
 
 // ============ TESTE DISC ============
+
+// Rascunho do teste em localStorage (por uid) — dá substância ao "Salvar e sair":
+// as respostas sobrevivem a sair da tela, trocar de rota e recarregar a página.
+function discDraftKey(user) { return 'voratte-disc-draft-' + ((user && user.id) || 'anon'); }
+function loadDiscDraft(user) {
+  try {
+    var raw = localStorage.getItem(discDraftKey(user));
+    if (!raw) return null;
+    var d = JSON.parse(raw);
+    return (d && typeof d === 'object' && d.answers) ? d : null;
+  } catch (e) { return null; }
+}
+function saveDiscDraft(user, answers, idx) {
+  try { localStorage.setItem(discDraftKey(user), JSON.stringify({ answers: answers, idx: idx })); } catch (e) {}
+}
+function clearDiscDraft(user) {
+  try { localStorage.removeItem(discDraftKey(user)); } catch (e) {}
+}
+
 function DiscTestScreen({ go, user, refreshProfile }) {
   const questions = window.DISC_QUESTIONS || [];
   const total = questions.length;
-  const [phase, setPhase] = React.useState('intro');  // 'intro' | 'instructions' | 'test'
-  const [idx, setIdx] = React.useState(0);
-  const [answers, setAnswers] = React.useState({});   // { [qId]: { most, least } }
+  const draft = React.useMemo(function () { return loadDiscDraft(user); }, [user && user.id]);
+  const [phase, setPhase] = React.useState(draft ? 'test' : 'intro');  // 'intro' | 'instructions' | 'test'
+  const [idx, setIdx] = React.useState(draft ? Math.min(draft.idx || 0, total - 1) : 0);
+  const [answers, setAnswers] = React.useState((draft && draft.answers) || {});   // { [qId]: { most, least } }
   const [saving, setSaving] = React.useState(false);
   const [error, setError] = React.useState('');
+
+  // Persiste o rascunho a cada resposta/navegação (barato: doc pequeno, só local)
+  React.useEffect(function () {
+    if (phase !== 'test') return;
+    if (Object.keys(answers).length === 0) return;
+    saveDiscDraft(user, answers, idx);
+  }, [answers, idx, phase]);
 
   const q = questions[idx];
   const current = (q && answers[q.id]) || {};
@@ -81,6 +108,7 @@ function DiscTestScreen({ go, user, refreshProfile }) {
       if (user && user.id && window.fbSaveDiscResult) {
         await window.fbSaveDiscResult(user.id, saved);
       }
+      clearDiscDraft(user); // teste concluído — rascunho não é mais necessário
       // Re-carrega perfil para refletir discCompleted/discMain no Firestore
       if (refreshProfile) await refreshProfile();
       go('analise');
@@ -664,10 +692,21 @@ function Pillar({ title, items, tone }) {
 }
 
 // ============ CRUZAMENTO ENTRE PERFIS ============
-function CruzamentoScreen({ go }) {
-  const myResult = window.DISC_LAST_RESULT;
-  const myPrimary = (myResult && myResult.profile && myResult.profile.primary) || 'D';
+function CruzamentoScreen({ go, user }) {
+  const [myResult, setMyResult] = React.useState(window.DISC_LAST_RESULT || null);
   const [target, setTarget] = React.useState('D');
+
+  // Sem cache em memória (ex.: reload direto nesta tela), recarrega do Firestore —
+  // senão o cabeçalho afirmaria "Seu perfil é D" para qualquer usuário.
+  React.useEffect(function () {
+    if (myResult || !user || !user.id) return;
+    window.fbGetDiscResult(user.id).then(function (doc) {
+      const r = discResultFromDoc(doc);
+      if (r) { setMyResult(r); window.DISC_LAST_RESULT = r; }
+    }).catch(function () {});
+  }, [user && user.id]);
+
+  const myPrimary = (myResult && myResult.profile && myResult.profile.primary) || null;
 
   const data = {
     D: {
@@ -722,7 +761,9 @@ function CruzamentoScreen({ go }) {
 
       <div className="card" style={{ padding: 22 }}>
         <div style={{ fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--muted)', fontWeight: 600 }}>
-          Seu perfil é <strong style={{ color: 'var(--brown-700)' }}>{myPrimary} · {DISC_META[myPrimary].label}</strong>. Escolha com quem você está negociando:
+          {myPrimary
+            ? <>Seu perfil é <strong style={{ color: 'var(--brown-700)' }}>{myPrimary} · {DISC_META[myPrimary].label}</strong>. Escolha com quem você está negociando:</>
+            : <>Escolha com quem você está negociando:</>}
         </div>
         <div className="m-stack-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginTop: 14 }}>
           {Object.entries(profiles).map(function (entry) {

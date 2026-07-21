@@ -753,13 +753,15 @@ function ComparacoesScreen({ go, user }) {
   var [loading, setLoading] = React.useState(true);
 
   React.useEffect(function () {
-    const gestorId = user && user.gestorId;
+    // Gestor compara o PRÓPRIO time (uid dele é o gestorId dos membros);
+    // aluno compara o time ao qual pertence (via user.gestorId).
+    const gestorId = user && (user.role === 'gestor' ? user.id : user.gestorId);
     if (!gestorId || !window.fbGetTeamMembers) { setLoading(false); return; }
     window.fbGetTeamMembers(gestorId).then(function (members) {
-      setTeam((members || []).filter(function (m) { return m.main; }));
+      setTeam((members || []).filter(function (m) { return m.main && m.main !== '—'; }));
       setLoading(false);
     }).catch(function () { setLoading(false); });
-  }, [user && user.gestorId]);
+  }, [user && user.id, user && user.gestorId, user && user.role]);
 
   const dist = React.useMemo(function () {
     const counts = { D: 0, I: 0, S: 0, C: 0 };

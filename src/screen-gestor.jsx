@@ -535,7 +535,8 @@ function GestorMapa({ go, user }) {
     if (!team || !team.length) return [];
     const byRole = {};
     team.forEach(function (m) {
-      if (!m.main) return; // ignora membros sem DISC
+      // membros sem DISC vêm com main '—' (placeholder), não null
+      if (!m.main || !/^[DISC]$/.test(m.main)) return;
       const role = m.role || t('gestor.mapa.noJob');
       if (!byRole[role]) byRole[role] = { role: role, D: 0, I: 0, S: 0, C: 0 };
       byRole[role][m.main] += 1;

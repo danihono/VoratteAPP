@@ -166,7 +166,8 @@ function DashboardScreen({ go, user }) {
         <div className="m-stack-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
           <QuickCard icon={<Ic.Kraljic s={20}/>} title={t('dashboard.quick.kraljic')}     sub={t('dashboard.quick.kraljicSub')}     onClick={() => go('kraljic')} />
           <QuickCard icon={<Ic.Object s={20}/>}  title={t('dashboard.quick.objecoes')}    sub={t('dashboard.quick.objecoesSub')}    onClick={() => go('objecoes')} />
-          <QuickCard icon={<Ic.Compare s={20}/>} title={t('dashboard.quick.comparacoes')} sub={t('dashboard.quick.comparacoesSub')} onClick={() => go('comparacoes')} />
+          {/* rota do aluno é 'cruzamento' — 'comparacoes' só existe no mapa do gestor */}
+          <QuickCard icon={<Ic.Compare s={20}/>} title={t('dashboard.quick.comparacoes')} sub={t('dashboard.quick.comparacoesSub')} onClick={() => go('cruzamento')} />
           <QuickCard icon={<Ic.Report s={20}/>}  title={t('dashboard.quick.relatorios')}  sub={t('dashboard.quick.relatoriosSub')}  onClick={() => go('relatorios')} />
         </div>
       </div>

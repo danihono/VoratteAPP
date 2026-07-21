@@ -1169,7 +1169,6 @@ function AdminGestores({ go }) {
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 4 }}>
                       <button className="icon-btn" onClick={function(){ setVerG(m); }} title={t('admin.ver.gestorTitle')}><Ic.Eye s={16}/></button>
                       <button className="icon-btn" onClick={function(){ setEditG(m); }} title={t('admin.editar.gestorTitle')}><Ic.Settings s={16}/></button>
-                      <button className="icon-btn" onClick={function(){ setEditG(m); }} title={t('admin.editar.gestorTitle')}><Ic.More s={16}/></button>
                     </div>
                   </td>
                 </tr>
@@ -1935,6 +1934,7 @@ function CriarAlunoModal({ onClose, onCreated }) {
       }
       await window.fbCreateUserDoc(uid, userDoc);
       if (company) window.fbIncrementCompanyCounter(company.id, 'userCount');
+      if (gestor && window.fbIncrementUserCounter) window.fbIncrementUserCounter(gestor.id, 'teamSize');
       setCreated({
         uid:         uid,
         name:        form.name.trim(),

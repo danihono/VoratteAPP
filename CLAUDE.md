@@ -28,37 +28,35 @@ The official brand spelling is **Vorätte** (with umlaut on the `a`). Always use
 Technical identifiers must stay ASCII and are NOT renamed:
 
 - Firebase project ID: `voratte-3fc9f`
-- Asset/file paths: `assets/voratte-logo.webp`, `uploads/logo-voratte-grande.webp`
-- HTML entry filename: `Voratte DISC Platform.html`
+- Asset/file paths: `public/assets/voratte-logo.webp`, `uploads/logo-voratte-grande.webp`
 - DOM IDs: `voratte-print-frame`
 - Email domain: `voratte.com.br` / `voratte.com`
 
 ## Running locally
 
-No build step. Serve the directory over HTTP:
-
 ```bash
-python -m http.server 8000
-# then open http://localhost:8000/Voratte%20DISC%20Platform.html
+npm install        # primeira vez
+npm run dev        # Vite dev server (HMR) — http://localhost:5173
+npm run build      # build de produção em dist/
+npm run preview    # serve o build de produção localmente
+npm test           # smoke tests do motor de negociação (Node, sem browser)
 ```
-
-Never open via `file://` — CORS blocks the Babel script loader.
 
 ## Deploy
 
 ```bash
-firebase deploy              # Hosting + Firestore rules + indexes
+firebase deploy              # roda `npm run build` (predeploy) + Hosting (dist/) + Firestore rules + indexes
 firebase deploy --only hosting
 firebase deploy --only firestore
 ```
 
 ## Architecture
 
-**Stack:** React 18 (UMD CDN) + Babel Standalone (inline JSX transpilation). No bundler, no npm packages at runtime, no URL routing.
+**Stack:** React 18 + Vite (build/bundling, JSX via `@vitejs/plugin-react`). Firebase Compat SDK e EmailJS via npm. No URL routing (navegação por estado).
 
-**Entry point:** `Voratte DISC Platform.html` — loads CDN scripts in order, then all `src/*.jsx` as `<script type="text/babel">`, then `src/app.jsx` last (renders `<App/>` to `#root`).
+**Entry point:** `index.html` → `src/main.jsx`, que importa todos os módulos **em ordem fixa** (dados antes de engines, engines antes de telas, `app.jsx` por último — ele renderiza `<App/>` em `#root`). Ao criar um arquivo novo em `src/`, adicione o import em `src/main.jsx` na posição correta da cadeia de dependências.
 
-**Critical constraint — isolated Babel scopes:** Each `<script type="text/babel">` is transpiled in its own scope. Files cannot `import` from each other. Cross-file sharing is done exclusively via `window` globals:
+**Convenção de compartilhamento — `window` globals:** os arquivos de `src/` são módulos de efeito colateral: não usam `import`/`export` entre si; tudo que é compartilhado é expostos em `window`:
 
 ```js
 // at the bottom of every src/*.jsx file
@@ -66,9 +64,11 @@ window.MyComponent = MyComponent;
 window.SOME_DATA   = SOME_DATA;
 ```
 
-`app.jsx` consumes all components as globals (e.g. `<DashboardScreen />`). Never use ES module syntax (`import/export`) in `.jsx` files.
+`src/bootstrap-globals.js` (primeiro import do `main.jsx`) materializa as dependências npm nesses globais: `window.React`, `window.ReactDOM` (react-dom/client), `window.firebase` (compat), `window.emailjs`. Referências "bare" (`React`, `Ic`, `t`, `firebase`…) resolvem via global scope. Os módulos rodam em strict mode (ESM) — nunca atribua a variáveis não declaradas.
 
-**Firebase:** Uses the Compat SDK (`firebase-app-compat.js` etc.) loaded as regular `<script>` tags — NOT `type="module"` — so they execute before Babel scripts. Helpers live in `src/firebase-config.js` (plain JS, not Babel) and are exposed as `window.auth`, `window.db`, `window.fbGetUserProfile`, `window.fbGetTeamMembers`, `window.fbGetAllUsers`, `window.fbGetAllCompanies`, `window.fbGetAllGestores`, `window.fbSaveDiscResult`, etc.
+**Firebase:** Compat SDK via npm (`firebase/compat/app` + auth + firestore), inicializado em `src/firebase-config.js`, que expõe `window.auth`, `window.db`, `window.fbGetUserProfile`, `window.fbGetTeamMembers`, `window.fbGetAllUsers`, `window.fbGetAllCompanies`, `window.fbGetAllGestores`, `window.fbSaveDiscResult`, etc.
+
+**Assets estáticos:** vivem em `public/` (copiados para a raiz do `dist/` no build). Referências em código usam caminhos relativos tipo `assets/voratte-logo.webp`.
 
 **Routing:** `useState`-based inside `App` in `app.jsx`. The function `renderScreen(role, route, go, user)` dispatches the right component. No URL changes on navigation.
 
@@ -118,12 +118,12 @@ Esses usuários devem existir no Firebase Auth **e** ter um documento em `/users
 The 24-question forced-choice DISC test is fully wired. Question bank, buyer
 profiles and the scoring engine live in `src/disc-data.jsx` (browser-runnable
 port of the canonical `disc-questions.ts` / `disc-engine.ts` at the repo root —
-the `.ts` files cannot run here because of the no-bundler architecture). It
+the `.ts` files remain reference-only; the app runs the `.jsx` port). It
 exposes `window.DISC_QUESTIONS`, `window.BUYER_PROFILES`,
 `window.BUYER_TYPE_TABLE`, `window.calculateDisc`. `DiscTestScreen` computes the
 result, saves it via `fbSaveDiscResult` and stashes it in
 `window.DISC_LAST_RESULT`; `AnaliseScreen` reads that global or reloads from
-Firestore. `disc-data.jsx` must load before `screen-disc.jsx` in the HTML.
+Firestore. `disc-data.jsx` must be imported before `screen-disc.jsx` in `src/main.jsx`.
 
 ## Report PDF export
 
@@ -132,7 +132,7 @@ export lives in `src/report-export.jsx` (`window.buildReportData`,
 `generateReportHTML`, `exportReportPDF`) — it builds a standalone A4 HTML
 document (Vorätte logo embedded as base64, system colors/fonts) and prints it
 through a hidden iframe (native print dialog → "Save as PDF"). No external
-library. `report-export.jsx` must load before `screen-rest.jsx`.
+library. `report-export.jsx` must be imported before `screen-rest.jsx` in `src/main.jsx`.
 
 ## What is NOT implemented yet
 

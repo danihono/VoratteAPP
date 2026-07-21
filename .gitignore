@@ -15,6 +15,7 @@ firestore.rules.bak
 
 # Dependências / build
 node_modules/
+dist/
 
 # SO / editor
 .DS_Store

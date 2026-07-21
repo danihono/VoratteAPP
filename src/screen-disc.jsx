@@ -42,6 +42,7 @@ function clearDiscDraft(user) {
 }
 
 function DiscTestScreen({ go, user, refreshProfile }) {
+  useLang();
   const questions = window.DISC_QUESTIONS || [];
   const total = questions.length;
   const draft = React.useMemo(function () { return loadDiscDraft(user); }, [user && user.id]);
@@ -114,7 +115,7 @@ function DiscTestScreen({ go, user, refreshProfile }) {
       go('analise');
     } catch (e) {
       console.error('Erro ao salvar DISC:', e);
-      setError('Não foi possível salvar agora — seu resultado foi calculado e será exibido.');
+      setError(t('disc.test.saveError'));
       go('analise');
     } finally {
       setSaving(false);
@@ -124,10 +125,10 @@ function DiscTestScreen({ go, user, refreshProfile }) {
   // ---- Tela 1: intro colorida e chamativa ----
   if (phase === 'intro') {
     const tiles = [
-      { k: 'd', letter: 'D', name: 'Dominância' },
-      { k: 'i', letter: 'I', name: 'Influência' },
-      { k: 's', letter: 'S', name: 'Estabilidade' },
-      { k: 'c', letter: 'C', name: 'Conformidade' },
+      { k: 'd', letter: 'D', name: t('disc.D.full') },
+      { k: 'i', letter: 'I', name: t('disc.I.full') },
+      { k: 's', letter: 'S', name: t('disc.S.full') },
+      { k: 'c', letter: 'C', name: t('disc.C.full') },
     ];
     return (
       <div className="page-enter" style={{ maxWidth: 860, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 22 }}>
@@ -145,20 +146,17 @@ function DiscTestScreen({ go, user, refreshProfile }) {
 
             <div style={{ position: 'relative', maxWidth: 640 }}>
               <div className="badge" style={{ background: 'rgba(255,255,255,0.10)', color: 'var(--brown-100)' }}>
-                <Ic.Sparkle s={12}/> Avaliação DISC · Perfil do Comprador
+                <Ic.Sparkle s={12}/> {t('disc.intro.badge')}
               </div>
               <h1 className="serif" style={{ fontSize: 46, fontWeight: 400, letterSpacing: '-0.025em', lineHeight: 1.06, marginTop: 18 }}>
-                Descubra seu<br/>
+                {t('disc.intro.titleTop')}<br/>
                 <em style={{
                   background: 'linear-gradient(90deg, var(--disc-d), var(--disc-i) 38%, var(--disc-s) 68%, var(--disc-c))',
                   WebkitBackgroundClip: 'text', backgroundClip: 'text', WebkitTextFillColor: 'transparent',
-                }}>perfil de comprador</em>
+                }}>{t('disc.intro.titleEm')}</em>
               </h1>
-              <p style={{ fontSize: 15, color: 'var(--brown-200)', marginTop: 18, lineHeight: 1.6, maxWidth: 520 }}>
-                São <strong style={{ color: 'var(--brown-50)' }}>24 grupos de palavras</strong> e leva
-                cerca de <strong style={{ color: 'var(--brown-50)' }}>10 minutos</strong>. Não existe
-                resposta certa — suas respostas são confidenciais e revelam como você negocia.
-              </p>
+              <p style={{ fontSize: 15, color: 'var(--brown-200)', marginTop: 18, lineHeight: 1.6, maxWidth: 520 }}
+                 dangerouslySetInnerHTML={{ __html: t('disc.intro.lede') }} />
 
               <div style={{ display: 'flex', gap: 12, marginTop: 26 }}>
                 {tiles.map(function (t) {
@@ -173,10 +171,10 @@ function DiscTestScreen({ go, user, refreshProfile }) {
 
               <div style={{ display: 'flex', gap: 10, marginTop: 32 }}>
                 <button className="btn btn-primary btn-lg" style={{ background: 'var(--brown-50)', color: 'var(--brown-900)' }} onClick={function () { setPhase('instructions'); }}>
-                  Quero começar <Ic.Arrow s={16}/>
+                  {t('disc.intro.start')} <Ic.Arrow s={16}/>
                 </button>
                 <button className="btn" style={{ background: 'rgba(255,255,255,0.10)', color: 'var(--brown-50)' }} onClick={function () { go('dashboard'); }}>
-                  Agora não
+                  {t('disc.intro.notNow')}
                 </button>
               </div>
             </div>
@@ -184,7 +182,7 @@ function DiscTestScreen({ go, user, refreshProfile }) {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center', fontSize: 12, color: 'var(--muted)' }}>
-          <Ic.Lock s={12} /> Respostas criptografadas · resultado disponível só para você e seu gestor
+          <Ic.Lock s={12} /> {t('disc.privacyLine')}
         </div>
       </div>
     );
@@ -193,10 +191,10 @@ function DiscTestScreen({ go, user, refreshProfile }) {
   // ---- Tela 2: instruções de como responder ----
   if (phase === 'instructions') {
     const steps = [
-      { c: 'var(--disc-i)', t: 'Um grupo de cada vez', d: 'A cada tela você vê 4 palavras. Leia as quatro antes de decidir.' },
-      { c: 'var(--disc-s)', t: 'Marque 1 "Mais" — fica verde', d: 'A palavra MAIS parecida com o seu jeito de ser. O botão fica verde.' },
-      { c: 'var(--disc-d)', t: 'Marque 1 "Menos" — fica vermelho', d: 'A palavra MENOS parecida com você. O botão fica vermelho.' },
-      { c: 'var(--disc-c)', t: 'Sinceridade, sem pensar demais', d: 'Não existe resposta certa. Responda rápido — a 1ª impressão é a mais fiel.' },
+      { c: 'var(--disc-i)', t: t('disc.instr.step1.t'), d: t('disc.instr.step1.d') },
+      { c: 'var(--disc-s)', t: t('disc.instr.step2.t'), d: t('disc.instr.step2.d') },
+      { c: 'var(--disc-d)', t: t('disc.instr.step3.t'), d: t('disc.instr.step3.d') },
+      { c: 'var(--disc-c)', t: t('disc.instr.step4.t'), d: t('disc.instr.step4.d') },
     ];
     const examplePill = {
       display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
@@ -207,13 +205,13 @@ function DiscTestScreen({ go, user, refreshProfile }) {
       <div className="page-enter" style={{ maxWidth: 720, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 22 }}>
         <div className="card" style={{ padding: 36 }}>
           <div style={{ fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--muted)', fontWeight: 600, marginBottom: 10 }}>
-            Etapa final antes de começar
+            {t('disc.instr.eyebrow')}
           </div>
           <h2 className="serif" style={{ fontSize: 28, fontWeight: 500, lineHeight: 1.2, letterSpacing: '-0.015em', marginBottom: 6 }}>
-            Como responder o teste
+            {t('disc.instr.title')}
           </h2>
           <p style={{ fontSize: 13.5, color: 'var(--muted)', marginBottom: 24 }}>
-            Leva só um minuto entender — depois é só seguir o fluxo.
+            {t('disc.instr.lede')}
           </p>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -234,28 +232,28 @@ function DiscTestScreen({ go, user, refreshProfile }) {
 
           <div style={{ marginTop: 22, padding: 18, borderRadius: 'var(--radius-md)', background: 'var(--brown-50)', border: '1px dashed var(--brown-300)' }}>
             <div style={{ fontSize: 11, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--muted)', fontWeight: 600, marginBottom: 12 }}>
-              Exemplo
+              {t('disc.instr.example')}
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', borderRadius: 'var(--radius-md)', border: '1px solid var(--line)', background: 'var(--paper)' }}>
-              <div style={{ flex: 1, fontSize: 15, fontWeight: 500, color: 'var(--ink)' }}>Decidido</div>
+              <div style={{ flex: 1, fontSize: 15, fontWeight: 500, color: 'var(--ink)' }}>{t('disc.instr.exampleWord')}</div>
               <div style={Object.assign({}, examplePill, { background: 'var(--disc-s)', borderColor: 'var(--disc-s)' })}>
-                <Ic.Check s={13} /> Mais
+                <Ic.Check s={13} /> {t('disc.word.more')}
               </div>
               <div style={Object.assign({}, examplePill, { background: 'var(--disc-d)', borderColor: 'var(--disc-d)' })}>
-                − Menos
+                − {t('disc.word.less')}
               </div>
             </div>
             <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 10 }}>
-              Verde = mais parecido com você · Vermelho = menos parecido com você.
+              {t('disc.instr.legend')}
             </div>
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 28 }}>
             <button className="btn btn-secondary" onClick={function () { setPhase('intro'); }}>
-              <Ic.ArrowL s={14} /> Voltar
+              <Ic.ArrowL s={14} /> {t('common.back')}
             </button>
             <button className="btn btn-primary" onClick={function () { setPhase('test'); }}>
-              Estou pronto, iniciar teste <Ic.Arrow s={14} />
+              {t('disc.instr.begin')} <Ic.Arrow s={14} />
             </button>
           </div>
         </div>
@@ -264,7 +262,7 @@ function DiscTestScreen({ go, user, refreshProfile }) {
   }
 
   if (!q) {
-    return <div className="card" style={{ padding: 32 }}>Banco de questões indisponível.</div>;
+    return <div className="card" style={{ padding: 32 }}>{t('disc.test.noBank')}</div>;
   }
 
   const pillBase = {
@@ -278,10 +276,10 @@ function DiscTestScreen({ go, user, refreshProfile }) {
     <div className="page-enter" style={{ maxWidth: 860, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 22 }}>
       <div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-          <div className="badge badge-outline">Teste DISC · Perfil do Comprador</div>
+          <div className="badge badge-outline">{t('disc.test.badge')}</div>
           <div style={{ fontSize: 13, color: 'var(--muted)' }}>
-            Questão <strong style={{ color: 'var(--ink)' }}>{idx + 1}</strong> de {total}
-            <span style={{ marginLeft: 10, color: 'var(--muted)' }}>· {answeredCount} respondidas</span>
+            {t('disc.test.qWord')} <strong style={{ color: 'var(--ink)' }}>{idx + 1}</strong> {t('disc.test.ofWord')} {total}
+            <span style={{ marginLeft: 10, color: 'var(--muted)' }}>· {t('disc.test.answered', { n: answeredCount })}</span>
           </div>
         </div>
         <div className="progress">
@@ -294,14 +292,12 @@ function DiscTestScreen({ go, user, refreshProfile }) {
 
       <div className="card" style={{ padding: 32 }}>
         <div style={{ fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--muted)', fontWeight: 600, marginBottom: 10 }}>
-          Adjetivos · Como você se comporta
+          {t('disc.test.groupLabel')}
         </div>
-        <h2 className="serif" style={{ fontSize: 25, fontWeight: 500, lineHeight: 1.25, letterSpacing: '-0.01em', marginBottom: 6 }}>
-          Em cada grupo, marque o que é <em>mais</em> e o que é <em>menos</em> parecido com você.
-        </h2>
-        <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 22 }}>
-          Escolha exatamente <strong>1 “Mais”</strong> e <strong>1 “Menos”</strong> entre as quatro palavras.
-        </p>
+        <h2 className="serif" style={{ fontSize: 25, fontWeight: 500, lineHeight: 1.25, letterSpacing: '-0.01em', marginBottom: 6 }}
+            dangerouslySetInnerHTML={{ __html: t('disc.test.title') }} />
+        <p style={{ fontSize: 13, color: 'var(--muted)', marginBottom: 22 }}
+           dangerouslySetInnerHTML={{ __html: t('disc.test.sub') }} />
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {q.options.map(function (o) {
@@ -326,7 +322,7 @@ function DiscTestScreen({ go, user, refreshProfile }) {
                     background: 'var(--disc-s)', color: '#fff', borderColor: 'var(--disc-s)',
                   } : null)}
                 >
-                  <Ic.Check s={13} /> Mais
+                  <Ic.Check s={13} /> {t('disc.word.more')}
                 </div>
                 <div
                   onClick={function () { pick('least', o.dimension); }}
@@ -334,7 +330,7 @@ function DiscTestScreen({ go, user, refreshProfile }) {
                     background: 'var(--disc-d)', color: '#fff', borderColor: 'var(--disc-d)',
                   } : null)}
                 >
-                  − Menos
+                  − {t('disc.word.less')}
                 </div>
               </div>
             );
@@ -347,21 +343,21 @@ function DiscTestScreen({ go, user, refreshProfile }) {
 
         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 26 }}>
           <button className="btn btn-secondary" disabled={idx === 0} onClick={function () { setIdx(Math.max(0, idx - 1)); }}>
-            <Ic.ArrowL s={14} /> Anterior
+            <Ic.ArrowL s={14} /> {t('disc.test.prev')}
           </button>
           <div style={{ display: 'flex', gap: 8 }}>
-            <button className="btn btn-ghost" onClick={function () { go('dashboard'); }}>Salvar e sair</button>
+            <button className="btn btn-ghost" onClick={function () { go('dashboard'); }}>{t('disc.test.saveExit')}</button>
             {idx < total - 1 ? (
               <button
                 className="btn btn-primary"
                 disabled={!(current.most && current.least)}
                 onClick={function () { setIdx(Math.min(total - 1, idx + 1)); }}
               >
-                Próxima <Ic.Arrow s={14} />
+                {t('disc.test.next')} <Ic.Arrow s={14} />
               </button>
             ) : (
               <button className="btn btn-primary" disabled={!allDone || saving} onClick={finish}>
-                {saving ? 'Calculando…' : 'Finalizar teste'} <Ic.Arrow s={14} />
+                {saving ? t('disc.test.calculating') : t('disc.test.finish')} <Ic.Arrow s={14} />
               </button>
             )}
           </div>
@@ -369,7 +365,7 @@ function DiscTestScreen({ go, user, refreshProfile }) {
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center', fontSize: 12, color: 'var(--muted)' }}>
-        <Ic.Lock s={12} /> Respostas criptografadas · resultado disponível só para você e seu gestor
+        <Ic.Lock s={12} /> {t('disc.privacyLine')}
       </div>
     </div>
   );
@@ -377,16 +373,14 @@ function DiscTestScreen({ go, user, refreshProfile }) {
 
 // ============ GRÁFICO DE BARRAS — Máscara / Pressão / Real ============
 function DiscBarChart({ most, least, change }) {
-  const dims = [
-    { key: 'D', label: 'D (Dominância)' },
-    { key: 'I', label: 'I (Influência)' },
-    { key: 'S', label: 'S (Estabilidade)' },
-    { key: 'C', label: 'C (Conformidade)' },
-  ];
+  useLang();
+  const dims = ['D', 'I', 'S', 'C'].map(function (k) {
+    return { key: k, label: k + ' (' + t('disc.' + k + '.full') + ')' };
+  });
   const series = [
-    { name: 'Máscara (apresentação)', color: '#3f7cb8', data: most || {} },
-    { name: 'Pressão (estresse)',     color: '#cf6a3f', data: least || {} },
-    { name: 'Real (decisão)',         color: '#1f9d6b', data: change || {} },
+    { name: t('disc.chart.mask'),     color: '#3f7cb8', data: most || {} },
+    { name: t('disc.chart.pressure'), color: '#cf6a3f', data: least || {} },
+    { name: t('disc.chart.real'),     color: '#1f9d6b', data: change || {} },
   ];
 
   const all = [];
@@ -463,6 +457,7 @@ function DiscBarChart({ most, least, change }) {
 
 // ============ ANÁLISE DO RESULTADO ============
 function AnaliseScreen({ go, user }) {
+  useLang();
   const [result, setResult] = React.useState(window.DISC_LAST_RESULT || null);
   const [loading, setLoading] = React.useState(!window.DISC_LAST_RESULT);
 
@@ -476,18 +471,18 @@ function AnaliseScreen({ go, user }) {
   }, [user && user.id]);
 
   if (loading) {
-    return <div className="card" style={{ padding: 40, textAlign: 'center', color: 'var(--muted)' }}>Carregando análise…</div>;
+    return <div className="card" style={{ padding: 40, textAlign: 'center', color: 'var(--muted)' }}>{t('analise.loading')}</div>;
   }
 
   if (!result) {
     return (
       <div className="card" style={{ padding: 44, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}>
-        <h2 className="serif" style={{ fontSize: 24, fontWeight: 500 }}>Você ainda não fez o teste DISC</h2>
+        <h2 className="serif" style={{ fontSize: 24, fontWeight: 500 }}>{t('analise.emptyTitle')}</h2>
         <p style={{ fontSize: 14, color: 'var(--muted)', maxWidth: 420 }}>
-          Responda às 24 questões para descobrir seu perfil de comprador e desbloquear a análise completa.
+          {t('analise.emptyBody')}
         </p>
         <button className="btn btn-primary" onClick={function () { go('teste'); }}>
-          Fazer o teste DISC <Ic.Arrow s={14} />
+          {t('analise.emptyCta')} <Ic.Arrow s={14} />
         </button>
       </div>
     );
@@ -501,16 +496,16 @@ function AnaliseScreen({ go, user }) {
   const totalMost = result.mostGraph.D + result.mostGraph.I + result.mostGraph.S + result.mostGraph.C || 1;
   const composition = ['D', 'I', 'S', 'C'].map(function (k) {
     return {
-      key: k, label: DISC_META[k].full, color: DISC_META[k].color,
+      key: k, label: t('disc.' + k + '.full'), color: DISC_META[k].color,
       value: Math.round((result.mostGraph[k] / totalMost) * 100),
     };
   });
 
   const panels = [
-    { label: 'Perfil',    value: result.code },
-    { label: 'Tipo',      value: profile.shortLabel },
-    { label: 'Decisão',   value: profile.decisionShort },
-    { label: 'Tom ideal', value: profile.toneShort },
+    { label: t('analise.panel.profile'),  value: result.code },
+    { label: t('analise.panel.type'),     value: profile.shortLabel },
+    { label: t('analise.panel.decision'), value: profile.decisionShort },
+    { label: t('analise.panel.tone'),     value: profile.toneShort },
   ];
 
   return (
@@ -521,24 +516,24 @@ function AnaliseScreen({ go, user }) {
         <div className="m-stack" style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: 32 }}>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}>
             <Donut size={220} stroke={28} data={composition}
-              center={<><div className="letter">{primary}</div><div className="label">{meta.label}</div></>}
+              center={<><div className="letter">{primary}</div><div className="label">{t('disc.' + primary + '.label')}</div></>}
             />
             <div style={{ textAlign: 'center' }}>
               <div className="serif" style={{ fontSize: 18, fontWeight: 500 }}>{profile.label}</div>
               <div style={{ fontSize: 12, color: 'var(--muted)' }}>
                 {profile.secondary
-                  ? <>secundário: <strong style={{ color: 'var(--ink)' }}>{DISC_META[profile.secondary].full} ({profile.secondary})</strong></>
-                  : 'perfil puro, sem traço secundário forte'}
+                  ? <>{t('analise.secondaryPrefix')} <strong style={{ color: 'var(--ink)' }}>{t('disc.' + profile.secondary + '.full')} ({profile.secondary})</strong></>
+                  : t('analise.pureProfile')}
               </div>
             </div>
           </div>
 
           <div>
             <div style={{ fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--muted)', fontWeight: 600, marginBottom: 6 }}>
-              Análise comportamental do comprador
+              {t('analise.eyebrow')}
             </div>
             <h2 className="serif" style={{ fontSize: 26, fontWeight: 500, lineHeight: 1.2, letterSpacing: '-0.01em', marginBottom: 8 }}>
-              Composição do seu perfil
+              {t('analise.compTitle')}
             </h2>
             <p style={{ fontSize: 13.5, color: 'var(--ink-soft)', lineHeight: 1.6, marginBottom: 18, maxWidth: 560 }}>
               {profile.buyerType}.
@@ -566,10 +561,10 @@ function AnaliseScreen({ go, user }) {
       {/* GRÁFICO 1 — Máscara / Pressão / Real */}
       <div className="card" style={{ padding: 28 }}>
         <div style={{ fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--muted)', fontWeight: 600, marginBottom: 6 }}>
-          Visualização do resultado
+          {t('analise.vizEyebrow')}
         </div>
         <h2 className="serif" style={{ fontSize: 22, fontWeight: 500, marginBottom: 18 }}>
-          Como esse comprador se comporta em três cenários
+          {t('analise.vizTitle')}
         </h2>
 
         <div className="m-stack-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 22 }}>
@@ -585,30 +580,26 @@ function AnaliseScreen({ go, user }) {
 
         <DiscBarChart most={result.mostGraph} least={result.leastGraph} change={result.changeGraph} />
 
-        <p style={{ fontSize: 12.5, color: 'var(--muted)', lineHeight: 1.6, marginTop: 16, maxWidth: 680 }}>
-          <strong style={{ color: 'var(--ink-soft)' }}>Máscara</strong> é como o comprador se apresenta numa primeira
-          reunião · <strong style={{ color: 'var(--ink-soft)' }}>Pressão</strong> é como ele age sob estresse de
-          negociação · <strong style={{ color: 'var(--ink-soft)' }}>Real</strong> é o perfil autêntico que governa a
-          decisão de compra.
-        </p>
+        <p style={{ fontSize: 12.5, color: 'var(--muted)', lineHeight: 1.6, marginTop: 16, maxWidth: 680 }}
+           dangerouslySetInnerHTML={{ __html: t('analise.vizExplainer') }} />
       </div>
 
       {/* Detalhe do perfil */}
       <div className="m-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-        <Pillar title="O que move o comprador (a)" items={profile.motivators} />
-        <Pillar title="O que trava a decisão" items={profile.fears} tone="warn" />
+        <Pillar title={t('relatorio.movesTitle')} items={profile.motivators} />
+        <Pillar title={t('relatorio.brakesTitle')} items={profile.fears} tone="warn" />
       </div>
       <div className="card">
-        <div className="card-title">Seu estilo de negociação</div>
-        <div className="card-sub">Autoconhecimento — seus próprios gatilhos na mesa de negociação</div>
+        <div className="card-title">{t('analise.styleTitle')}</div>
+        <div className="card-sub">{t('analise.styleSub')}</div>
         <div className="m-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
           {(function () {
             const e = (window.voratteEstiloComprador && window.voratteEstiloComprador(profile.primary)) || { tom: '', ritmo: '', objecao: '' };
             return [
-              ['O tom que funciona com você', e.tom],
-              ['Seu ritmo de decisão', e.ritmo],
-              ['Como você reage a objeções', e.objecao],
-              ['Estilo de decisão', profile.decisionStyle],
+              [t('relatorio.toneIdeal'), e.tom],
+              [t('relatorio.closing'), e.ritmo],
+              [t('relatorio.objections'), e.objecao],
+              [t('analise.decisionStyle'), profile.decisionStyle],
             ].map(function (row) {
               return (
                 <div key={row[0]} style={{ padding: 14, background: 'var(--paper-warm)', borderRadius: 10, border: '1px solid var(--line)' }}>
@@ -624,21 +615,21 @@ function AnaliseScreen({ go, user }) {
       {/* GRÁFICO 2 — tabela dos 11 tipos de comprador */}
       <div className="card" style={{ padding: 28 }}>
         <div style={{ fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--muted)', fontWeight: 600, marginBottom: 6 }}>
-          Referência
+          {t('analise.refEyebrow')}
         </div>
         <h2 className="serif" style={{ fontSize: 22, fontWeight: 500, marginBottom: 4 }}>
-          Os 11 tipos de comprador reconhecidos pela Vorätte
+          {t('analise.typesTitle')}
         </h2>
         <p style={{ fontSize: 12.5, color: 'var(--muted)', marginBottom: 16 }}>
-          Perfis puros + combinações. O seu está destacado.
+          {t('analise.typesSub')}
         </p>
 
         <div className="tbl-wrap"><table className="tbl">
           <thead>
             <tr>
-              <th style={{ width: 70 }}>Código</th>
-              <th>Tipo de comprador</th>
-              <th>Como esse perfil negocia</th>
+              <th style={{ width: 70 }}>{t('analise.col.code')}</th>
+              <th>{t('analise.col.type')}</th>
+              <th>{t('analise.col.how')}</th>
             </tr>
           </thead>
           <tbody>
@@ -648,7 +639,7 @@ function AnaliseScreen({ go, user }) {
                 <tr key={row.code} style={mine ? { background: 'var(--brown-50)' } : null}>
                   <td>
                     <strong style={{ color: 'var(--brown-700)' }}>{row.code}</strong>
-                    {mine && <span className="badge badge-brown" style={{ marginLeft: 8 }}>Você</span>}
+                    {mine && <span className="badge badge-brown" style={{ marginLeft: 8 }}>{t('analise.youBadge')}</span>}
                   </td>
                   <td style={{ fontWeight: 600 }}>{row.type}</td>
                   <td style={{ color: 'var(--ink-soft)' }}>{row.comoVender}</td>
@@ -662,11 +653,11 @@ function AnaliseScreen({ go, user }) {
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
         {!(user && user.role === 'gestor') && (
           <button className="btn btn-secondary" onClick={function () { go('cruzamento'); }}>
-            Cruzamento com outros perfis <Ic.Arrow s={14} />
+            {t('analise.crossCta')} <Ic.Arrow s={14} />
           </button>
         )}
         <button className="btn btn-primary" onClick={function () { go('relatorio'); }}>
-          Gerar meu relatório <Ic.Arrow s={14} />
+          {t('analise.reportCta')} <Ic.Arrow s={14} />
         </button>
       </div>
     </div>
@@ -693,6 +684,7 @@ function Pillar({ title, items, tone }) {
 
 // ============ CRUZAMENTO ENTRE PERFIS ============
 function CruzamentoScreen({ go, user }) {
+  useLang();
   const [myResult, setMyResult] = React.useState(window.DISC_LAST_RESULT || null);
   const [target, setTarget] = React.useState('D');
 
@@ -708,52 +700,18 @@ function CruzamentoScreen({ go, user }) {
 
   const myPrimary = (myResult && myResult.profile && myResult.profile.primary) || null;
 
-  const data = {
-    D: {
-      identify: ['Direto', 'Competitivo', 'Focado em resultados', 'Impaciente', 'Gosta de desafios', 'Decisivo'],
-      comm: ['Seja direto e objetivo', 'Foque em resultado, ROI e prazo', 'Apresente opções claras e exija contrapartidas', 'Mostre consequências objetivas', 'Evite rodeios e não entre em disputa de ego'],
-      objs: [
-        ['"Quero o resultado disso"', 'Apresente dados e ROI'],
-        ['"Quanto isso vai economizar?"', 'Seja objetivo e vá direto ao ponto'],
-        ['"Por que não é mais rápido?"', 'Mostre agilidade e assertividade'],
-      ],
-    },
-    I: {
-      identify: ['Comunicativo', 'Entusiasta', 'Influente', 'Otimista', 'Busca reconhecimento', 'Sociável'],
-      comm: ['Reconheça a parceria e mantenha tom positivo', 'Use prova social e cases para ancorar', 'Traga estrutura à conversa fluida', 'Formalize por escrito os compromissos', 'Traduza o entusiasmo em próximos passos objetivos'],
-      objs: [
-        ['"Quem mais já comprou?"', 'Traga referências e casos visíveis'],
-        ['"Como vão me ver com isso?"', 'Mostre o impacto reputacional positivo'],
-        ['"Não quero parecer rígido"', 'Apresente alternativas flexíveis'],
-      ],
-    },
-    S: {
-      identify: ['Paciente', 'Estável', 'Bom ouvinte', 'Avesso a mudanças bruscas', 'Cooperativo', 'Leal'],
-      comm: ['Crie um ambiente seguro e previsível', 'Explique cada passo com calma', 'Dê previsibilidade e reduza a incerteza', 'Evite pressão por urgência artificial', 'Confirme cada etapa do acordo'],
-      objs: [
-        ['"E se algo der errado?"', 'Mostre histórico e garantias'],
-        ['"Precisamos pensar com calma"', 'Ofereça prazo para análise'],
-        ['"E a equipe, vai aceitar?"', 'Envolva a equipe na decisão'],
-      ],
-    },
-    C: {
-      identify: ['Analítico', 'Detalhista', 'Cauteloso', 'Orientado por dados', 'Crítico', 'Perfeccionista'],
-      comm: ['Traga dados, TCO e benchmark', 'Documente premissas e critérios', 'Respeite o tempo de análise', 'Antecipe objeções técnicas com evidência', 'Use linguagem técnica e precisa'],
-      objs: [
-        ['"Preciso pensar melhor"', 'Mostre benefícios racionais e dados'],
-        ['"Quero ver mais opções"', 'Dê alternativas e benchmarks'],
-        ['"E se mudarmos depois?"', 'Traga casos de adaptação bem-sucedidos'],
-        ['"Isso atende à minha equipe?"', 'Envolva a equipe na decisão'],
-      ],
-    },
+  // Conteúdo do cruzamento vem dos dicionários i18n (arrays via tList) —
+  // cruz.data.{K}.identify / .comm / .objs (objs = pares [objeção, resposta])
+  const d = {
+    identify: tList('cruz.data.' + target + '.identify'),
+    comm:     tList('cruz.data.' + target + '.comm'),
+    objs:     tList('cruz.data.' + target + '.objs'),
   };
-
-  const d = data[target];
   const profiles = {
-    D: { label: 'Dominante', desc: 'Resultado · Decisão · Velocidade' },
-    I: { label: 'Influente', desc: 'Pessoas · Entusiasmo · Reconhecimento' },
-    S: { label: 'Estável', desc: 'Cooperação · Paciência · Lealdade' },
-    C: { label: 'Conforme', desc: 'Dados · Detalhe · Precisão' },
+    D: { label: t('disc.D.label'), desc: t('cruz.desc.D') },
+    I: { label: t('disc.I.label'), desc: t('cruz.desc.I') },
+    S: { label: t('disc.S.label'), desc: t('cruz.desc.S') },
+    C: { label: t('disc.C.label'), desc: t('cruz.desc.C') },
   };
 
   return (
@@ -762,8 +720,8 @@ function CruzamentoScreen({ go, user }) {
       <div className="card" style={{ padding: 22 }}>
         <div style={{ fontSize: 11, letterSpacing: '0.16em', textTransform: 'uppercase', color: 'var(--muted)', fontWeight: 600 }}>
           {myPrimary
-            ? <>Seu perfil é <strong style={{ color: 'var(--brown-700)' }}>{myPrimary} · {DISC_META[myPrimary].label}</strong>. Escolha com quem você está negociando:</>
-            : <>Escolha com quem você está negociando:</>}
+            ? <>{t('cruz.yourProfileIs')} <strong style={{ color: 'var(--brown-700)' }}>{myPrimary} · {t('disc.' + myPrimary + '.label')}</strong>. {t('cruz.choose')}</>
+            : <>{t('cruz.choose')}</>}
         </div>
         <div className="m-stack-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginTop: 14 }}>
           {Object.entries(profiles).map(function (entry) {
@@ -795,8 +753,8 @@ function CruzamentoScreen({ go, user }) {
 
       <div className="m-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
         <div className="card">
-          <div className="card-title">Como identificar um perfil {target}</div>
-          <div className="card-sub">Sinais comportamentais mais evidentes</div>
+          <div className="card-title">{t('cruz.identifyTitle', { k: target })}</div>
+          <div className="card-sub">{t('cruz.identifySub')}</div>
           {d.identify.map(function (it, i) {
             return (
               <div className="list-row" key={i}>
@@ -807,8 +765,8 @@ function CruzamentoScreen({ go, user }) {
           })}
         </div>
         <div className="card">
-          <div className="card-title">Como conduzir com esse perfil</div>
-          <div className="card-sub">Sua condução de comprador, conforme o perfil</div>
+          <div className="card-title">{t('cruz.conductTitle')}</div>
+          <div className="card-sub">{t('cruz.conductSub')}</div>
           {d.comm.map(function (it, i) {
             return (
               <div className="list-row" key={i}>
@@ -823,10 +781,10 @@ function CruzamentoScreen({ go, user }) {
       <div className="card">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 18 }}>
           <div>
-            <div className="card-title">Objeções típicas do perfil {target}</div>
-            <div className="card-sub" style={{ marginBottom: 0 }}>Antecipe e prepare resposta</div>
+            <div className="card-title">{t('cruz.objTitle', { k: target })}</div>
+            <div className="card-sub" style={{ marginBottom: 0 }}>{t('cruz.objSub')}</div>
           </div>
-          <div className="badge badge-brown"><Ic.Sparkle s={11} /> Sugerido por IA</div>
+          <div className="badge badge-brown"><Ic.Sparkle s={11} /> {t('cruz.aiBadge')}</div>
         </div>
 
         <div className="m-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginTop: 14 }}>
@@ -847,16 +805,13 @@ function CruzamentoScreen({ go, user }) {
             <Ic.Bulb s={20} />
           </div>
           <div style={{ flex: 1 }}>
-            <div className="serif" style={{ fontSize: 16, fontWeight: 600, color: 'var(--brown-50)' }}>Dica estratégica</div>
+            <div className="serif" style={{ fontSize: 16, fontWeight: 600, color: 'var(--brown-50)' }}>{t('cruz.tipTitle')}</div>
             <p style={{ fontSize: 13, color: 'var(--brown-200)', marginTop: 4, lineHeight: 1.55 }}>
-              {target === 'D' && 'Perfis D são competitivos. Estabeleça regras claras, foque em resultados mensuráveis e respeite o tempo do outro.'}
-              {target === 'I' && 'Perfis I são influenciados por relacionamento e entusiasmo. Construa conexão e mostre os benefícios para as pessoas.'}
-              {target === 'S' && 'Perfis S precisam de tempo e segurança. Não pressione decisões — construa confiança e demonstre estabilidade.'}
-              {target === 'C' && 'Perfis C compram com dados. Apresente comparativos, evidências e respeite cada passo da análise.'}
+              {t('cruz.tip.' + target)}
             </p>
           </div>
           <button className="btn" style={{ background: 'var(--brown-700)', color: 'var(--brown-50)' }} onClick={function () { go('relatorio'); }}>
-            Salvar no relatório <Ic.Arrow s={14} />
+            {t('cruz.saveReport')} <Ic.Arrow s={14} />
           </button>
         </div>
       </div>

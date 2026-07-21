@@ -99,9 +99,11 @@ service cloud.firestore {
       // Atualização: dono do relatório (necessário para reexportar self_{uid}
       // sobrescrevendo o mesmo doc) ou admin. Sem este allow, reexportações
       // do aluno eram silenciosamente bloqueadas pela rule anterior.
+      // Dono não pode reatribuir o relatório: userId precisa permanecer o mesmo.
       allow update: if isSignedIn() && (
         isAdmin() ||
-        resource.data.userId == myUid()
+        (resource.data.userId == myUid() &&
+         request.resource.data.userId == resource.data.userId)
       );
 
       allow delete: if isAdmin();

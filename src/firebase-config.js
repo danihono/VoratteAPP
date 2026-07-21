@@ -28,6 +28,10 @@ window.fbLogout = function() {
   // Limpa caches de sessão que vivem em módulos JSX (não persistem entre páginas,
   // mas vazariam entre dois logins na mesma aba sem refresh).
   if (typeof window.clearGestorTeamCache === 'function') window.clearGestorTeamCache();
+  // Resultado DISC em cache pertence ao usuário que deslogou — sem esta limpeza,
+  // o próximo login na mesma aba veria a análise/relatório do usuário anterior.
+  window.DISC_LAST_RESULT = null;
+  window.DISC_DATA = [];
   return window.auth.signOut();
 };
 
@@ -209,7 +213,7 @@ window.fbSaveDiscResult = async function(uid, result) {
 
 // Cria usuário no Firebase Auth SEM fazer logout do admin atual (REST API)
 window.fbCreateUser = async function(email, password) {
-  var API_KEY = 'AIzaSyAeMc2-zGJ5ZgfA34AV-lZaXgXetO7n0wY';
+  var API_KEY = firebaseConfig.apiKey;
   var res = await fetch(
     'https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=' + API_KEY,
     {
@@ -267,6 +271,17 @@ window.fbIncrementCompanyCounter = async function(companyId, field) {
       [field]: firebase.firestore.FieldValue.increment(1)
     });
   } catch (e) { /* contador é "best effort" — não bloqueia o cadastro */ }
+};
+
+// Incrementa um contador numérico em users/{uid} (ex.: teamSize do gestor ao
+// vincular um aluno). Best effort — não bloqueia o cadastro se falhar.
+window.fbIncrementUserCounter = async function(uid, field) {
+  if (!uid || !field) return;
+  try {
+    await window.db.collection('users').doc(uid).update({
+      [field]: firebase.firestore.FieldValue.increment(1)
+    });
+  } catch (e) { /* contador é "best effort" */ }
 };
 
 // Marca um usuário como convidado (após enviar email de convite)

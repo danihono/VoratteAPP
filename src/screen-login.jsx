@@ -140,7 +140,10 @@ function LoginScreen({ authError }) {
           </form>
 
           <div className="signup-row">
-            {t('login.signupRow')} <a>{t('login.signupLink')}</a>
+            {t('login.signupRow')}{' '}
+            <a href={'mailto:Renato.honorato@voratte.com.br?subject=' + encodeURIComponent('Vorätte · ' + t('login.signupLink'))}>
+              {t('login.signupLink')}
+            </a>
           </div>
 
           <div style={{ marginTop: 36, paddingTop: 20, borderTop: '1px solid var(--line-soft)', fontSize: 11, color: 'var(--muted-soft)', display: 'flex', justifyContent: 'space-between', gap: 12 }}>

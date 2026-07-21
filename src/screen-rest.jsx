@@ -856,7 +856,6 @@ function ComparacoesScreen({ go, user }) {
                     <td style={{ paddingRight: 24 }}>
                       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 4 }}>
                         <button className="icon-btn" onClick={() => go('cruzamento')}><Ic.Compare s={16}/></button>
-                        <button className="icon-btn"><Ic.More s={16}/></button>
                       </div>
                     </td>
                   </tr>
@@ -916,6 +915,24 @@ function PerfilScreen({ go, user, refreshProfile }) {
   const discMain = u.discMain;
   const [theme, setTheme] = window.useTheme();
   const [editOpen, setEditOpen] = React.useState(false);
+  // Avaliação DISC atual — alimenta o card "Histórico" (o schema guarda 1 doc
+  // por usuário; refazer o teste sobrescreve, então o "histórico" é a atual)
+  const [discDoc, setDiscDoc] = React.useState(null);
+  React.useEffect(function () {
+    if (!u.id || !window.fbGetDiscResult) return;
+    window.fbGetDiscResult(u.id).then(function (doc) {
+      setDiscDoc(doc || null);
+    }).catch(function () {});
+  }, [u.id]);
+  function fmtHistDate(ts) {
+    if (!ts) return '—';
+    try {
+      var lang = window.getLang();
+      var loc = lang === 'es' ? 'es' : lang === 'en' ? 'en-US' : 'pt-BR';
+      return ts.toDate().toLocaleDateString(loc);
+    } catch (e) {}
+    return '—';
+  }
   const subtitleParts = [];
   if (u.jobTitle)    subtitleParts.push(u.jobTitle);
   if (u.companyName) subtitleParts.push(u.companyName);
@@ -1055,9 +1072,26 @@ function PerfilScreen({ go, user, refreshProfile }) {
         <div className="card">
           <div className="card-title">{t('perfil.history')}</div>
           <div className="card-sub">{t('perfil.historySub')}</div>
-          <div style={{ padding: '24px 0', color: 'var(--muted)', fontSize: 13.5 }}>
-            {t('perfil.historyEmpty')}
-          </div>
+          {discDoc && discDoc.main ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px', marginTop: 10, borderRadius: 10, background: 'var(--paper-warm)', border: '1px solid var(--line-soft)' }}>
+              <div className={'disc-tile disc-' + discDoc.main.toLowerCase()} style={{ width: 38, height: 38, fontSize: 17 }}>{discDoc.main}</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--ink)' }}>
+                  {t('perfil.badgeProfile', { label: t('disc.' + discDoc.main + '.label'), code: discDoc.code || discDoc.main })}
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>
+                  {t('perfil.history.completedOn', { date: fmtHistDate(discDoc.completedAt) })}
+                </div>
+              </div>
+              <button className="icon-btn" onClick={() => go('analise')} title={t('nav.analise')}>
+                <Ic.Arrow s={16}/>
+              </button>
+            </div>
+          ) : (
+            <div style={{ padding: '24px 0', color: 'var(--muted)', fontSize: 13.5 }}>
+              {t('perfil.historyEmpty')}
+            </div>
+          )}
 
           <div style={{ marginTop: 18 }}>
             <button className="btn btn-primary btn-block" onClick={() => go('teste')}>

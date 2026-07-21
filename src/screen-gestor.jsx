@@ -709,6 +709,56 @@ function GestorRelatorios({ go, user }) {
   var [team, teamLoading] = useGestorTeam(user && user.id, user);
   var [rows, setRows]     = React.useState([]);
   var [loading, setLoading] = React.useState(true);
+  var [consBusy, setConsBusy] = React.useState(false);
+
+  // Relatório consolidado do TIME — reutiliza o gerador agregado do admin
+  // (window.buildAggregateReportData / exportAggregateReportPDF). O doc fica
+  // com userId = gestor (dono), id determinístico para não duplicar na lista.
+  async function handleNewConsolidated() {
+    if (consBusy) return;
+    var done = team.filter(function (m) { return m.main && m.main !== '—'; });
+    if (!done.length) { alert(t('gestor.relatorios.consNone')); return; }
+    if (!window.buildAggregateReportData || !window.exportAggregateReportPDF) return;
+    setConsBusy(true);
+    try {
+      var discDocs = await Promise.all(done.map(function (m) {
+        return window.fbGetDiscResult(m.id).catch(function () { return null; });
+      }));
+      var discResults = discDocs.map(function (d, i) {
+        return Object.assign({ userId: done[i].id, main: done[i].main, code: done[i].main }, d || {});
+      });
+      var companyId = (user && user.companyId) || 'team';
+      var companyName = (user && user.companyName) || t('gestor.relatorios.teamLabel');
+      var usersLike = done.map(function (m) {
+        return {
+          id: m.id, name: m.name,
+          jobTitle: m.role !== '—' ? m.role : '',
+          companyId: companyId, companyName: companyName,
+          discMain: m.main, discCompleted: true,
+        };
+      });
+      var data = window.buildAggregateReportData(
+        { kind: 'empresa', companyId: companyId },
+        usersLike, discResults, [{ id: companyId, name: companyName }]
+      );
+      window.exportAggregateReportPDF(data);
+      try {
+        await window.fbSaveReport({
+          userId: user.id,
+          type: 'empresa',
+          title: data.title,
+          targetLabel: data.subtitle,
+          createdBy: user.id,
+          createdByName: (user && user.name) || '',
+        }, 'teamcons_' + user.id);
+      } catch (e) { console.warn('fbSaveReport (consolidado) falhou — PDF gerado mesmo assim:', e); }
+      reloadRows();
+    } catch (e) {
+      console.error('Erro ao gerar consolidado do time:', e);
+    } finally {
+      setConsBusy(false);
+    }
+  }
 
   // Mapa uid -> nome para mostrar o "dono" do relatório
   var teamById = React.useMemo(function () {
@@ -717,11 +767,11 @@ function GestorRelatorios({ go, user }) {
     return m;
   }, [team]);
 
-  React.useEffect(function () {
-    if (teamLoading) return;
+  function reloadRows() {
     if (!team.length) { setRows([]); setLoading(false); return; }
     if (!window.fbGetReportsByTeam) { setLoading(false); return; }
-    var uids = team.map(function (p) { return p.id; });
+    // inclui o próprio gestor: o consolidado do time é gravado com userId = gestor
+    var uids = team.map(function (p) { return p.id; }).concat(user && user.id ? [user.id] : []);
     setLoading(true);
     window.fbGetReportsByTeam(uids).then(function (docs) {
       setRows(docs || []);
@@ -731,6 +781,11 @@ function GestorRelatorios({ go, user }) {
       setRows([]);
       setLoading(false);
     });
+  }
+
+  React.useEffect(function () {
+    if (teamLoading) return;
+    reloadRows();
   }, [teamLoading, team]);
 
   function fmtDate(ts) {
@@ -750,11 +805,14 @@ function GestorRelatorios({ go, user }) {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div className="tabs">
           <button className="tab active">{t('gestor.relatorios.tab.team')}</button>
-          <button className="tab" disabled title={t('gestor.relatorios.newSoon')}>{t('gestor.relatorios.tab.cons')}</button>
-          <button className="tab" disabled title={t('gestor.relatorios.newSoon')}>{t('gestor.relatorios.tab.role')}</button>
         </div>
-        <button className="btn btn-primary" disabled title={t('gestor.relatorios.newSoon')}>
-          <Ic.Plus s={14}/> {t('gestor.relatorios.new')}
+        <button
+          className="btn btn-primary"
+          onClick={handleNewConsolidated}
+          disabled={consBusy || teamLoading || !team.length}
+          title={!team.length && !teamLoading ? t('gestor.relatorios.consNone') : undefined}
+        >
+          <Ic.Plus s={14}/> {consBusy ? t('gestor.report.generating') : t('gestor.relatorios.new')}
         </button>
       </div>
 
@@ -795,10 +853,14 @@ function GestorRelatorios({ go, user }) {
                     <td>{fmtDate(r.createdAt)}</td>
                     <td style={{ paddingRight: 24 }}>
                       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 4 }}>
-                        {/* Relatório de membro do time → re-exporta o PDF DELE; senão (ex.: doc antigo sem dono no time) cai no relatório próprio */}
+                        {/* Membro do time → re-exporta o PDF dele; consolidado do gestor → regenera; senão relatório próprio */}
                         <button
                           className="icon-btn"
-                          onClick={() => { owner ? exportMemberReport(owner, user) : go('relatorio'); }}
+                          onClick={() => {
+                            if (owner) exportMemberReport(owner, user);
+                            else if (user && r.userId === user.id && r.type === 'empresa') handleNewConsolidated();
+                            else go('relatorio');
+                          }}
                           title={t('gestor.relatorios.actionView')}
                         >
                           <Ic.Eye s={16}/>

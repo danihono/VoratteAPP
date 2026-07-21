@@ -125,7 +125,6 @@ function DashboardScreen({ go, user }) {
               <div className="card-title">{t('dashboard.profile.title')}</div>
               <div className="card-sub">{t('dashboard.profile.sub')}</div>
             </div>
-            <button className="icon-btn"><Ic.More s={16}/></button>
           </div>
 
           {discLoading ? (

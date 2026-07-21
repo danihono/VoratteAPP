@@ -406,7 +406,7 @@ function AdminDashboard({ go }) {
                 </div>
                 <div>{c.sector ? <span className="badge badge-outline">{c.sector}</span> : <span style={{ color: 'var(--muted-soft)', fontSize: 11 }}>—</span>}</div>
                 <div style={{ textAlign: 'right', fontSize: 13, fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{c.userCount || 0}<span style={{ fontSize: 11, fontWeight: 500, color: 'var(--muted)' }}>{t('admin.topCompanies.usersSuffix')}</span></div>
-                <button className="icon-btn"><Ic.Arrow s={16}/></button>
+                <button className="icon-btn" onClick={() => go('empresas')} title={t('admin.topCompanies.viewAll')}><Ic.Arrow s={16}/></button>
               </div>
             );
           })}
@@ -1307,15 +1307,18 @@ function AdminEstatisticas({ go }) {
   useLang();
   var [users, setUsers]         = React.useState([]);
   var [companies, setCompanies] = React.useState([]);
+  var [reportCount, setReportCount] = React.useState(0);
   var [loading, setLoading]     = React.useState(true);
 
   React.useEffect(function () {
     Promise.all([
       window.fbGetAllUsers(500).catch(function () { return []; }),
       window.fbGetAllCompanies().catch(function () { return []; }),
+      window.fbGetAllReports ? window.fbGetAllReports(500).catch(function () { return []; }) : Promise.resolve([]),
     ]).then(function (results) {
       setUsers(results[0] || []);
       setCompanies(results[1] || []);
+      setReportCount((results[2] || []).length);
       setLoading(false);
     });
   }, []);
@@ -1350,7 +1353,7 @@ function AdminEstatisticas({ go }) {
         <Mini2 label={t('admin.stats.discDone')}        value={loading ? '—' : String(completed)}        sub={loading ? '' : t('admin.stats.discDoneSub', { n: users.length })} />
         <Mini2 label={t('admin.stats.completionRate')}  value={loading ? '—' : completionRate}           sub={t('admin.stats.completionRateSub')} />
         <Mini2 label={t('admin.stats.companies')}       value={loading ? '—' : String(companies.length)} sub={t('admin.stats.companiesSub')} />
-        <Mini2 label={t('admin.stats.avgTime')}         value="—"                                        sub={t('admin.stats.avgTimeSub')} />
+        <Mini2 label={t('admin.stats.reportsGen')}      value={loading ? '—' : String(reportCount)}      sub={t('admin.stats.reportsGenSub')} />
       </div>
 
       <div className="card">

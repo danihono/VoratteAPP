@@ -410,7 +410,6 @@ function App() {
             )}
             <LangPicker />
             <ThemeTogglePill />
-            <button className="icon-btn topbar-bell"><Ic.Bell s={18}/><span className="dot"/></button>
             <div className="top-user">
               <div className="avatar">{profile.initials}</div>
               <div>

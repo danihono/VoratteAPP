@@ -49,6 +49,45 @@ async function _buildDemoSelfMember(currentUser) {
   }
 }
 
+// Exporta o relatório PDF de um MEMBRO do time (não o do gestor logado).
+// Reutiliza a mesma infra do relatório individual: fbGetDiscResult + buildReportData
+// + exportReportPDF (padrão idêntico ao handleReExport do admin). Persiste os
+// metadados em /reports com doc determinístico 'team_{memberUid}' (best-effort).
+async function exportMemberReport(member, gestorUser) {
+  if (!member || !member.id) return;
+  var doc = await window.fbGetDiscResult(member.id);
+  if (!doc) { alert(t('gestor.report.noDisc')); return; }
+  var code = doc.code || doc.main;
+  var discR = {
+    mostGraph:   doc.mostGraph   || { D: doc.d, I: doc.i, S: doc.s, C: doc.c },
+    leastGraph:  doc.leastGraph  || { D: 0, I: 0, S: 0, C: 0 },
+    changeGraph: doc.changeGraph || { D: 0, I: 0, S: 0, C: 0 },
+    code: code,
+    profile: window.BUYER_PROFILES[code] || window.BUYER_PROFILES[doc.main],
+  };
+  // shape vindo de fbGetTeamMembers: role = jobTitle; empresa vem do gestor (mesmo tenant)
+  var userLike = {
+    name:        member.name !== '—' ? member.name : '',
+    jobTitle:    member.role !== '—' ? member.role : '',
+    companyName: (gestorUser && gestorUser.companyName) || '',
+    email:       member.email || '',
+  };
+  window.exportReportPDF(window.buildReportData(userLike, discR));
+  try {
+    await window.fbSaveReport({
+      userId:        member.id,
+      type:          'individual',
+      title:         t('gestor.report.title', { name: userLike.name || member.email || member.id }),
+      targetId:      member.id,
+      targetLabel:   userLike.name || member.email || '',
+      createdBy:     gestorUser && gestorUser.id,
+      createdByName: (gestorUser && gestorUser.name) || '',
+    }, 'team_' + member.id);
+  } catch (e) {
+    console.warn('fbSaveReport (membro) falhou — PDF foi gerado mesmo assim:', e);
+  }
+}
+
 function useGestorTeam(gestorId, currentUser) {
   var cached = gestorId ? _gestorTeamCache[gestorId] : null;
   var [team, setTeam] = React.useState(cached || []);
@@ -333,9 +372,18 @@ function GestorEquipe({ go, user }) {
   var [team, teamLoading, teamError] = useGestorTeam(user && user.id, user);
   var GESTOR_TEAM = team;
   var [sel, setSel] = React.useState(null);
+  var [exporting, setExporting] = React.useState(false);
   var selId = sel || (GESTOR_TEAM.length ? GESTOR_TEAM[0].id : null);
   var p = GESTOR_TEAM.find(function(x) { return x.id === selId; }) || null;
   var senderName = user && user.name ? user.name : t('role.gestor');
+
+  function handleMemberReport(member) {
+    if (exporting) return;
+    setExporting(true);
+    exportMemberReport(member, user)
+      .catch(function (e) { console.error('Erro ao gerar relatório do membro:', e); })
+      .then(function () { setExporting(false); });
+  }
 
   function handleMessage(member) {
     if (!member || !member.email) { alert(t('gestor.notify.empty')); return; }
@@ -431,8 +479,8 @@ function GestorEquipe({ go, user }) {
                 <button className="btn btn-secondary" onClick={() => handleMessage(p)} disabled={!p.email}>
                   <Ic.Chat s={14}/> {t('gestor.detail.message')}
                 </button>
-                <button className="btn btn-primary" onClick={() => go('relatorio')}>
-                  <Ic.Pdf s={14}/> {t('gestor.detail.report')}
+                <button className="btn btn-primary" onClick={() => handleMemberReport(p)} disabled={exporting}>
+                  <Ic.Pdf s={14}/> {exporting ? t('gestor.report.generating') : t('gestor.detail.report')}
                 </button>
               </div>
             ) : (
@@ -689,7 +737,12 @@ function GestorRelatorios({ go, user }) {
                     <td>{fmtDate(r.createdAt)}</td>
                     <td style={{ paddingRight: 24 }}>
                       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 4 }}>
-                        <button className="icon-btn" onClick={() => go('relatorio')} title={t('gestor.relatorios.actionView')}>
+                        {/* Relatório de membro do time → re-exporta o PDF DELE; senão (ex.: doc antigo sem dono no time) cai no relatório próprio */}
+                        <button
+                          className="icon-btn"
+                          onClick={() => { owner ? exportMemberReport(owner, user) : go('relatorio'); }}
+                          title={t('gestor.relatorios.actionView')}
+                        >
                           <Ic.Eye s={16}/>
                         </button>
                       </div>

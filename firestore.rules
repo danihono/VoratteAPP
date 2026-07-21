@@ -90,19 +90,23 @@ service cloud.firestore {
       );
 
       // Criação: admin pode tudo (wizard grava sem userId fixo); dono comum
-      // precisa indicar o próprio uid em userId.
+      // precisa indicar o próprio uid em userId; gestor pode registrar relatório
+      // de membro do próprio time (exportMemberReport → doc team_{memberUid}).
       allow create: if isSignedIn() && (
         isAdmin() ||
-        request.resource.data.userId == myUid()
+        request.resource.data.userId == myUid() ||
+        isMyTeamMember(request.resource.data.userId)
       );
 
       // Atualização: dono do relatório (necessário para reexportar self_{uid}
       // sobrescrevendo o mesmo doc) ou admin. Sem este allow, reexportações
       // do aluno eram silenciosamente bloqueadas pela rule anterior.
-      // Dono não pode reatribuir o relatório: userId precisa permanecer o mesmo.
+      // Dono/gestor não podem reatribuir o relatório: userId permanece o mesmo.
+      // Gestor atualiza o doc team_{memberUid} ao reexportar o PDF do membro.
       allow update: if isSignedIn() && (
         isAdmin() ||
-        (resource.data.userId == myUid() &&
+        ((resource.data.userId == myUid() ||
+          isMyTeamMember(resource.data.userId)) &&
          request.resource.data.userId == resource.data.userId)
       );
 

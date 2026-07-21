@@ -83,6 +83,8 @@ async function exportMemberReport(member, gestorUser) {
       createdBy:     gestorUser && gestorUser.id,
       createdByName: (gestorUser && gestorUser.name) || '',
     }, 'team_' + member.id);
+    // Contador de relatórios do membro (regras permitem gestor do time incrementar)
+    if (window.fbIncrementUserCounter) window.fbIncrementUserCounter(member.id, 'reportCount');
   } catch (e) {
     console.warn('fbSaveReport (membro) falhou — PDF foi gerado mesmo assim:', e);
   }
@@ -373,16 +375,47 @@ function GestorEquipe({ go, user }) {
   var GESTOR_TEAM = team;
   var [sel, setSel] = React.useState(null);
   var [exporting, setExporting] = React.useState(false);
+  var [memberReports, setMemberReports] = React.useState([]);
+  var [reportsLoading, setReportsLoading] = React.useState(false);
   var selId = sel || (GESTOR_TEAM.length ? GESTOR_TEAM[0].id : null);
   var p = GESTOR_TEAM.find(function(x) { return x.id === selId; }) || null;
   var senderName = user && user.name ? user.name : t('role.gestor');
+
+  // Relatórios reais do membro selecionado (regras: gestor lê reports do time)
+  var loadMemberReports = React.useCallback(function (memberId) {
+    if (!memberId || !window.fbGetReportsByUser) { setMemberReports([]); return; }
+    setReportsLoading(true);
+    window.fbGetReportsByUser(memberId).then(function (docs) {
+      setMemberReports(docs || []);
+      setReportsLoading(false);
+    }).catch(function (err) {
+      console.warn('Erro ao carregar relatórios do membro:', err);
+      setMemberReports([]);
+      setReportsLoading(false);
+    });
+  }, []);
+
+  React.useEffect(function () { loadMemberReports(selId); }, [selId, loadMemberReports]);
 
   function handleMemberReport(member) {
     if (exporting) return;
     setExporting(true);
     exportMemberReport(member, user)
       .catch(function (e) { console.error('Erro ao gerar relatório do membro:', e); })
-      .then(function () { setExporting(false); });
+      .then(function () {
+        setExporting(false);
+        loadMemberReports(member && member.id); // reflete o doc recém-gravado na lista
+      });
+  }
+
+  function fmtReportDate(ts) {
+    if (!ts) return '—';
+    try {
+      var lang = window.getLang();
+      var loc = lang === 'es' ? 'es' : lang === 'en' ? 'en-US' : 'pt-BR';
+      return ts.toDate().toLocaleDateString(loc);
+    } catch (e) {}
+    return '—';
   }
 
   function handleMessage(member) {
@@ -471,7 +504,7 @@ function GestorEquipe({ go, user }) {
               <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
                 {p.main !== '—' && <div className="badge badge-brown">{t('perfil.badgeProfile', { label: t('disc.' + p.main + '.label'), code: p.main })}</div>}
                 <div className="badge badge-outline">{t('gestor.detail.lastEval', { date: p.last })}</div>
-                <div className="badge badge-outline">{t('gestor.detail.reportsCount', { n: p.reports })}</div>
+                <div className="badge badge-outline">{t('gestor.detail.reportsCount', { n: memberReports.length })}</div>
               </div>
             </div>
             {p.status === 'done' ? (
@@ -526,33 +559,58 @@ function GestorEquipe({ go, user }) {
               </div>
             </div>
 
-            <div className="m-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-              <div className="card">
-                <div className="card-title">{t('gestor.detail.strengthsTitle')}</div>
-                {[
-                  t('gestor.detail.strength.1'),
-                  t('gestor.detail.strength.2'),
-                  t('gestor.detail.strength.3'),
-                  t('gestor.detail.strength.4'),
-                ].map((s, i) => <div className="list-row" key={i}><Ic.Check s={14}/><span>{s}</span></div>)}
-              </div>
-              <div className="card">
-                <div className="card-title">{t('gestor.detail.risksTitle')}</div>
-                {[
-                  t('gestor.detail.risk.1'),
-                  t('gestor.detail.risk.2'),
-                  t('gestor.detail.risk.3'),
-                  t('gestor.detail.risk.4'),
-                ].map((s, i) => <div className="list-row" key={i}><div className="bullet" style={{ background: 'var(--disc-d)' }}/><span>{s}</span></div>)}
-              </div>
-            </div>
+            {/* Conteúdo derivado do perfil DISC REAL do membro (BUYER_PROFILES),
+                não mais texto genérico igual para todos */}
+            {(function () {
+              var prof = window.BUYER_PROFILES && window.BUYER_PROFILES[p.main];
+              if (!prof) return null;
+              return (
+                <div className="m-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                  <div className="card">
+                    <div className="card-title">{t('relatorio.movesTitle')}</div>
+                    {(prof.motivators || []).map((s, i) => <div className="list-row" key={i}><Ic.Check s={14}/><span>{s}</span></div>)}
+                  </div>
+                  <div className="card">
+                    <div className="card-title">{t('relatorio.brakesTitle')}</div>
+                    {(prof.fears || []).map((s, i) => <div className="list-row" key={i}><div className="bullet" style={{ background: 'var(--disc-d)' }}/><span>{s}</span></div>)}
+                  </div>
+                </div>
+              );
+            })()}
 
             <div className="card">
               <div className="card-title">{t('gestor.detail.reportsTitle', { name: p.name.split(' ')[0] })}</div>
-              <div className="card-sub">{t('gestor.detail.reportsSub', { n: p.reports || 0 })}</div>
-              <div style={{ padding: '20px 0', color: 'var(--muted)', fontSize: 13.5 }}>
-                {t('gestor.detail.reportsEmpty')}
-              </div>
+              <div className="card-sub">{t('gestor.detail.reportsSub', { n: memberReports.length })}</div>
+              {reportsLoading ? (
+                <div style={{ padding: '20px 0', color: 'var(--muted)', fontSize: 13.5 }}>{t('common.loading')}</div>
+              ) : memberReports.length === 0 ? (
+                <div style={{ padding: '20px 0', color: 'var(--muted)', fontSize: 13.5 }}>
+                  {t('gestor.detail.reportsNone', { name: p.name.split(' ')[0] })}
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 12 }}>
+                  {memberReports.map(function (r) {
+                    return (
+                      <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', borderRadius: 10, background: 'var(--paper-warm)', border: '1px solid var(--line-soft)' }}>
+                        <div style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--brown-50)', color: 'var(--brown-700)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          <Ic.Pdf s={14}/>
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {r.title || t('relatorios.itemTitle')}
+                          </div>
+                          <div style={{ fontSize: 11.5, color: 'var(--muted)' }}>
+                            {fmtReportDate(r.createdAt)}{r.createdByName ? ' · ' + r.createdByName : ''}
+                          </div>
+                        </div>
+                        <button className="icon-btn" onClick={() => handleMemberReport(p)} disabled={exporting} title={t('relatorios.downloadTitle')}>
+                          <Ic.Download s={16}/>
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </React.Fragment>
         ) : (

@@ -470,6 +470,7 @@ window.I18N_ES = {
   'gestor.detail.reportsSub':    '{n} documentos disponibles',
   'gestor.detail.reportsEmpty':  'Lista de informes disponibles pronto.',
   'gestor.report.noDisc':        'Este colaborador aún no completó el test DISC.',
+  'gestor.detail.reportsNone':   'Aún no hay informes generados para {name} — usa el botón "Informe" de arriba.',
   'gestor.report.generating':    'Generando…',
   'gestor.report.title':         'Informe DISC · {name}',
   'gestor.detail.noDiscTitle':   '{name} aún no respondió el DISC',

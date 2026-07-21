@@ -471,6 +471,7 @@ window.I18N_PTBR = {
   'gestor.detail.reportsSub':    '{n} documentos disponíveis',
   'gestor.detail.reportsEmpty':  'Lista de relatórios disponíveis em breve.',
   'gestor.report.noDisc':        'Este colaborador ainda não concluiu o teste DISC.',
+  'gestor.detail.reportsNone':   'Nenhum relatório gerado para {name} ainda — use o botão "Relatório" acima.',
   'gestor.report.generating':    'Gerando…',
   'gestor.report.title':         'Relatório DISC · {name}',
   'gestor.detail.noDiscTitle':   '{name} ainda não respondeu o DISC',

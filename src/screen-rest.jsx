@@ -15,6 +15,8 @@ async function persistOwnReport(user) {
       createdBy: user.id,
       createdByName: user.name || '',
     }, 'self_' + user.id);
+    // Contador de relatórios gerados exibido ao gestor/admin (best-effort)
+    if (window.fbIncrementUserCounter) window.fbIncrementUserCounter(user.id, 'reportCount');
   } catch (e) {
     console.warn('persistOwnReport falhou (PDF foi gerado mesmo assim):', e);
   }

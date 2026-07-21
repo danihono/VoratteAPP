@@ -476,22 +476,52 @@ function userToRow(doc) {
   };
 }
 
-function companyToRow(doc) {
+// stats: mapa opcional companyId → { users, managers, done, total } calculado ao vivo
+// a partir de /users. Os contadores gravados no doc (userCount/completedPct) drifam —
+// só existem incrementos best-effort na criação — então a exibição prefere o cálculo real.
+function companyToRow(doc, stats) {
+  var s = stats && stats[doc.id];
+  var completedLive = s && s.total ? Math.round(s.done / s.total * 100) : null;
   return {
     id:        doc.id,
     name:      doc.name      || '—',
     sector:    doc.sector    || '—',
-    users:     doc.userCount    || 0,
-    managers:  doc.managerCount || 0,
-    completed: doc.completedPct || 0,
+    users:     s ? s.users    : (doc.userCount    || 0),
+    managers:  s ? s.managers : (doc.managerCount || 0),
+    completed: completedLive !== null ? completedLive : (doc.completedPct || 0),
     plan:      doc.plan || 'Starter',
     since:     doc.since || '—',
     _doc:      doc,
   };
 }
 
-function gestorToRow(doc) {
-  var done = doc.teamCompletedCount || 0, total = doc.teamSize || 0;
+// Agrega /users por empresa (casa por companyId, com fallback para companyName)
+function buildCompanyStats(companies, users) {
+  var byId = {};
+  var nameToId = {};
+  companies.forEach(function (c) {
+    byId[c.id] = { users: 0, managers: 0, done: 0, total: 0 };
+    if (c.name) nameToId[c.name] = c.id;
+  });
+  users.forEach(function (u) {
+    var cid = u.companyId || nameToId[u.companyName];
+    var s = cid && byId[cid];
+    if (!s) return;
+    if (u.role === 'gestor') s.managers += 1;
+    else if (u.role === 'aluno') s.users += 1;
+    else return; // admins não entram na conta da empresa
+    s.total += 1;
+    if (u.discCompleted) s.done += 1;
+  });
+  return byId;
+}
+
+// teamStats: mapa opcional gestorId → { total, done } calculado ao vivo de /users
+// (teamSize/teamCompletedCount gravados no doc nunca foram mantidos — drifam).
+function gestorToRow(doc, teamStats) {
+  var s = teamStats && teamStats[doc.id];
+  var done  = s ? s.done  : (doc.teamCompletedCount || 0);
+  var total = s ? s.total : (doc.teamSize || 0);
   return {
     id:        doc.id,
     name:      doc.name        || '—',
@@ -809,8 +839,13 @@ function AdminEmpresas({ go }) {
 
   function reload() {
     setLoading(true);
-    window.fbGetAllCompanies().then(function(docs) {
-      setCos(docs.map(companyToRow));
+    Promise.all([
+      window.fbGetAllCompanies(),
+      window.fbGetAllUsers(500).catch(function () { return []; }),
+    ]).then(function(results) {
+      var docs = results[0] || [];
+      var stats = buildCompanyStats(docs, results[1] || []);
+      setCos(docs.map(function (d) { return companyToRow(d, stats); }));
       setLoading(false);
     }).catch(function() { setLoading(false); });
   }
@@ -952,9 +987,10 @@ function VerEmpresaModal({ company, onClose }) {
       <AdminDetailRow label={t('admin.field.cnpj')}         value={doc.cnpj} />
       <AdminDetailRow label={t('admin.field.phone')}        value={doc.phone} />
       <AdminDetailRow label={t('admin.field.website')}      value={doc.website} />
-      <AdminDetailRow label={t('admin.field.userCount')}    value={doc.userCount} />
-      <AdminDetailRow label={t('admin.field.managerCount')} value={doc.managerCount} />
-      <AdminDetailRow label={t('admin.field.completedPct')} value={(doc.completedPct || 0) + '%'} />
+      {/* contadores calculados ao vivo na listagem (row), não os gravados no doc */}
+      <AdminDetailRow label={t('admin.field.userCount')}    value={company.users} />
+      <AdminDetailRow label={t('admin.field.managerCount')} value={company.managers} />
+      <AdminDetailRow label={t('admin.field.completedPct')} value={(company.completed || 0) + '%'} />
       <AdminDetailRow label={t('admin.field.createdAt')}    value={fmtAdminDate(doc.createdAt)} />
     </AdminModalShell>
   );
@@ -1033,9 +1069,9 @@ function EditarEmpresaModal({ company, onClose, onSaved }) {
         </div>
 
         <div className="m-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, padding: '12px 0', borderTop: '1px solid var(--line-soft)' }}>
-          <div style={{ fontSize: 12, color: 'var(--muted)' }}>{t('admin.field.userCount')}: <strong style={{ color: 'var(--ink)' }}>{doc.userCount || 0}</strong></div>
-          <div style={{ fontSize: 12, color: 'var(--muted)' }}>{t('admin.field.managerCount')}: <strong style={{ color: 'var(--ink)' }}>{doc.managerCount || 0}</strong></div>
-          <div style={{ fontSize: 12, color: 'var(--muted)' }}>{t('admin.field.completedPct')}: <strong style={{ color: 'var(--ink)' }}>{(doc.completedPct || 0) + '%'}</strong></div>
+          <div style={{ fontSize: 12, color: 'var(--muted)' }}>{t('admin.field.userCount')}: <strong style={{ color: 'var(--ink)' }}>{company.users || 0}</strong></div>
+          <div style={{ fontSize: 12, color: 'var(--muted)' }}>{t('admin.field.managerCount')}: <strong style={{ color: 'var(--ink)' }}>{company.managers || 0}</strong></div>
+          <div style={{ fontSize: 12, color: 'var(--muted)' }}>{t('admin.field.completedPct')}: <strong style={{ color: 'var(--ink)' }}>{(company.completed || 0) + '%'}</strong></div>
         </div>
 
         {error && (
@@ -1065,8 +1101,19 @@ function AdminGestores({ go }) {
 
   function reload() {
     setLoading(true);
-    window.fbGetAllGestores().then(function(docs) {
-      setMs(docs.map(gestorToRow));
+    Promise.all([
+      window.fbGetAllGestores(),
+      window.fbGetAllUsers(500).catch(function () { return []; }),
+    ]).then(function(results) {
+      var docs = results[0] || [];
+      var teamStats = {};
+      (results[1] || []).forEach(function (u) {
+        if (u.role !== 'aluno' || !u.gestorId) return;
+        if (!teamStats[u.gestorId]) teamStats[u.gestorId] = { total: 0, done: 0 };
+        teamStats[u.gestorId].total += 1;
+        if (u.discCompleted) teamStats[u.gestorId].done += 1;
+      });
+      setMs(docs.map(function (d) { return gestorToRow(d, teamStats); }));
       setLoading(false);
     }).catch(function() { setLoading(false); });
   }
@@ -1191,7 +1238,7 @@ function VerGestorModal({ gestor, onClose }) {
       <AdminDetailRow label={t('admin.field.email')}      value={doc.email} />
       <AdminDetailRow label={t('admin.field.jobTitle')}   value={doc.jobTitle} />
       <AdminDetailRow label={t('admin.field.company')}    value={doc.companyName || doc.companyId} />
-      <AdminDetailRow label={t('admin.field.teamSize')}   value={doc.teamSize || 0} />
+      <AdminDetailRow label={t('admin.field.teamSize')}   value={gestor.team || 0} />
       <AdminDetailRow label={t('admin.field.createdAt')}  value={fmtAdminDate(doc.createdAt)} />
     </AdminModalShell>
   );
@@ -1237,7 +1284,7 @@ function EditarGestorModal({ gestor, onClose, onSaved }) {
         <div className="m-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, padding: '12px 0', borderTop: '1px solid var(--line-soft)' }}>
           <div style={{ fontSize: 12, color: 'var(--muted)' }}>{t('admin.field.email')}: <strong style={{ color: 'var(--ink)' }}>{doc.email || '—'}</strong></div>
           <div style={{ fontSize: 12, color: 'var(--muted)' }}>{t('admin.field.company')}: <strong style={{ color: 'var(--ink)' }}>{doc.companyName || doc.companyId || '—'}</strong></div>
-          <div style={{ fontSize: 12, color: 'var(--muted)' }}>{t('admin.field.teamSize')}: <strong style={{ color: 'var(--ink)' }}>{doc.teamSize || 0}</strong></div>
+          <div style={{ fontSize: 12, color: 'var(--muted)' }}>{t('admin.field.teamSize')}: <strong style={{ color: 'var(--ink)' }}>{gestor.team || 0}</strong></div>
         </div>
 
         {error && (

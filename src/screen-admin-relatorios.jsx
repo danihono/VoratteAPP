@@ -345,6 +345,7 @@
         targetLabel: (target.name || '—') + ' · ' + (target.jobTitle || '—'),
         config: { kind: 'individual', individualUserId: target.id },
       });
+      if (window.fbIncrementUserCounter) window.fbIncrementUserCounter(target.id, 'reportCount');
     }
 
     async function generateAggregate() {

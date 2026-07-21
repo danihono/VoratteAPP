@@ -47,11 +47,16 @@ service cloud.firestore {
       // Bloqueia escalada de privilégio (role) e mudanças que afetam isolamento
       // por empresa/time (companyId, gestorId, invited, email, companyName, etc).
       // affectedKeys() = chaves que mudaram entre resource e request.resource.
+      // reportCount: contador de relatórios gerados — o próprio user incrementa ao
+      // exportar o seu PDF; o gestor incrementa o do membro ao exportar o dele.
       allow update: if isSignedIn() && (
         isAdmin() ||
         (myUid() == uid &&
          request.resource.data.diff(resource.data).affectedKeys()
-           .hasOnly(['name', 'jobTitle', 'discCompleted', 'discMain', 'lastSeen']))
+           .hasOnly(['name', 'jobTitle', 'discCompleted', 'discMain', 'lastSeen', 'reportCount'])) ||
+        (isGestor() && resource.data.gestorId == myUid() &&
+         request.resource.data.diff(resource.data).affectedKeys()
+           .hasOnly(['reportCount']))
       );
       allow create: if isAdmin();
       allow delete: if isAdmin();

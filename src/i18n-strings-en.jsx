@@ -470,6 +470,7 @@ window.I18N_EN = {
   'gestor.detail.reportsSub':    '{n} documents available',
   'gestor.detail.reportsEmpty':  'Report list available soon.',
   'gestor.report.noDisc':        'This team member has not completed the DISC test yet.',
+  'gestor.detail.reportsNone':   'No reports generated for {name} yet — use the "Report" button above.',
   'gestor.report.generating':    'Generating…',
   'gestor.report.title':         'DISC report · {name}',
   'gestor.detail.noDiscTitle':   '{name} has not taken the DISC yet',
